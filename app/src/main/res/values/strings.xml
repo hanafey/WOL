@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">WOL</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+
+    <string name="ping_fake">Ping FAKE</string>
+    <string name="wake_fake">Wake FAKE</string>
+    <string name="ping_nasa">Ping NASA</string>
+    <string name="wake_nasa">Wake NASA</string>
+
+    <string name="ping_timeout_message">%1$s TIMED OUT! Sleeping?</string>
+    <string name="ping_success_message">%1$s accessible! Wide Awake?</string>
+    <string name="ping_failed_message">%1$s ping failed! %2$s\n%3$s</string>
+    <string name="wake_attempt_message">%1$s WAKE UP! %2$s</string>
+    <string name="wake_failed_message">%1$s WAKE failed! %2$s\n%3$s</string>
+</resources>
