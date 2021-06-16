@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
@@ -92,6 +93,10 @@ class MainFragment : Fragment() {
         }
         mvm.targets.forEachIndexed { ix, wh ->
             uiWake[ix].setOnClickListener(WakeClickListener(wh))
+        }
+
+        ui.goToDialog.setOnClickListener {
+            findNavController().navigate(R.id.HostStatusDialog)
         }
     }
 

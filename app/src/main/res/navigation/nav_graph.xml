@@ -18,6 +18,7 @@
             app:destination="@id/SecondFragment"
             />
     </fragment>
+
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.hanafey.android.wol.SecondFragment"
@@ -30,4 +31,11 @@
             app:destination="@id/FirstFragment"
             />
     </fragment>
+
+    <dialog
+        android:id="@+id/HostStatusDialog"
+        android:name="com.hanafey.android.wol.HostStatusDialog"
+        android:label="HostStatusDialog"
+        tools:layout="@layout/dialog_host_status"
+        />
 </navigation>

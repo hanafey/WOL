@@ -9,6 +9,7 @@
     >
 
     <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/hosts_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -193,5 +194,14 @@
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/go_to_dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hosts_group"
+        android:text="Go To Dialog"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
