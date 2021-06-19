@@ -4,6 +4,20 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        debug_signing_config {
+            storeFile file('/home/mkh/Android/Keys/APK/apk.keystore')
+            storePassword ''
+            keyAlias 'app'
+            keyPassword ''
+        }
+        release_signing_config {
+            storeFile file('/home/mkh/Android/Keys/APK/apk.keystore')
+            storePassword ''
+            keyAlias 'app'
+            keyPassword ''
+        }
+    }
     compileSdkVersion 30
     buildToolsVersion "31.0.0 rc4"
 
@@ -15,12 +29,17 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        signingConfig signingConfigs.debug_signing_config
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release_signing_config
+        }
+        debug {
+            signingConfig signingConfigs.debug_signing_config
         }
     }
     compileOptions {
@@ -32,6 +51,10 @@ android {
     }
     buildFeatures {
         viewBinding true
+    }
+    dependenciesInfo {
+        includeInApk false
+        includeInBundle false
     }
 }
 

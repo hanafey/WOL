@@ -25,13 +25,15 @@ class WolHost(
     /**
      * If this host is being pinged, or should be pinged, this is true.
      */
-    var pingMe = false
+    var pingMe = true
 
 
     /**
      * The number of times host was pinged since last reset
      */
-    var pingedCount = 0
+    var pingedCountAlive = 0
+
+    var pingedCountDead = 0
 
 
     /**
@@ -59,7 +61,8 @@ class WolHost(
     var wakeupException: Throwable? = null
 
     fun resetState() {
-        pingedCount = 0
+        pingedCountAlive = 0
+        pingedCountDead = 0
         pingState = PingStates.INDETERMINATE
         pingException = null
         wakeupCount = 0
@@ -68,10 +71,11 @@ class WolHost(
 
 
     /**
-     * Resets [pingedCount], [pingState], [pingException]
+     * Resets [pingedCountAlive], [pingState], [pingException]
      */
     fun resetPingState() {
-        pingedCount = 0
+        pingedCountAlive = 0
+        pingedCountDead = 0
         pingState = PingStates.INDETERMINATE
         pingException = null
     }

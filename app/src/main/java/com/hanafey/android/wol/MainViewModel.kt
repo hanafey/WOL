@@ -18,8 +18,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val targets: List<WolHost> = listOf(
         WolHost(0, "FAKE", "192.168.1.16", "aa:bb:cc:dd:ee:ff", "192.168.1.255"),
-        WolHost(1, "NASA", "192.168.1.250", "001132F00ECF", "192.168.1.255"),
-        WolHost(2, "HOG", "192.168.1.252", "001132F00ECF", "192.168.1.16"),
+        WolHost(1, "NASA", "192.168.1.250", "00:11:32:F0:0E:C1", "192.168.1.255"),
+        WolHost(2, "SPACEX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
     ).sorted()
 
     private val _targetPingChanged = MutableLiveData(-1)
@@ -30,10 +30,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val targetWakeChangedLiveData: LiveData<Int>
         get() = _targetWakeChanged
 
-    var pingDelayMillis = 2500L
+    var pingDelayMillis = 1000L
 
     private var pingJobs: List<Job> = emptyList()
-    private var pingActive = false
+    var pingActive = false
+        private set
+
+    var pingFocussedTarget: WolHost? = null
 
     fun signalPingTargetChanged(wh: WolHost) {
         _targetPingChanged.value = wh.pKey
@@ -47,7 +50,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             var address: InetAddress? = null
 
             while (pingActive) {
-                if (host.pingMe) {
+                if (host.pingMe && host != pingFocussedTarget) {
                     if (address == null) {
                         address = try {
                             InetAddress.getByName(host.pingName)
@@ -61,10 +64,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (address != null) {
                         try {
                             if (MagicPacket.ping(address)) {
-                                host.pingState = WolHost.PingStates.ALIVE
-                                host.pingedCount++
+                                if (host.pingMe) {
+                                    // Ping can take time, and host may have been turned off while waiting result
+                                    host.pingState = WolHost.PingStates.ALIVE
+                                    host.pingedCountAlive++
+                                }
                             } else {
-                                host.pingState = WolHost.PingStates.DEAD
+                                if (host.pingMe) {
+                                    // Ping can take time, and host may have been turned off while waiting result
+                                    host.pingState = WolHost.PingStates.DEAD
+                                    host.pingedCountDead++
+                                }
                             }
                         } catch (e: Throwable) {
                             host.pingState = WolHost.PingStates.EXCEPTION

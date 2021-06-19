@@ -14,5 +14,6 @@
         <!-- Customize your theme here. -->
         <item name="colorPingable">@color/pingable</item>
         <item name="colorUnPingable">@color/unPingable</item>
+        <item name="colorFrozenPingable">@color/frozenPingable</item>
     </style>
 </resources>
