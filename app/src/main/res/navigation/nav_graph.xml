@@ -38,4 +38,11 @@
         android:label="HostStatusDialog"
         tools:layout="@layout/dialog_host_status"
         />
+
+    <dialog
+        android:id="@+id/WolStatusDialog"
+        android:name="com.hanafey.android.wol.WolStatusDialog"
+        android:label="WolStatusDialog"
+        tools:layout="@layout/dialog_wol_status"
+        />
 </navigation>

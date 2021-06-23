@@ -162,6 +162,10 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                         psb.backgroundTintList = pingResponsiveTint
                     }
                     psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
+                    if (target.wolToWakeHistoryChanged) {
+                        target.wolToWakeHistoryChanged = false
+                        mvm.settingsData.writeTimeToWakeHistory(target)
+                    }
                 }
 
                 WolHost.PingStates.DEAD -> {
@@ -311,8 +315,24 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
     inner class WakeClickListener(private val target: WolHost) : View.OnClickListener {
         override fun onClick(v: View?) {
-            dlog(LTAG) { "WAKE ${target.title}" }
-            val job = mvm.wakeTarget(target)
+            val message = when {
+                !target.pingMe -> {
+                    "${target.title} is not being pinged, so will not try to wake it up..."
+                }
+
+                target.pingState == WolHost.PingStates.ALIVE -> {
+                    "${target.title} alive, so does not need to be woken up!"
+                }
+
+                else -> {
+                    mvm.wakeTarget(target)
+                    "${target.title} WOL to ${target.macAddress} via ${target.broadcastIp}"
+                }
+            }
+
+            Snackbar.make(ui.root, message, Snackbar.LENGTH_LONG).show()
+            mvm.wolFocussedTarget = target
+            findNavController().navigate(R.id.WolStatusDialog)
         }
     }
 }

@@ -53,11 +53,11 @@ object MagicPacket {
      * Given address tests if address is "reachable", and returns true if it is, else false. The time
      * to wait for a response is in [waitForResponseMilli]
      * @param hostAddress The `InetAddress` to ping.
-     * @param waitForResponseMilli Time to wait for a response before returning false. Default is 1000 mSec.
+     * @param waitForResponseMilli Time to wait for a response before returning false. Default is 250 mSec.
      * @return True if ping succeeded, false if ping timed out.
      */
     @Throws(java.io.IOException::class)
-    fun ping(hostAddress: InetAddress, waitForResponseMilli: Int = 1000): Boolean {
+    fun ping(hostAddress: InetAddress, waitForResponseMilli: Int = 250): Boolean {
         return hostAddress.isReachable(waitForResponseMilli)
     }
 
