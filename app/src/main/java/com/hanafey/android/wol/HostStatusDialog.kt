@@ -35,8 +35,6 @@ class HostStatusDialog : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         val wh = mvm.pingFocussedTarget
         if (wh != null) {
-            ui.hostStatusTitle.text = "Name: ${wh.title}"
-            ui.hostStatusAddress.text = "Address: ${wh.pingName} Ping Count: ${wh.pingedCountAlive}/${wh.pingedCountDead}"
             updateUi(wh)
             ui.upButton.setOnClickListener {
                 findNavController().navigateUp()
@@ -60,6 +58,8 @@ class HostStatusDialog : BottomSheetDialogFragment() {
     }
 
     private fun updateUi(wh: WolHost) {
+        ui.hostStatusTitle.text = "Name: ${wh.title}"
+        ui.hostStatusAddress.text = "Address: ${wh.pingName} Ping Count: ${wh.pingedCountAlive}/${wh.pingedCountDead}"
         ui.pingStatus.text = when (wh.pingState) {
             WolHost.PingStates.INDETERMINATE -> "Not pinging, state unknown"
             WolHost.PingStates.ALIVE -> "Alive, responded to last ping"

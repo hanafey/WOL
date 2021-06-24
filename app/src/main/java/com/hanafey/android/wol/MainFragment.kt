@@ -30,10 +30,14 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
     private var _binding: FragmentMainBinding? = null
     private val ui get() = _binding!!
+
+    // The UI defines a fixed upper limit on the number of hosts, and we put these components in a list so
+    // we can iterate over them. MainViewModel.targets determine how many are active.
     private lateinit var uiHosts: List<ViewGroup>
     private lateinit var uiPingEnabled: List<SwitchMaterial>
     private lateinit var uiPingState: List<MaterialButton>
     private lateinit var uiWake: List<MaterialButton>
+
     private lateinit var pingOffTint: ColorStateList
     private lateinit var pingFrozenTint: ColorStateList
     private lateinit var pingResponsiveTint: ColorStateList
@@ -46,6 +50,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     ): View {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
 
+        // Put the static names into lists
         uiHosts = listOf(
             ui.hostHo01,
             ui.hostHo02,
@@ -53,6 +58,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             ui.hostHo04,
             ui.hostHo05,
         )
+
         uiPingEnabled = listOf(
             ui.pingEnabledHo01,
             ui.pingEnabledHo02,
@@ -60,6 +66,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             ui.pingEnabledHo04,
             ui.pingEnabledHo05,
         )
+
         uiPingState = listOf(
             ui.pingStateHo01,
             ui.pingStateHo02,
@@ -67,6 +74,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             ui.pingStateHo04,
             ui.pingStateHo05,
         )
+
         uiWake = listOf(
             ui.wakeHo01,
             ui.wakeHo02,
@@ -89,8 +97,12 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive)!!
         pingExceptionTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_exception)!!
 
+        val hc = mvm.targets.size
+        val pingStateListener = PingStateClickListener()
+
+        // Leave visible only the defined hosts.
         uiHosts.forEachIndexed { ix, vg ->
-            if (ix < mvm.targets.size) {
+            if (ix < hc) {
                 vg.visibility = View.VISIBLE
             } else {
                 vg.visibility = View.GONE
@@ -98,27 +110,16 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
 
         mvm.targets.forEachIndexed { ix, wh ->
-            uiPingEnabled[ix].isChecked = wh.pingMe
-            uiPingEnabled[ix].text = wh.title
-        }
-
-        mvm.targets.forEachIndexed { ix, wh ->
-            if (ix < mvm.targets.size) {
+            if (ix < hc) {
+                uiPingEnabled[ix].isChecked = wh.pingMe
+                uiPingEnabled[ix].text = wh.title
                 uiPingEnabled[ix].setOnClickListener(PingClickListener(wh))
-            }
-        }
 
-        val pingStateListener = PingStateClickListener()
-
-        mvm.targets.forEachIndexed { ix, wh ->
-            if (ix < mvm.targets.size) {
                 uiPingState[ix].setOnClickListener(pingStateListener)
                 uiPingState[ix].isEnabled = mvm.targets[ix].pingMe
-            }
-        }
-        mvm.targets.forEachIndexed { ix, wh ->
-            if (ix < mvm.targets.size) {
+
                 uiWake[ix].setOnClickListener(WakeClickListener(wh))
+                uiWake[ix].isEnabled = mvm.targets[ix].pingMe
             }
         }
 
@@ -261,38 +262,19 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
             if (!v.isChecked) {
                 // Ping is disabled for this host
-                target.resetPingState()
+                target.resetState()
                 uiPingState[target.pKey].backgroundTintList = pingOffTint
                 uiPingState[target.pKey].icon = ContextCompat.getDrawable(
                     requireActivity(),
                     R.drawable.ic_baseline_device_unknown_24
                 )
                 uiPingState[target.pKey].isEnabled = false
+                uiWake[target.pKey].isEnabled = false
             }
 
             when {
-                wasPinging > 0 && nowPinging > 0 -> {
-                    /*
-                    if (nowPinging < wasPinging) {
-                        // Host went offline
-                        dlog(LTAG) { "pingClickListener: RESET: $wasPinging -- $nowPinging ${target.title} state=${target.pingState} ex=${target.pingException}" }
-                        target.resetPingState()
-                        mvm.signalPingTargetChanged(target)
-                        uiPingState[target.pKey].backgroundTintList = pingOffTint
-                        uiPingState[target.pKey].icon = ContextCompat.getDrawable(
-                            requireActivity(),
-                            R.drawable.ic_baseline_device_unknown_24
-                        )
-                    } else {
-                        // Do nothing -- one more host is ping active it will signal
-                        dlog(LTAG) { "pingClickListener: DO NOTHING: $wasPinging -- $nowPinging ${target.title} state=${target.pingState} ex=${target.pingException}" }
-                    }
-                    */
-                }
-
                 wasPinging > 0 && nowPinging == 0 -> {
                     // Pinging stops
-                    dlog(LTAG) { "pingClickListener: KILL ALL: $wasPinging -- $nowPinging ${target.title} state=${target.pingState} ex=${target.pingException}" }
                     mvm.signalPingTargetChanged(target)
                     mvm.killPingTargets()
                     Snackbar.make(ui.root, "Pinging Stopped", Snackbar.LENGTH_LONG).show()
@@ -306,8 +288,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 }
 
                 else -> {
-                    // Not expected
-                    dlog(LTAG) { "pingClickListener: $wasPinging -- $nowPinging ${target.title} state=${target.pingState} ex=${target.pingException}" }
+                    mvm.signalPingTargetChanged(target)
                 }
             }
         }
@@ -321,7 +302,13 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 }
 
                 target.pingState == WolHost.PingStates.ALIVE -> {
-                    "${target.title} alive, so does not need to be woken up!"
+                    if (mvm.settingsData.wakePingableHosts) {
+                        mvm.wakeTarget(target)
+                        "${target.title} alive, but will be woken anyway!\n"
+                        "${target.title} WOL to ${target.macAddress} via ${target.broadcastIp}"
+                    } else {
+                        "${target.title} alive, so does not need to be woken up!"
+                    }
                 }
 
                 else -> {

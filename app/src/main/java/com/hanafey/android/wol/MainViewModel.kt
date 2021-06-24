@@ -34,8 +34,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val targetWakeChangedLiveData: LiveData<Int>
         get() = _targetWakeChanged
 
-    var pingDelayMillis = 1000L
-
     private var pingJobs: List<Job> = emptyList()
     var pingActive = false
         private set
@@ -71,7 +69,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (address != null) {
                         try {
                             host.lastPingSentAt.update(Instant.now())
-                            if (MagicPacket.ping(address)) {
+                            if (MagicPacket.ping(address, settingsData.pingResponseWaitMillis)) {
                                 if (host.pingMe) {
                                     // Ping can take time, and host may have been turned off while waiting result
                                     host.pingState = WolHost.PingStates.ALIVE
@@ -105,7 +103,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _targetPingChanged.postValue(host.pKey)
                     }
                 }
-                delay(pingDelayMillis)
+                delay(settingsData.pingDelayMillis)
             }
             host.resetPingState()
             _targetPingChanged.postValue(host.pKey)

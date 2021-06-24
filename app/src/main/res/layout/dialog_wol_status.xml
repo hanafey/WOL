@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
+    android:background="?attr/colorDialogSurface"
     tools:context=".WolStatusDialog"
     >
 
@@ -38,7 +39,7 @@
         app:layout_constraintTop_toBottomOf="@+id/wol_status_address"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="8dp"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
         tools:text="Ping Response"
         />
@@ -63,6 +64,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"
+        android:minLines="2"
         android:maxLines="5"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"

@@ -7,6 +7,15 @@ class SettingsData(val spm: SharedPreferences) {
 
     private val MAX_WOL_HISTORY = 25
 
+    /**
+     * Normally a pingable host is running thus a WOL packet is meaningless, but is is also
+     * harmless. Good for testing so the WOL packet can be observed on the network.
+     */
+    val wakePingableHosts: Boolean = true
+
+    var pingDelayMillis = 1000L
+    var pingResponseWaitMillis = 500
+
     fun initializeModel(mvm: MainViewModel) {
         readTimeToWakeHistory(mvm)
     }

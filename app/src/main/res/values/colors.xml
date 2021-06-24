@@ -10,5 +10,8 @@
 
     <color name="pingable">#009600</color>
     <color name="unPingable">#304FFE</color>
+    <color name="unPingable_dark">#64B5F6</color>
     <color name="frozenPingable">#878686</color>
+    <color name="dialogSurface">#FFECB3</color>
+    <color name="dialogSurface_dark">#1A237E</color>
 </resources>

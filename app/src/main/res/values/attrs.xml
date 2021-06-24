@@ -3,4 +3,5 @@
     <attr name="colorPingable" format="color" />
     <attr name="colorUnPingable" format="color" />
     <attr name="colorFrozenPingable" format="color" />
+    <attr name="colorDialogSurface" format="color" />
 </resources>

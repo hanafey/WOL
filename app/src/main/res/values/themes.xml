@@ -15,6 +15,7 @@
         <item name="colorPingable">@color/pingable</item>
         <item name="colorUnPingable">@color/unPingable</item>
         <item name="colorFrozenPingable">@color/frozenPingable</item>
+        <item name="colorDialogSurface">@color/dialogSurface</item>
     </style>
 
     <style name="Theme.WOL.NoActionBar">
