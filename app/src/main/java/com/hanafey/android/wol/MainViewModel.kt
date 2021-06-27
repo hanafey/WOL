@@ -18,11 +18,13 @@ import java.time.Instant
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val LTAG = "MainViewModel"
 
-    val targets: List<WolHost> = listOf(
-        WolHost(0, "FAKE", "192.168.1.11", "aa:bb:cc:dd:ee:ff", "192.168.1.255"),
-        WolHost(1, "NASA", "192.168.1.250", "00:11:32:F0:0E:C1", "192.168.1.255"),
-        WolHost(2, "SPACEX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
-    ).sorted()
+    val targets = sortedMapOf(
+        1 to WolHost(1, "FAKE", "192.168.1.11", "aa:bb:cc:dd:ee:ff", "192.168.1.255"),
+        2 to WolHost(2, "NASA", "192.168.1.250", "00:11:32:F0:0E:C1", "192.168.1.255"),
+        3 to WolHost(3, "SPACEX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+        4 to WolHost(4, "UNSET3", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+        5 to WolHost(5, "UNSET4", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+    )
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
@@ -47,6 +49,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun pingTarget(host: WolHost): Job {
+        val logOn = false
+        dlog(LTAG, logOn) { "PingTarget $host" }
         host.resetPingState()
         _targetPingChanged.value = host.pKey
 
@@ -54,6 +58,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             var address: InetAddress? = null
 
             while (pingActive) {
+                dlog(LTAG, logOn) { "Ping Active host=${host.title}" }
                 if (host.pingMe) {
                     if (address == null) {
                         address = try {
@@ -67,6 +72,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                     if (address != null) {
+                        dlog(LTAG, logOn) { "Pinging host=${host.title}" }
                         try {
                             host.lastPingSentAt.update(Instant.now())
                             if (MagicPacket.ping(address, settingsData.pingResponseWaitMillis)) {
@@ -115,7 +121,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Returns the first host that wants to be pinged. If null, no host wants to be pinged.
      */
     fun firstPingMe(): WolHost? {
-        return targets.firstOrNull { it.pingMe }
+        targets.forEach {
+            if (it.value.pingMe) return it.value
+        }
+        return null
     }
 
 
@@ -123,9 +132,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Returns the number of hosts that wants to be pinged. Zero means nobody is pinged.
      */
     fun countPingMe(): Int {
-        return targets.fold(0) { acc, wh ->
-            if (wh.pingMe) acc + 1 else acc
+        var count = 0
+        targets.forEach { (pk, wh) ->
+            if (wh.pingMe) count++
         }
+        return count
     }
 
     fun wakeTarget(host: WolHost): Job {
@@ -135,9 +146,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 MagicPacket.sendWol(host.macAddress)
                 host.lastWolSentAt.update(Instant.now())
                 host.wakeupCount++
-                dlog(LTAG) { "wakeTarget: ${host.title} count=${host.wakeupCount}" }
             } catch (ex: Throwable) {
-                dlog(LTAG) { "wakeTarget: ${host.title} ex=$ex" }
                 host.wakeupException = ex
             }
             _targetWakeChanged.postValue(host.pKey)
@@ -145,15 +154,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun pingTargets() {
-        pingActive = true
-        pingJobs = targets.map { wh ->
-            pingTarget(wh)
+        pingJobs = targets.filterValues { wh -> wh.pingMe }.map {
+            pingTarget(it.value)
         }
+        pingActive = pingJobs.isNotEmpty()
     }
 
     fun resetPingStats() {
-        targets.map { wh ->
-            wh.resetState()
+        targets.map {
+            it.value.resetState()
         }
     }
 

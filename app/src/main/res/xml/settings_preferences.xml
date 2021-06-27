@@ -1,0 +1,209 @@
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreferenceCompat
+        app:defaultValue="true"
+        app:key="HOST_ENABLED_01"
+        app:title="Include Host 1"
+        />
+
+    <PreferenceCategory
+        app:key="HOST_SECTION_01"
+        app:title="Host 1"
+        >
+
+        <EditTextPreference
+            app:defaultValue="1"
+            app:key="HOST_PKEY_01"
+            app:title="@string/wol_order"
+            app:useSimpleSummaryProvider="true"
+            app:dependency="HOST_ENABLED"
+            app:isPreferenceVisible="false"
+            />
+
+        <EditTextPreference
+            app:defaultValue="Host 1"
+            app:key="HOST_TITLE_01"
+            app:title="Host Name"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.1"
+            app:key="HOST_PING_NAME_01"
+            app:title="IP address or name for ping"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="a1:b2:c3:d4:e5:f6"
+            app:key="HOST_MAC_STRING_01"
+            app:title="MAC address for WOL Magic Packet"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.255"
+            app:key="HOST_BROADCAST_IP_01"
+            app:title="IP Address for WOL broadcast"
+            app:useSimpleSummaryProvider="true"
+            />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Host 2">
+
+        <EditTextPreference
+            app:defaultValue="2"
+            app:key="HOST_PKEY_02"
+            app:title="Order"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="Host 2"
+            app:key="HOST_TITLE_02"
+            app:title="Host Name"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.2"
+            app:key="HOST_PING_NAME_02"
+            app:title="IP address or name for ping"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="a1:b2:c3:d4:e5:f6"
+            app:key="HOST_MAC_STRING_02"
+            app:title="MAC address for WOL Magic Packet"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.255"
+            app:key="HOST_BROADCAST_IP_02"
+            app:title="IP Address for WOL broadcast"
+            app:useSimpleSummaryProvider="true"
+            />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Host 3">
+
+        <EditTextPreference
+            app:defaultValue="3"
+            app:key="HOST_PKEY_03"
+            app:title="Order"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="Host 3"
+            app:key="HOST_TITLE_03"
+            app:title="Host Name"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.3"
+            app:key="HOST_PING_NAME_03"
+            app:title="IP address or name for ping"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="a1:b2:c3:d4:e5:f6"
+            app:key="HOST_MAC_STRING_03"
+            app:title="MAC address for WOL Magic Packet"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.255"
+            app:key="HOST_BROADCAST_IP_03"
+            app:title="IP Address for WOL broadcast"
+            app:useSimpleSummaryProvider="true"
+            />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Host 4">
+
+        <EditTextPreference
+            app:defaultValue="4"
+            app:key="HOST_PKEY_04"
+            app:title="Order"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="Host 4"
+            app:key="HOST_TITLE_04"
+            app:title="Host Name"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.4"
+            app:key="HOST_PING_NAME_04"
+            app:title="IP address or name for ping"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="a1:b2:c3:d4:e5:f6"
+            app:key="HOST_MAC_STRING_04"
+            app:title="MAC address for WOL Magic Packet"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.255"
+            app:key="HOST_BROADCAST_IP_04"
+            app:title="IP Address for WOL broadcast"
+            app:useSimpleSummaryProvider="true"
+            />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Host 5">
+
+        <EditTextPreference
+            app:defaultValue="5"
+            app:key="HOST_PKEY_05"
+            app:title="Order"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="Host 5"
+            app:key="HOST_TITLE_05"
+            app:title="Host Name"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.5"
+            app:key="HOST_PING_NAME_05"
+            app:title="IP address or name for ping"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="a1:b2:c3:d4:e5:f6"
+            app:key="HOST_MAC_STRING_05"
+            app:title="MAC address for WOL Magic Packet"
+            app:useSimpleSummaryProvider="true"
+            />
+
+        <EditTextPreference
+            app:defaultValue="192.168.1.255"
+            app:key="HOST_BROADCAST_IP_05"
+            app:title="IP Address for WOL broadcast"
+            app:useSimpleSummaryProvider="true"
+            />
+    </PreferenceCategory>
+
+</PreferenceScreen>

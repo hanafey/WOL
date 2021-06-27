@@ -15,15 +15,21 @@ import kotlin.concurrent.withLock
  */
 class WolHost(
     val pKey: Int,
-    val title: String,
-    val pingName: String,
+    var title: String,
+    var pingName: String,
     macString: String,
-    val broadcastIp: String,
+    var broadcastIp: String,
 ) : Comparable<WolHost> {
+    /**
+     * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
+     * done internally because both [enabled] and [pingMe] are persisted as settings.
+     */
+    var enabled = true
+
     /**
      * The MAC address in standard format.
      */
-    val macAddress = MagicPacket.standardizeMac(macString)
+    var macAddress = MagicPacket.standardizeMac(macString)
 
 
     /**

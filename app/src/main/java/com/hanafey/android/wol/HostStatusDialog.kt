@@ -102,12 +102,10 @@ class HostStatusDialog : BottomSheetDialogFragment() {
 
     private fun observePingLiveData() {
         mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            if (ix < 0 || ix >= mvm.targets.size || mvm.targets[ix] != mvm.pingFocussedTarget) {
-                return@observe // ======================================== >>>
+            val target = mvm.pingFocussedTarget
+            if (target != null && ix >= 0 && ix < mvm.targets.size && mvm.targets[ix] == target) {
+                updateUi(target)
             }
-
-            val wh = mvm.targets[ix]
-            updateUi(wh)
         }
     }
 }

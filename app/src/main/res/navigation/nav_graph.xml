@@ -12,12 +12,13 @@
         android:label="@string/main_fragment_label"
         tools:layout="@layout/fragment_main"
         >
-
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment"
-            />
     </fragment>
+
+    <fragment
+        android:id="@+id/SettingsFragment"
+        android:name="com.hanafey.android.wol.SettingsFragment"
+        android:label="SettingsFragment"
+        />
 
     <fragment
         android:id="@+id/SecondFragment"

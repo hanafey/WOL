@@ -2,9 +2,7 @@ package com.hanafey.android.wol
 
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -83,6 +81,8 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             ui.wakeHo05,
         )
 
+        setHasOptionsMenu(true)
+
         return ui.root
     }
 
@@ -97,30 +97,21 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive)!!
         pingExceptionTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_exception)!!
 
-        val hc = mvm.targets.size
         val pingStateListener = PingStateClickListener()
 
-        // Leave visible only the defined hosts.
-        uiHosts.forEachIndexed { ix, vg ->
-            if (ix < hc) {
-                vg.visibility = View.VISIBLE
-            } else {
-                vg.visibility = View.GONE
-            }
-        }
+        mvm.targets.forEach { (pk, wh) ->
+            val ix = pk - 1
+            uiHosts[ix].visibility = if (wh.enabled) View.VISIBLE else View.GONE
 
-        mvm.targets.forEachIndexed { ix, wh ->
-            if (ix < hc) {
-                uiPingEnabled[ix].isChecked = wh.pingMe
-                uiPingEnabled[ix].text = wh.title
-                uiPingEnabled[ix].setOnClickListener(PingClickListener(wh))
+            uiPingEnabled[ix].isChecked = wh.pingMe
+            uiPingEnabled[ix].text = wh.title
+            uiPingEnabled[ix].setOnClickListener(PingClickListener(wh))
 
-                uiPingState[ix].setOnClickListener(pingStateListener)
-                uiPingState[ix].isEnabled = mvm.targets[ix].pingMe
+            uiPingState[ix].setOnClickListener(pingStateListener)
+            uiPingState[ix].isEnabled = wh.pingMe
 
-                uiWake[ix].setOnClickListener(WakeClickListener(wh))
-                uiWake[ix].isEnabled = mvm.targets[ix].pingMe
-            }
+            uiWake[ix].setOnClickListener(WakeClickListener(wh))
+            uiWake[ix].isEnabled = wh.pingMe
         }
 
 
@@ -134,20 +125,40 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         observeWakeLiveData()
     }
 
+
+    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.menu_main, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.mi_settings -> {
+                findNavController().navigate(R.id.SettingsFragment)
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun initializeView(v: View) {
     }
 
     private fun observePingLiveData() {
 
-        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            if (ix < 0 || ix >= mvm.targets.size) {
-                return@observe // ======================================== >>>
+        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { pk ->
+            val target = if (mvm.targets.containsKey(pk)) {
+                mvm.targets[pk]!!
+            } else {
+                throw IllegalArgumentException("observePingLiveData: $pk is invalid target pKey")
             }
 
-            val target = mvm.targets[ix]
-            val psb = uiPingState[ix]
+            val ix = pk - 1
+            dlog(LTAG) { "observePingLiveData: Host $pk enabled:${target.enabled} visibility:${uiHosts[ix].visibility}" }
 
-            dlog(LTAG) { "observe Ping of [$ix] ${target.title} state=${target.pingState} ex=${target.pingException}" }
+            uiHosts[ix].visibility = if (target.enabled) View.VISIBLE else View.GONE
+
+            val psb = uiPingState[ix]
 
             when (target.pingState) {
                 WolHost.PingStates.INDETERMINATE -> {
@@ -187,14 +198,14 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     }
 
     private fun observeWakeLiveData() {
-        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { ix ->
+        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { pk ->
+            val ix = pk - 1
             if (ix < 0 || ix >= mvm.targets.size) {
                 return@observe // ======================================== >>>
             }
 
-            val target = mvm.targets[ix]
+            val target = mvm.targets[pk]!!
             val ex = target.wakeupException
-            dlog(LTAG) { "observe wake of [$ix] ${target.title} state=${target.wakeupCount} ex=${target.wakeupException}" }
 
             if (ex != null) {
                 Snackbar.make(
@@ -241,9 +252,9 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
     inner class PingStateClickListener : View.OnClickListener {
         override fun onClick(v: View?) {
-            val psi = uiPingState.indexOfFirst { button -> button === v }
-            if (psi >= 0) {
-                mvm.pingFocussedTarget = mvm.targets[psi]
+            val ix = uiPingState.indexOfFirst { button -> button === v }
+            if (ix >= 0) {
+                mvm.pingFocussedTarget = mvm.targets[ix + 1]
                 v?.backgroundTintList = pingFrozenTint
                 findNavController().navigate(R.id.HostStatusDialog)
             }
@@ -254,22 +265,26 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         override fun onClick(v: View?) {
             require(v is SwitchMaterial) { "This listener requires SwitchMaterial as the owner." }
 
+            val ix = target.pKey - 1
             val wasPinging = mvm.countPingMe()
-            target.pingMe = v.isChecked
+            if (target.pingMe != v.isChecked) {
+                target.pingMe = v.isChecked
+                mvm.settingsData.savePingEnabled(target)
+            }
             val nowPinging = mvm.countPingMe()
 
-            uiPingState[target.pKey].isEnabled = v.isChecked
+            uiPingState[ix].isEnabled = v.isChecked
 
             if (!v.isChecked) {
                 // Ping is disabled for this host
                 target.resetState()
-                uiPingState[target.pKey].backgroundTintList = pingOffTint
-                uiPingState[target.pKey].icon = ContextCompat.getDrawable(
+                uiPingState[ix].backgroundTintList = pingOffTint
+                uiPingState[ix].icon = ContextCompat.getDrawable(
                     requireActivity(),
                     R.drawable.ic_baseline_device_unknown_24
                 )
-                uiPingState[target.pKey].isEnabled = false
-                uiWake[target.pKey].isEnabled = false
+                uiPingState[ix].isEnabled = false
+                uiWake[ix].isEnabled = false
             }
 
             when {
@@ -282,7 +297,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
                 wasPinging == 0 && nowPinging > 0 -> {
                     // Pinging starts
-                    dlog(LTAG) { "pingClickListener: START PING: $wasPinging -- $nowPinging ${target.title} state=${target.pingState} ex=${target.pingException}" }
                     mvm.pingTargets()
                     Snackbar.make(ui.root, "Pinging...", Snackbar.LENGTH_SHORT).show()
                 }

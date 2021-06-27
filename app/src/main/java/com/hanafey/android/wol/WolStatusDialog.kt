@@ -139,12 +139,10 @@ class WolStatusDialog : BottomSheetDialogFragment() {
 
     private fun observePingLiveData() {
         mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            if (ix < 0 || ix >= mvm.targets.size || mvm.targets[ix] != mvm.wolFocussedTarget) {
-                return@observe // ======================================== >>>
+            val target = mvm.wolFocussedTarget
+            if (target != null && ix >= 0 && ix < mvm.targets.size && mvm.targets[ix] == target) {
+                updateUi(target)
             }
-
-            val wh = mvm.targets[ix]
-            updateUi(wh)
         }
     }
 }
