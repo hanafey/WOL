@@ -9,7 +9,8 @@ enum class PrefNames {
     HOST_TITLE,
     HOST_PING_NAME,
     HOST_MAC_STRING,
-    HOST_BROADCAST_IP;
+    HOST_BROADCAST_IP,
+    PING_DELAY;
 
     /**
      * String form of preference name. For prefs that are host name dependent provide the host name.

@@ -1,13 +1,16 @@
 package com.hanafey.android.wol
 
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.wol.databinding.DialogWolStatusBinding
 import com.hanafey.android.wol.magic.WolHost
 import java.time.Duration
@@ -24,6 +27,11 @@ class WolStatusDialog : BottomSheetDialogFragment() {
     private val ui: DialogWolStatusBinding
         get() = _binding!!
 
+    private lateinit var wh: WolHost
+    private lateinit var pingResponsiveTint: ColorStateList
+    private lateinit var pingUnResponsiveTint: ColorStateList
+    private lateinit var pingOtherTint: ColorStateList
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = DialogWolStatusBinding.inflate(inflater, container, false)
         return ui.root
@@ -31,11 +39,17 @@ class WolStatusDialog : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val wh = mvm.wolFocussedTarget
-        if (wh != null) {
+        pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive_dialog)!!
+        pingResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_responsive_dialog)!!
+        pingOtherTint = ContextCompat.getColorStateList(requireContext(), R.color.mtrl_btn_bg_color_selector)!!
+
+        val wft = mvm.wolFocussedTarget
+        if (wft != null) {
+            wh = wft
             updateUi(wh)
-            ui.upButton.setOnClickListener {
-                findNavController().navigateUp()
+            ui.wolButton.setOnClickListener {
+                mvm.wakeTarget(wh)
+                Snackbar.make(view, "WOL magic packet set to ${wh.title}", Snackbar.LENGTH_SHORT).show()
             }
 
             observePingLiveData()
@@ -59,10 +73,26 @@ class WolStatusDialog : BottomSheetDialogFragment() {
         ui.wolStatusTitle.text = "Name: ${wh.title}"
         ui.wolStatusAddress.text = "Address: ${wh.pingName} Ping Count: ${wh.pingedCountAlive}/${wh.pingedCountDead}"
         ui.pingStatus.text = when (wh.pingState) {
-            WolHost.PingStates.INDETERMINATE -> "Not pinging, state unknown"
-            WolHost.PingStates.ALIVE -> "Alive, responded to last ping"
-            WolHost.PingStates.DEAD -> "Sleeping, no response to last ping"
-            WolHost.PingStates.EXCEPTION -> "Error attempting to ping"
+            WolHost.PingStates.NOT_PINGING -> {
+                ui.root.backgroundTintList = pingOtherTint
+                "Not pinging, state unknown"
+            }
+            WolHost.PingStates.INDETERMINATE -> {
+                ui.root.backgroundTintList = pingOtherTint
+                "Not pinging, state unknown"
+            }
+            WolHost.PingStates.ALIVE -> {
+                ui.root.backgroundTintList = pingResponsiveTint
+                "Alive, responded to last ping"
+            }
+            WolHost.PingStates.DEAD -> {
+                ui.root.backgroundTintList = pingUnResponsiveTint
+                "Sleeping, no response to last ping"
+            }
+            WolHost.PingStates.EXCEPTION -> {
+                ui.root.backgroundTintList = pingOtherTint
+                "Error attempting to ping"
+            }
         }
         if (wh.pingState == WolHost.PingStates.EXCEPTION) {
             ui.pingException.text = wh.pingException?.localizedMessage ?: "No exception message."
@@ -139,9 +169,8 @@ class WolStatusDialog : BottomSheetDialogFragment() {
 
     private fun observePingLiveData() {
         mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            val target = mvm.wolFocussedTarget
-            if (target != null && ix >= 0 && ix < mvm.targets.size && mvm.targets[ix] == target) {
-                updateUi(target)
+            if (wh.pKey == ix) {
+                updateUi(wh)
             }
         }
     }

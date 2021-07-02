@@ -28,11 +28,19 @@
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/ping_enabled_ho01"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_marginEnd="16dp"
-                android:layout_weight="0.5"
-                android:text="Fake"
+                android:layout_weight="0.75"
+                tools:text="Fake"
                 android:textAlignment="textEnd"
+                />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/ping_counts_ho01"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.25"
+                android:textAlignment="center"
+                tools:text="999/888"
                 />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ping_state_ho01"
@@ -40,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:text="111"
+                android:text=""
                 app:icon="@drawable/ic_baseline_device_unknown_24"
                 />
             <com.google.android.material.button.MaterialButton
@@ -49,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:backgroundTint="?attr/colorPrimaryVariant"
-                android:text="222"
+                android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
         </androidx.appcompat.widget.LinearLayoutCompat>
@@ -64,11 +72,19 @@
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/ping_enabled_ho02"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_marginEnd="16dp"
-                android:layout_weight="0.5"
-                android:text="Fake"
+                android:layout_weight="0.75"
+                tools:text="Fake"
                 android:textAlignment="textEnd"
+                />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/ping_counts_ho02"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.25"
+                android:textAlignment="center"
+                tools:text="999/888"
                 />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ping_state_ho02"
@@ -76,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:text="112"
+                android:text=""
                 app:icon="@drawable/ic_baseline_device_unknown_24"
                 />
             <com.google.android.material.button.MaterialButton
@@ -85,7 +101,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:backgroundTint="?attr/colorPrimaryVariant"
-                android:text="222"
+                android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
         </androidx.appcompat.widget.LinearLayoutCompat>
@@ -100,11 +116,19 @@
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/ping_enabled_ho03"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_marginEnd="16dp"
-                android:layout_weight="0.5"
-                android:text="Fake"
+                android:layout_weight="0.75"
+                tools:text="Fake"
                 android:textAlignment="textEnd"
+                />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/ping_counts_ho03"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.25"
+                android:textAlignment="center"
+                tools:text="999/888"
                 />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ping_state_ho03"
@@ -112,7 +136,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:text="113"
+                android:text=""
                 app:icon="@drawable/ic_baseline_device_unknown_24"
                 />
             <com.google.android.material.button.MaterialButton
@@ -121,7 +145,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:backgroundTint="?attr/colorPrimaryVariant"
-                android:text="222"
+                android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
         </androidx.appcompat.widget.LinearLayoutCompat>
@@ -136,11 +160,19 @@
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/ping_enabled_ho04"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_marginEnd="16dp"
-                android:layout_weight="0.5"
-                android:text="Fake"
+                android:layout_weight="0.75"
+                tools:text="Fake"
                 android:textAlignment="textEnd"
+                />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/ping_counts_ho04"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.25"
+                android:textAlignment="center"
+                tools:text="999/888"
                 />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ping_state_ho04"
@@ -148,7 +180,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:text="114"
+                android:text=""
                 app:icon="@drawable/ic_baseline_device_unknown_24"
                 />
             <com.google.android.material.button.MaterialButton
@@ -157,7 +189,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:backgroundTint="?attr/colorPrimaryVariant"
-                android:text="222"
+                android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
         </androidx.appcompat.widget.LinearLayoutCompat>
@@ -172,11 +204,19 @@
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/ping_enabled_ho05"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_marginEnd="16dp"
-                android:layout_weight="0.5"
-                android:text="Fake"
+                android:layout_weight="0.75"
+                tools:text="Fake"
                 android:textAlignment="textEnd"
+                />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/ping_counts_ho05"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.25"
+                android:textAlignment="center"
+                tools:text="999/888"
                 />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ping_state_ho05"
@@ -184,7 +224,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:text="115"
+                android:text=""
                 app:icon="@drawable/ic_baseline_device_unknown_24"
                 />
             <com.google.android.material.button.MaterialButton
@@ -193,7 +233,7 @@
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:backgroundTint="?attr/colorPrimaryVariant"
-                android:text="222"
+                android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
         </androidx.appcompat.widget.LinearLayoutCompat>

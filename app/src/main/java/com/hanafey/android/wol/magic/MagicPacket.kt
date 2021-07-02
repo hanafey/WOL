@@ -45,7 +45,7 @@ object MagicPacket {
         SecurityException::class,
     )
     fun ping(hostName: String, waitForResponseMilli: Int = 1000): Boolean {
-        return ping(InetAddress.getByName(hostName))
+        return ping(InetAddress.getByName(hostName), waitForResponseMilli)
     }
 
 

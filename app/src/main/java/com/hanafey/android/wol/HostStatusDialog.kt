@@ -61,6 +61,7 @@ class HostStatusDialog : BottomSheetDialogFragment() {
         ui.hostStatusTitle.text = "Name: ${wh.title}"
         ui.hostStatusAddress.text = "Address: ${wh.pingName} Ping Count: ${wh.pingedCountAlive}/${wh.pingedCountDead}"
         ui.pingStatus.text = when (wh.pingState) {
+            WolHost.PingStates.NOT_PINGING -> "Not pinging, state unknown"
             WolHost.PingStates.INDETERMINATE -> "Not pinging, state unknown"
             WolHost.PingStates.ALIVE -> "Alive, responded to last ping"
             WolHost.PingStates.DEAD -> "Sleeping, no response to last ping"

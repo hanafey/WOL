@@ -20,6 +20,12 @@ class WolHost(
     macString: String,
     var broadcastIp: String,
 ) : Comparable<WolHost> {
+
+    /**
+     * Used to control mutation of properties that may changed on another thread.
+     */
+    val lock = ReentrantLock(false)
+
     /**
      * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
      * done internally because both [enabled] and [pingMe] are persisted as settings.
@@ -36,7 +42,6 @@ class WolHost(
      * If this host is being pinged, or should be pinged, this is true.
      */
     var pingMe = true
-
 
     /**
      * The number of times host was pinged since last reset that were successful
@@ -107,23 +112,27 @@ class WolHost(
     var wakeupException: Throwable? = null
 
     fun resetState() {
-        pingedCountAlive = 0
-        pingedCountDead = 0
-        pingState = PingStates.INDETERMINATE
-        pingException = null
-        wakeupCount = 0
-        wakeupException = null
+        lock.withLock {
+            pingedCountAlive = 0
+            pingedCountDead = 0
+            pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
+            pingException = null
+            wakeupCount = 0
+            wakeupException = null
+        }
     }
 
 
     /**
-     * Resets [pingedCountAlive], [pingState], [pingException]
+     * Resets [pingedCountAlive], [pingState], [pingException]. Synchronized.
      */
     fun resetPingState() {
-        pingedCountAlive = 0
-        pingedCountDead = 0
-        pingState = PingStates.INDETERMINATE
-        pingException = null
+        lock.withLock {
+            pingedCountAlive = 0
+            pingedCountDead = 0
+            pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
+            pingException = null
+        }
     }
 
 
@@ -166,6 +175,11 @@ class WolHost(
     }
 
     enum class PingStates {
+        /**
+         * Not pinging the host at this time.
+         */
+        NOT_PINGING,
+
         /**
          * Unknown, no ping result yet.
          */

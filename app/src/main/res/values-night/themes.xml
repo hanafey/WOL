@@ -12,7 +12,7 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
-        <item name="colorPingable">@color/pingable</item>
+        <item name="colorPingable">@color/pingable_dark</item>
         <item name="colorUnPingable">@color/unPingable_dark</item>
         <item name="colorFrozenPingable">@color/frozenPingable</item>
         <item name="colorDialogSurface">@color/dialogSurface_dark</item>

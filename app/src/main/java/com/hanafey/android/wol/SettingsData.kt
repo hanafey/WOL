@@ -29,12 +29,18 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     private fun readUiSettings(mvm: MainViewModel) {
-        var prefName: String = ""
-        for ((ix, wh) in mvm.targets) {
+        var prefName = PrefNames.PING_DELAY.pref(-1)
+        pingDelayMillis = spm.getString(prefName, pingDelayMillis.toString())?.toLong() ?: pingDelayMillis
+        for ((_, wh) in mvm.targets) {
             prefName = PrefNames.HOST_ENABLED.pref(wh.pKey)
-            wh.enabled = spm.getBoolean(prefName, wh.enabled) ?: wh.enabled
+            wh.enabled = spm.getBoolean(prefName, wh.enabled)
             prefName = PrefNames.HOST_PING_ME.pref(wh.pKey)
-            wh.pingMe = spm.getBoolean(prefName, wh.pingMe) ?: wh.pingMe
+            wh.pingMe = spm.getBoolean(prefName, wh.pingMe)
+            if (wh.pingMe) {
+                wh.pingState = WolHost.PingStates.INDETERMINATE
+            } else {
+                wh.pingState = WolHost.PingStates.NOT_PINGING
+            }
             prefName = PrefNames.HOST_TITLE.pref(wh.pKey)
             wh.title = spm.getString(prefName, wh.title) ?: wh.title
             prefName = PrefNames.HOST_PING_NAME.pref(wh.pKey)
@@ -47,11 +53,11 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     private fun readTimeToWakeHistory(mvm: MainViewModel) {
-        for ((ix, wh) in mvm.targets) {
+        for ((_, wh) in mvm.targets) {
             val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.title)
             val string: String = spm.getString(prefName, "") ?: ""
             val strings = if (string.isNotBlank()) {
-                string!!.split(',')
+                string.split(',')
             } else {
                 emptyList()
             }
@@ -69,7 +75,7 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     fun writeTimeToWakeHistory(mvm: MainViewModel) {
-        for ((ix, wh) in mvm.targets) {
+        for ((_, wh) in mvm.targets) {
             writeTimeToWakeHistory(wh)
         }
     }

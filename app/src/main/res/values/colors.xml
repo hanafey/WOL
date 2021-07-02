@@ -8,8 +8,9 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="pingable">#009600</color>
-    <color name="unPingable">#304FFE</color>
+    <color name="pingable_dark">#7ACC7A</color>
+    <color name="pingable">#006600</color>
+    <color name="unPingable">#0019A6</color>
     <color name="unPingable_dark">#64B5F6</color>
     <color name="frozenPingable">#878686</color>
     <color name="dialogSurface">#FFECB3</color>
