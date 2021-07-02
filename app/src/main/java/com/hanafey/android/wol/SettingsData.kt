@@ -29,9 +29,9 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     private fun readUiSettings(mvm: MainViewModel) {
-        var prefName = PrefNames.PING_DELAY.pref(-1)
+        var prefName = PrefNames.PING_DELAY.pref()
         pingDelayMillis = spm.getString(prefName, pingDelayMillis.toString())?.toLong() ?: pingDelayMillis
-        for ((_, wh) in mvm.targets) {
+        for (wh in mvm.targets) {
             prefName = PrefNames.HOST_ENABLED.pref(wh.pKey)
             wh.enabled = spm.getBoolean(prefName, wh.enabled)
             prefName = PrefNames.HOST_PING_ME.pref(wh.pKey)
@@ -53,7 +53,7 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     private fun readTimeToWakeHistory(mvm: MainViewModel) {
-        for ((_, wh) in mvm.targets) {
+        for (wh in mvm.targets) {
             val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.title)
             val string: String = spm.getString(prefName, "") ?: ""
             val strings = if (string.isNotBlank()) {
@@ -75,7 +75,7 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     fun writeTimeToWakeHistory(mvm: MainViewModel) {
-        for ((_, wh) in mvm.targets) {
+        for (wh in mvm.targets) {
             writeTimeToWakeHistory(wh)
         }
     }

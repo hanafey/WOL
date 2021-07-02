@@ -1,10 +1,12 @@
 package com.hanafey.android.wol
 
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -24,6 +26,11 @@ class HostStatusDialog : BottomSheetDialogFragment() {
     private val ui: DialogHostStatusBinding
         get() = _binding!!
 
+    private lateinit var wh: WolHost
+    private lateinit var pingResponsiveTint: ColorStateList
+    private lateinit var pingUnResponsiveTint: ColorStateList
+    private lateinit var pingOtherTint: ColorStateList
+
     private val timeFormatter = DateTimeFormatter.ofPattern("hh:mm:ss a")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -33,8 +40,13 @@ class HostStatusDialog : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val wh = mvm.pingFocussedTarget
-        if (wh != null) {
+        pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive_dialog)!!
+        pingResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_responsive_dialog)!!
+        pingOtherTint = ContextCompat.getColorStateList(requireContext(), R.color.mtrl_btn_bg_color_selector)!!
+
+        val wft = mvm.pingFocussedTarget
+        if (wft != null) {
+            wh = wft
             updateUi(wh)
             ui.upButton.setOnClickListener {
                 findNavController().navigateUp()
@@ -103,9 +115,8 @@ class HostStatusDialog : BottomSheetDialogFragment() {
 
     private fun observePingLiveData() {
         mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            val target = mvm.pingFocussedTarget
-            if (target != null && ix >= 0 && ix < mvm.targets.size && mvm.targets[ix] == target) {
-                updateUi(target)
+            if (wh.pKey == ix) {
+                updateUi(wh)
             }
         }
     }

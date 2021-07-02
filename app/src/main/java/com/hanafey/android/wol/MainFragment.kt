@@ -110,8 +110,8 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
         val pingStateListener = PingStateClickListener()
 
-        mvm.targets.forEach { (pk, wh) ->
-            val ix = pk - 1
+        mvm.targets.forEach { wh ->
+            val ix = wh.pKey
             uiHosts[ix].visibility = if (wh.enabled) View.VISIBLE else View.GONE
 
             uiPingEnabled[ix].isChecked = wh.pingMe
@@ -157,22 +157,20 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
     private fun observePingLiveData() {
 
-        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { pk ->
+        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
             val target = when {
-                mvm.targets.containsKey(pk) -> {
-                    mvm.targets[pk]!!
-                }
-                pk == -1 -> {
+                ix == -1 -> {
                     return@observe
                 }
+                mvm.targets.size > ix -> {
+                    mvm.targets[ix]
+                }
                 else -> {
-                    throw IllegalArgumentException("observePingLiveData: $pk is invalid target pKey")
+                    throw IllegalArgumentException("observePingLiveData: $ix is invalid target index")
                 }
             }
 
             target.lock.withLock {
-                val ix = pk - 1
-
                 uiHosts[ix].visibility = if (target.enabled) View.VISIBLE else View.GONE
 
                 val psb = uiPingState[ix]
@@ -232,14 +230,14 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
     }
 
+    // TODO: Do we need a wake data listener? Ping state shows wake or sleeping...
     private fun observeWakeLiveData() {
-        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { pk ->
-            val ix = pk - 1
+        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { ix ->
             if (ix < 0 || ix >= mvm.targets.size) {
                 return@observe // ======================================== >>>
             }
 
-            val target = mvm.targets[pk]!!
+            val target = mvm.targets[ix]
             val ex = target.wakeupException
 
             if (ex != null) {
@@ -288,8 +286,8 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         override fun onClick(v: View?) {
             val ix = uiPingState.indexOfFirst { button -> button === v }
             if (ix >= 0) {
-                val wh = mvm.targets[ix + 1]
-                wh?.lock?.withLock {
+                val wh = mvm.targets[ix]
+                wh.lock.withLock {
                     mvm.pingFocussedTarget = wh
                     v?.backgroundTintList = pingFrozenTint
                     findNavController().navigate(R.id.HostStatusDialog)
@@ -303,7 +301,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             require(v is SwitchMaterial) { "This listener requires SwitchMaterial as the owner." }
 
             target.lock.withLock {
-                val ix = target.pKey - 1
+                val ix = target.pKey
                 if (target.pingMe != v.isChecked) {
                     // State is changing
                     target.pingMe = v.isChecked
@@ -331,7 +329,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         override fun onClick(v: View?) {
             require(v is SwitchMaterial) { "This listener requires SwitchMaterial as the owner." }
 
-            val ix = target.pKey - 1
+            val ix = target.pKey
             val wasPinging = mvm.countPingMe()
             if (target.pingMe != v.isChecked) {
                 target.pingMe = v.isChecked

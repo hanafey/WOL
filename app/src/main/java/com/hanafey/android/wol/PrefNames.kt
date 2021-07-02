@@ -15,16 +15,17 @@ enum class PrefNames {
     /**
      * String form of preference name. For prefs that are host name dependent provide the host name.
      */
-    fun pref(hostName: String = ""): String {
+    fun pref(hostName: String): String {
         return if (hostName.isBlank()) toString() else toString() + "_$hostName"
     }
 
     /**
      * String form of preference name. For prefs that are host name dependent by an integer key provide the key
-     * greater than zero.
+     * greater than or equal to zero. So the target host at index 0 has pref names that end with "_01".
+     * @param hostIndex The host index. The name is string value of index +1 formatted by "_%02d".
      */
-    fun pref(hostKey: Int = 0): String {
-        return if (hostKey <= 0) toString() else "${this}_%02d".format(hostKey)
+    fun pref(hostIndex: Int = -1): String {
+        return if (hostIndex < 0) toString() else "${this}_%02d".format(hostIndex + 1)
     }
 
     companion object {

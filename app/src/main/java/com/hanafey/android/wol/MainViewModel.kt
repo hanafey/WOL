@@ -1,6 +1,7 @@
 package com.hanafey.android.wol
 
 import android.app.Application
+import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -16,12 +17,12 @@ import kotlin.concurrent.withLock
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val LTAG = "MainViewModel"
 
-    val targets = sortedMapOf(
-        1 to WolHost(1, "FAKE", "192.168.1.11", "aa:bb:cc:dd:ee:ff", "192.168.1.255"),
-        2 to WolHost(2, "NASA", "192.168.1.250", "00:11:32:F0:0E:C1", "192.168.1.255"),
-        3 to WolHost(3, "SPACEX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
-        4 to WolHost(4, "UNSET3", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
-        5 to WolHost(5, "UNSET4", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+    val targets = listOf(
+        WolHost(0, "FAKE", "192.168.1.11", "aa:bb:cc:dd:ee:ff", "192.168.1.255"),
+        WolHost(1, "NASA", "192.168.1.250", "00:11:32:F0:0E:C1", "192.168.1.255"),
+        WolHost(2, "SPACEX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+        WolHost(3, "UNSET3", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+        WolHost(4, "UNSET4", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
     )
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
@@ -42,6 +43,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     var wolFocussedTarget: WolHost? = null
 
+    @MainThread
     fun signalPingTargetChanged(wh: WolHost) {
         _targetPingChanged.value = wh.pKey
     }
@@ -55,7 +57,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             joinAll(*pingJobs.toTypedArray())
             pingActive = true
-            pingJobs = targets.map { (_, wh) ->
+            pingJobs = targets.map { wh ->
                 pingTarget(wh)
             }
         }
@@ -63,7 +65,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetPingStats() {
         targets.map {
-            it.value.resetState()
+            it.resetState()
         }
     }
 
@@ -127,7 +129,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
                                         host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
                                         host.wolToWakeHistoryChanged = true
-                                        _targetWakeChanged.value = host.pKey
+                                        _targetWakeChanged.postValue(host.pKey)
                                     }
                                 }
                             } else {
@@ -165,10 +167,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Returns the first host that wants to be pinged. If null, no host wants to be pinged.
      */
     fun firstPingMe(): WolHost? {
-        targets.forEach {
-            if (it.value.pingMe) return it.value
-        }
-        return null
+        return targets.firstOrNull { it.pingMe }
     }
 
 
@@ -176,11 +175,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Returns the number of hosts that wants to be pinged. Zero means nobody is pinged.
      */
     fun countPingMe(): Int {
-        var count = 0
-        targets.forEach { (_, wh) ->
-            if (wh.pingMe) count++
-        }
-        return count
+        return targets.fold(0) { z, wh -> if (wh.pingMe) z + 1 else z }
     }
 
     fun wakeTarget(host: WolHost): Job {

@@ -20,7 +20,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
 
         screen.addPreference(
             EditTextPreference(context).apply {
-                key = PrefNames.PING_DELAY.pref(-1)
+                key = PrefNames.PING_DELAY.pref()
                 title = "Delay between pings (mSec)"
                 setDefaultValue(mvm.settingsData.pingDelayMillis.toString())
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
@@ -28,12 +28,13 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
             }
         )
 
-        for ((k, wh) in mvm.targets) {
-            require(k == wh.pKey) { "Developer error: The WolHost.pKey MUST be same as map key in MainViewModel" }
+        for (wh in mvm.targets) {
+            // Names of GUI elements on one-based.
+            val hn = wh.pKey + 1
             screen.addPreference(
                 SwitchPreference(context).apply {
-                    key = PrefNames.HOST_ENABLED.pref(k)
-                    title = "Include host $k (${wh.title})"
+                    key = PrefNames.HOST_ENABLED.pref(wh.pKey)
+                    title = "Include host $hn (${wh.title})"
                     isChecked = wh.enabled
                     onPreferenceChangeListener = this@SettingsFragment
                 }
@@ -41,14 +42,14 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
 
             screen.let { ps ->
                 PreferenceCategory(context).let { pc ->
-                    pc.key = PrefNames.HOST_SECTION.pref(k)
-                    pc.title = "Host $k: ${wh.title}"
+                    pc.key = PrefNames.HOST_SECTION.pref(wh.pKey)
+                    pc.title = "Host $hn: ${wh.title}"
                     pc.isVisible = wh.enabled
                     ps.addPreference(pc)
 
                     pc.addPreference(
                         EditTextPreference(context).apply {
-                            key = PrefNames.HOST_TITLE.pref(k)
+                            key = PrefNames.HOST_TITLE.pref(wh.pKey)
                             title = "Host Name"
                             setDefaultValue(wh.title)
                             summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
@@ -58,7 +59,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
 
                     pc.addPreference(
                         EditTextPreference(context).apply {
-                            key = PrefNames.HOST_PING_NAME.pref(k)
+                            key = PrefNames.HOST_PING_NAME.pref(wh.pKey)
                             title = "Host IP address or name"
                             setDefaultValue(wh.pingName)
                             summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
@@ -68,7 +69,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
 
                     pc.addPreference(
                         EditTextPreference(context).apply {
-                            key = PrefNames.HOST_MAC_STRING.pref(k)
+                            key = PrefNames.HOST_MAC_STRING.pref(wh.pKey)
                             title = "WOL MAC address (eg: a1:b2:c3:d4:e5:f6)"
                             setDefaultValue(wh.macAddress)
                             summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
@@ -78,7 +79,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
 
                     pc.addPreference(
                         EditTextPreference(context).apply {
-                            key = PrefNames.HOST_BROADCAST_IP.pref(k)
+                            key = PrefNames.HOST_BROADCAST_IP.pref(wh.pKey)
                             title = "WOL Broadcast address (eg: 192.168.1.255)"
                             setDefaultValue(wh.broadcastIp)
                             summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
@@ -99,13 +100,14 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
     override fun onPreferenceChange(pref: Preference?, newValue: Any?): Boolean {
         if (pref == null || newValue == null) return true
 
-        val (pk, pki) = PrefNames.fromString(pref.key)
+        val (pk, hn) = PrefNames.fromString(pref.key)
+        val ix = hn - 1
 
         return when (pk) {
             PrefNames.HOST_ENABLED -> {
                 val isEnabled = newValue as Boolean
-                val sectionKey = PrefNames.HOST_SECTION.pref(pki)
-                val target = mvm.targets[pki]!!
+                val sectionKey = PrefNames.HOST_SECTION.pref(ix)
+                val target = mvm.targets[ix]
                 findPreference<PreferenceCategory>(sectionKey)?.isVisible = isEnabled
                 target.enabled = isEnabled
                 if (!isEnabled) {
@@ -123,7 +125,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                     Snackbar.make(requireView(), "Cannot set host name to blank!", Snackbar.LENGTH_LONG).show()
                     false
                 } else {
-                    mvm.targets[pki]?.title = value
+                    mvm.targets[ix].title = value
                     true
                 }
             }
@@ -142,7 +144,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                         false
                     }
                     else -> {
-                        mvm.targets[pki]?.pingName = value
+                        mvm.targets[ix].pingName = value
                         true
                     }
                 }
@@ -162,7 +164,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                         false
                     }
                     else -> {
-                        mvm.targets[pki]?.broadcastIp = value
+                        mvm.targets[ix].broadcastIp = value
                         true
                     }
                 }
@@ -180,7 +182,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                     else -> {
                         try {
                             val mac = MagicPacket.standardizeMac(value)
-                            mvm.targets[pki]?.macAddress = mac
+                            mvm.targets[ix].macAddress = mac
                             true
                         } catch (_: Exception) {
                             Snackbar.make(requireView(), "Must be like a1:b2:c3:d4:e5:f6", Snackbar.LENGTH_LONG).show()
@@ -226,12 +228,14 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String) {
-        val (pk, pki) = PrefNames.fromString(key)
+        val (pk, hn) = PrefNames.fromString(key)
+        val ix = hn - 1
         when (pk) {
             PrefNames.HOST_TITLE -> {
-                val sectionKey = PrefNames.HOST_ENABLED.pref(pki)
-                val wh = mvm.targets[pki]!!
-                findPreference<Preference>(sectionKey)?.title = "Include host $pki (${wh.title})"
+                // Change the title on the enable host switch to reflect new host name.
+                val sectionKey = PrefNames.HOST_ENABLED.pref(ix)
+                val wh = mvm.targets[ix]
+                findPreference<Preference>(sectionKey)?.title = "Include host $hn (${wh.title})"
             }
 
             else -> {
