@@ -94,6 +94,7 @@ class WolStatusDialog : BottomSheetDialogFragment() {
                 "Error attempting to ping"
             }
         }
+
         if (wh.pingState == WolHost.PingStates.EXCEPTION) {
             ui.pingException.text = wh.pingException?.localizedMessage ?: "No exception message."
             ui.pingException.visibility = View.VISIBLE

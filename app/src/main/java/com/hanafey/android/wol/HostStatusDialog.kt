@@ -73,12 +73,28 @@ class HostStatusDialog : BottomSheetDialogFragment() {
         ui.hostStatusTitle.text = "Name: ${wh.title}"
         ui.hostStatusAddress.text = "Address: ${wh.pingName} Ping Count: ${wh.pingedCountAlive}/${wh.pingedCountDead}"
         ui.pingStatus.text = when (wh.pingState) {
-            WolHost.PingStates.NOT_PINGING -> "Not pinging, state unknown"
-            WolHost.PingStates.INDETERMINATE -> "Not pinging, state unknown"
-            WolHost.PingStates.ALIVE -> "Alive, responded to last ping"
-            WolHost.PingStates.DEAD -> "Sleeping, no response to last ping"
-            WolHost.PingStates.EXCEPTION -> "Error attempting to ping"
+            WolHost.PingStates.NOT_PINGING -> {
+                ui.root.backgroundTintList = pingOtherTint
+                "Not pinging, state unknown"
+            }
+            WolHost.PingStates.INDETERMINATE -> {
+                ui.root.backgroundTintList = pingOtherTint
+                "Not pinging, state unknown"
+            }
+            WolHost.PingStates.ALIVE -> {
+                ui.root.backgroundTintList = pingResponsiveTint
+                "Alive, responded to last ping"
+            }
+            WolHost.PingStates.DEAD -> {
+                ui.root.backgroundTintList = pingUnResponsiveTint
+                "Sleeping, no response to last ping"
+            }
+            WolHost.PingStates.EXCEPTION -> {
+                ui.root.backgroundTintList = pingOtherTint
+                "Error attempting to ping"
+            }
         }
+
         ui.pingResponse.text = pingResponseMessage(wh)
 
         if (wh.pingState == WolHost.PingStates.EXCEPTION) {

@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
+    android:background="?attr/colorDialogSurface"
+    android:paddingBottom="8dp"
     tools:context=".HostStatusDialog"
     >
 
@@ -16,7 +18,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="8dp"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
-        android:textSize="32sp"
+        android:textSize="24sp"
         tools:text="Title"
         />
     <com.google.android.material.textview.MaterialTextView
@@ -26,7 +28,7 @@
         app:layout_constraintTop_toBottomOf="@id/host_status_title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
         android:textSize="16sp"
         tools:text="Address"
@@ -38,7 +40,7 @@
         app:layout_constraintTop_toBottomOf="@+id/host_status_address"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
         tools:text="Ping Status"
         />
@@ -49,8 +51,9 @@
         app:layout_constraintTop_toBottomOf="@+id/ping_status"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+        android:layout_marginTop="8dp"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
         tools:text="Ping Response"
         />
     <com.google.android.material.textview.MaterialTextView
@@ -73,8 +76,7 @@
         app:layout_constraintTop_toBottomOf="@+id/ping_exception"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.455"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:text="Done"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>
