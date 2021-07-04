@@ -18,11 +18,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val LTAG = "MainViewModel"
 
     val targets = listOf(
-        WolHost(0, "FAKE", "192.168.1.11", "aa:bb:cc:dd:ee:ff", "192.168.1.255"),
-        WolHost(1, "NASA", "192.168.1.250", "00:11:32:F0:0E:C1", "192.168.1.255"),
-        WolHost(2, "SPACEX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
-        WolHost(3, "UNSET3", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
-        WolHost(4, "UNSET4", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+        WolHost(0, "HOST 1", "192.168.1.11", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
+        WolHost(1, "HOST 2", "192.168.1.12", "a2:b2:c2:d2:e2:f2", "192.168.1.255"),
+        WolHost(2, "HOST 3", "192.168.1.13", "a3:b3:c3:d3:e3:f3", "192.168.1.255"),
+        WolHost(3, "HOST 4", "192.168.1.14", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),
+        WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255"),
     )
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))

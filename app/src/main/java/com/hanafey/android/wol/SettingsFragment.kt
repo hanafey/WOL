@@ -28,17 +28,30 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
             }
         )
 
+        screen.let { ps ->
+            PreferenceCategory(context).let { pc ->
+                pc.title = "Included Hosts"
+                ps.addPreference(pc)
+
+                for (wh in mvm.targets) {
+                    // Names of GUI elements on one-based.
+                    val hn = wh.pKey + 1
+
+                    pc.addPreference(
+                        SwitchPreference(context).apply {
+                            key = PrefNames.HOST_ENABLED.pref(wh.pKey)
+                            title = "Include host $hn (${wh.title})"
+                            isChecked = wh.enabled
+                            onPreferenceChangeListener = this@SettingsFragment
+                        }
+                    )
+                }
+            }
+        }
+
         for (wh in mvm.targets) {
             // Names of GUI elements on one-based.
             val hn = wh.pKey + 1
-            screen.addPreference(
-                SwitchPreference(context).apply {
-                    key = PrefNames.HOST_ENABLED.pref(wh.pKey)
-                    title = "Include host $hn (${wh.title})"
-                    isChecked = wh.enabled
-                    onPreferenceChangeListener = this@SettingsFragment
-                }
-            )
 
             screen.let { ps ->
                 PreferenceCategory(context).let { pc ->
