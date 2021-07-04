@@ -56,7 +56,6 @@
                 style="@style/Widget.AppTheme.Button.IconButton"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:backgroundTint="?attr/colorPrimaryVariant"
                 android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
@@ -100,7 +99,6 @@
                 style="@style/Widget.AppTheme.Button.IconButton"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:backgroundTint="?attr/colorPrimaryVariant"
                 android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
@@ -144,7 +142,6 @@
                 style="@style/Widget.AppTheme.Button.IconButton"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:backgroundTint="?attr/colorPrimaryVariant"
                 android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
@@ -188,7 +185,6 @@
                 style="@style/Widget.AppTheme.Button.IconButton"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:backgroundTint="?attr/colorPrimaryVariant"
                 android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
@@ -232,11 +228,9 @@
                 style="@style/Widget.AppTheme.Button.IconButton"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:backgroundTint="?attr/colorPrimaryVariant"
                 android:text=""
                 app:icon="@drawable/ic_baseline_electrical_services_24"
                 />
         </androidx.appcompat.widget.LinearLayoutCompat>
     </androidx.appcompat.widget.LinearLayoutCompat>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -121,6 +121,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             uiPingState[ix].setOnClickListener(pingStateListener)
             uiPingState[ix].isEnabled = wh.pingMe
 
+            uiWake[ix].isEnabled = wh.pingMe
             uiWake[ix].setOnClickListener {
                 mvm.wolFocussedTarget = wh
                 findNavController().navigate(R.id.WolStatusDialog)
@@ -181,13 +182,11 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                         target.resetState()
                         psb.backgroundTintList = pingOffTint
                         psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_device_unknown_24)
-                        psb.isEnabled = false
                     }
 
                     WolHost.PingStates.INDETERMINATE -> {
                         psb.backgroundTintList = pingOffTint
                         psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_device_unknown_24)
-                        psb.isEnabled = false
                     }
 
                     WolHost.PingStates.ALIVE -> {
@@ -197,7 +196,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                             psb.backgroundTintList = pingResponsiveTint
                         }
                         psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
-                        psb.isEnabled = true
                         if (target.wolToWakeHistoryChanged) {
                             target.wolToWakeHistoryChanged = false
                             mvm.settingsData.writeTimeToWakeHistory(target)
@@ -211,13 +209,11 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                             psb.backgroundTintList = pingUnResponsiveTint
                         }
                         psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_down_24)
-                        psb.isEnabled = true
                     }
 
                     WolHost.PingStates.EXCEPTION -> {
                         psb.backgroundTintList = pingExceptionTint
                         psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_error_24)
-                        psb.isEnabled = true
                     }
                 }
                 val wakeMessage = when {
@@ -309,6 +305,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 }
 
                 uiPingState[ix].isEnabled = v.isChecked
+                uiWake[ix].isEnabled = v.isChecked
                 if (!target.pingMe) {
                     // Ping is disabled for this host
                     target.resetState()
@@ -317,56 +314,9 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                         requireActivity(),
                         R.drawable.ic_baseline_device_unknown_24
                     )
-                    uiPingState[ix].isEnabled = false
                 }
 
                 mvm.signalPingTargetChanged(target)
-            }
-        }
-    }
-
-    inner class PingClickListenerOld(private val target: WolHost) : View.OnClickListener {
-        override fun onClick(v: View?) {
-            require(v is SwitchMaterial) { "This listener requires SwitchMaterial as the owner." }
-
-            val ix = target.pKey
-            val wasPinging = mvm.countPingMe()
-            if (target.pingMe != v.isChecked) {
-                target.pingMe = v.isChecked
-                mvm.settingsData.savePingEnabled(target)
-            }
-            val nowPinging = mvm.countPingMe()
-
-            uiPingState[ix].isEnabled = v.isChecked
-
-            if (!v.isChecked) {
-                // Ping is disabled for this host
-                target.resetState()
-                uiPingState[ix].backgroundTintList = pingOffTint
-                uiPingState[ix].icon = ContextCompat.getDrawable(
-                    requireActivity(),
-                    R.drawable.ic_baseline_device_unknown_24
-                )
-                uiPingState[ix].isEnabled = false
-            }
-
-            when {
-                wasPinging > 0 && nowPinging == 0 -> {
-                    // Pinging stops
-                    mvm.signalPingTargetChanged(target)
-                    mvm.killPingTargets()
-                    Snackbar.make(ui.root, "Pinging Stopped", Snackbar.LENGTH_LONG).show()
-                }
-
-                wasPinging == 0 && nowPinging > 0 -> {
-                    // Pinging starts
-                    mvm.pingTargets()
-                    Snackbar.make(ui.root, "Pinging...", Snackbar.LENGTH_SHORT).show()
-                }
-
-                else -> {
-                    mvm.signalPingTargetChanged(target)
-                }
             }
         }
     }
