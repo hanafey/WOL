@@ -1,0 +1,17 @@
+<resources>
+    <string name="error_doc_site"><![CDATA[
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Show Web Site Failed</h1>
+    <h2>Could not launch browser activity</h2>
+    <p>The following exception was thrown on the attempt to start activity
+    with the ACTION_VIEW intent. This is an issue with your device.</p>
+    <p>Exception:</p>
+    <code>
+%1$s
+    </code>
+</body>
+</html>
+]]></string>
+</resources>

@@ -9,4 +9,8 @@
     <string name="ping_failed_message">%1$s ping failed! %2$s\n%3$s</string>
     <string name="wake_attempt_message">%1$s WAKE UP! %2$s</string>
     <string name="wake_failed_message">%1$s WAKE failed! %2$s\n%3$s</string>
+
+    <string name="show_help">Help</string>
+    <string name="do_not_show_next_time">Do not show next time</string>
+    <string name="new_user_help">First time users must configure their hosts. Please navigate to the help site.</string>
 </resources>

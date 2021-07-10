@@ -1,16 +1,8 @@
 package com.hanafey.android.wol.magic
 
-import com.hanafey.android.wol.EXT_EPOCH
-import com.hanafey.android.wol.tlog
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
-import java.time.Instant
-import kotlin.system.exitProcess
 
 object MagicPacket {
     private const val LTAG = "MagicPacket"
@@ -132,101 +124,6 @@ object MagicPacket {
             newMac.split(':', '-')
         } else {
             throw IllegalArgumentException("Invalid MAC address")
-        }
-    }
-
-
-    @JvmStatic
-    fun main(args: Array<String>) {
-        val LTAG = "MagicPacketTest"
-
-        if (args.size < 2 || args.size > 3) {
-            println("Usage: java MagicPacket <broadcast-ip> <mac-address> [<ping-ip>]")
-            println("Example: java MagicPacket 192.168.0.255 00:0D:61:08:22:4A")
-            println("Example: java MagicPacket 192.168.0.255 00-0D-61-08-22-4A 192.168.1.1")
-            exitProcess(1)
-        }
-        val ipStr = args[0]
-        val macStr = args[1]
-        val pingStr = if (args.size > 2) args[2] else ""
-
-        runBlocking {
-            EXT_EPOCH = Instant.now()
-            /*
-            tlog(LTAG) {"Launch first ping."}
-            launch(Dispatchers.IO) {
-                if (pingStr.isNotEmpty()) doPingPlayTest("FIRST", pingStr)
-            }
-            tlog(LTAG) {"Launch first wol."}
-            launch(Dispatchers.IO) {
-                if (macStr.length >= 12) doWolPlayTest("SECOND", ipStr, macStr)
-            }
-            */
-            tlog(LTAG) { "Launch second ping and wol." }
-            launch(Dispatchers.IO) {
-                if (pingStr.isNotEmpty()) doPingTest("PING", pingStr)
-                if (macStr.length >= 12) doWolTest("WOL", ipStr, macStr)
-            }
-        }
-        /*
-        var state = ""
-        try {
-            if (pingStr.isNotEmpty()) {
-                state = "Ping"
-                println("Sending ping to $pingStr")
-                val now = Instant.now()
-                val pingable = ping(pingStr)
-                val after = Instant.now()
-                val duration = Duration.between(now, after).toMillis()
-                println("Ping $pingStr is pingable? $pingable ($duration mSec)")
-            }
-            state = "WOL"
-            print("Wake $macStr on $ipStr:$PORT ...")
-            sendWol(macStr, ipStr, PORT)
-            println(" sent.")
-        } catch (e: IllegalArgumentException) {
-            println(e.message)
-        } catch (e: Throwable) {
-            println("Failed $state:" + e.message)
-        }
-        */
-    }
-
-    private suspend fun doWolPlayTest(name: String, ipStr: String, macStr: String) {
-        tlog(LTAG) { "$name:: doWolTest wait..." }
-        delay(1000L)
-        tlog(LTAG) { "$name:: doWolTest done..." }
-    }
-
-    private suspend fun doPingPlayTest(name: String, pingStr: String) {
-        tlog(LTAG) { "$name:: doPingTest wait..." }
-        delay(1500L)
-        tlog(LTAG) { "$name:: doPingTest done..." }
-    }
-
-    private suspend fun doPingTest(name: String, pingStr: String) {
-        for (i in 1..5) {
-            try {
-                tlog(LTAG) { "$name::  send $pingStr" }
-                val pingable = ping(pingStr)
-                tlog(LTAG) { "$name::  result $pingable $pingStr" }
-            } catch (e: Throwable) {
-                tlog(LTAG) { "$name:: FAILED: $e" }
-            }
-            delay(500L)
-        }
-    }
-
-    private suspend fun doWolTest(name: String, ipStr: String, macStr: String) {
-        try {
-            for (i in 1..5) {
-                tlog(LTAG) { "$name::  start $ipStr, $macStr" }
-                sendWol(macStr, ipStr, PORT)
-                tlog(LTAG) { "$name::  end $ipStr, $macStr" }
-                delay(1000L)
-            }
-        } catch (e: Throwable) {
-            tlog(LTAG) { "$name:: FAILED: $e" }
         }
     }
 }

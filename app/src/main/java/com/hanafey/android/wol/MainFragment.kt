@@ -108,8 +108,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive)!!
         pingExceptionTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_exception)!!
 
-        val pingStateListener = PingStateClickListener()
-
         mvm.targets.forEach { wh ->
             val ix = wh.pKey
             uiHosts[ix].visibility = if (wh.enabled) View.VISIBLE else View.GONE
@@ -118,23 +116,25 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             uiPingEnabled[ix].text = wh.title
             uiPingEnabled[ix].setOnClickListener(PingClickListener(wh))
 
-            uiPingState[ix].setOnClickListener(pingStateListener)
+            uiPingState[ix].setOnClickListener(PingStateClickListener(wh, false))
             uiPingState[ix].isEnabled = wh.pingMe
 
             uiWake[ix].isEnabled = wh.pingMe
-            uiWake[ix].setOnClickListener {
-                mvm.wolFocussedTarget = wh
-                findNavController().navigate(R.id.WolStatusDialog)
-            }
+            uiWake[ix].setOnClickListener(PingStateClickListener(wh, true))
         }
 
 
         findNavController().addOnDestinationChangedListener(this)
 
-        mvm.pingTargets()
+        mvm.pingTargetsIfNeeded()
 
         observePingLiveData()
         observeWakeLiveData()
+
+        if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
+            findNavController().navigate(R.id.FirstTimeInformationFragment)
+            mvm.firstVisit = false
+        }
     }
 
 
@@ -177,6 +177,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 val psb = uiPingState[ix]
                 val pingCounts = uiPingCounts[ix]
 
+                tlog(LTAG) { "Ping Observe: ${target.pingState}" }
                 when (target.pingState) {
                     WolHost.PingStates.NOT_PINGING -> {
                         target.resetState()
@@ -278,16 +279,16 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
     }
 
-    inner class PingStateClickListener : View.OnClickListener {
+    inner class PingStateClickListener(private val wh: WolHost, private val showWol: Boolean) : View.OnClickListener {
         override fun onClick(v: View?) {
-            val ix = uiPingState.indexOfFirst { button -> button === v }
-            if (ix >= 0) {
-                val wh = mvm.targets[ix]
-                wh.lock.withLock {
-                    mvm.pingFocussedTarget = wh
-                    v?.backgroundTintList = pingFrozenTint
-                    findNavController().navigate(R.id.HostStatusDialog)
-                }
+            wh.lock.withLock {
+                mvm.wolFocussedTarget = wh
+                findNavController().navigate(
+                    R.id.HostStatusFragment,
+                    Bundle().apply {
+                        putBoolean("show_wol", showWol)
+                    }
+                )
             }
         }
     }

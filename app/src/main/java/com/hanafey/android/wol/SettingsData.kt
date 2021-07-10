@@ -15,10 +15,10 @@ class SettingsData(val spm: SharedPreferences) {
 
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
+    var versionAcknowledged = 0
 
     fun initializeModel(mvm: MainViewModel) {
-        readUiSettings(mvm)
-        readTimeToWakeHistory(mvm)
+        readSettings(mvm)
     }
 
     fun savePingEnabled(wh: WolHost) {
@@ -28,9 +28,14 @@ class SettingsData(val spm: SharedPreferences) {
         editor.apply()
     }
 
-    private fun readUiSettings(mvm: MainViewModel) {
+    private fun readSettings(mvm: MainViewModel) {
         var prefName = PrefNames.PING_DELAY.pref()
         pingDelayMillis = spm.getString(prefName, pingDelayMillis.toString())?.toLong() ?: pingDelayMillis
+        prefName = PrefNames.PING_WAIT.pref()
+        pingResponseWaitMillis = spm.getString(prefName, pingResponseWaitMillis.toString())?.toInt() ?: pingResponseWaitMillis
+        prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()
+        versionAcknowledged = spm.getInt(prefName, versionAcknowledged)
+
         for (wh in mvm.targets) {
             prefName = PrefNames.HOST_ENABLED.pref(wh.pKey)
             wh.enabled = spm.getBoolean(prefName, wh.enabled)
@@ -50,6 +55,8 @@ class SettingsData(val spm: SharedPreferences) {
             prefName = PrefNames.HOST_BROADCAST_IP.pref(wh.pKey)
             wh.broadcastIp = spm.getString(prefName, wh.broadcastIp) ?: wh.broadcastIp
         }
+
+        readTimeToWakeHistory(mvm)
     }
 
     private fun readTimeToWakeHistory(mvm: MainViewModel) {
@@ -59,7 +66,9 @@ class SettingsData(val spm: SharedPreferences) {
             val strings = if (string.isNotBlank()) {
                 string.split(',')
             } else {
-                emptyList()
+                // debugger: No defaults are appropriate.
+                // emptyList()
+                listOf("30000", "35000", "25000")
             }
 
             val ints = strings.map {
@@ -91,6 +100,14 @@ class SettingsData(val spm: SharedPreferences) {
         val string = strings.joinToString(",")
         with(spm.edit()) {
             putString(prefName, string)
+            apply()
+        }
+    }
+
+    fun writeVersionAcknowledged(version: Int) {
+        val prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()
+        with(spm.edit()) {
+            putInt(prefName, version)
             apply()
         }
     }

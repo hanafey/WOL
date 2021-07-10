@@ -28,6 +28,16 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
             }
         )
 
+        screen.addPreference(
+            EditTextPreference(context).apply {
+                key = PrefNames.PING_WAIT.pref()
+                title = "Longest wait for ping response (mSec)"
+                setDefaultValue(mvm.settingsData.pingResponseWaitMillis.toString())
+                summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                onPreferenceChangeListener = this@SettingsFragment
+            }
+        )
+
         screen.let { ps ->
             PreferenceCategory(context).let { pc ->
                 pc.title = "Included Hosts"
@@ -232,11 +242,39 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                 }
             }
 
+            PrefNames.PING_WAIT -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Positive Integer required", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+                            if (intValue < 100) {
+                                Snackbar.make(requireView(), "Ping delay must be at least 100 mSec", Snackbar.LENGTH_LONG).show()
+                                false
+                            } else {
+                                mvm.settingsData.pingResponseWaitMillis = intValue
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Ping response wait  must be an integer", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
             // Non UI settings
             PrefNames.HOST_TIME_TO_WAKE -> true
             PrefNames.HOST_SECTION -> true
             PrefNames.HOST_PKEY -> true
             PrefNames.HOST_PING_ME -> true
+            PrefNames.VERSION_ACKNOWLEDGED -> true
         }
     }
 

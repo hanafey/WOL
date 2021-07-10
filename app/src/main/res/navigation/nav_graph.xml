@@ -11,14 +11,26 @@
         android:name="com.hanafey.android.wol.MainFragment"
         android:label="@string/main_fragment_label"
         tools:layout="@layout/fragment_main"
-        >
-    </fragment>
+        />
 
     <fragment
         android:id="@+id/SettingsFragment"
         android:name="com.hanafey.android.wol.SettingsFragment"
         android:label="SettingsFragment"
         />
+
+    <fragment
+        android:id="@+id/HostStatusFragment"
+        android:name="com.hanafey.android.wol.HostStatusFragment"
+        android:label="Host Status"
+        tools:layout="@layout/fragment_host_status"
+        >
+        <argument
+            android:name="show_wol"
+            app:argType="boolean"
+            android:defaultValue="false"
+            />
+    </fragment>
 
     <dialog
         android:id="@+id/HostStatusDialog"
@@ -33,4 +45,37 @@
         android:label="WolStatusDialog"
         tools:layout="@layout/dialog_wol_status"
         />
+
+    <fragment
+        android:id="@+id/FirstTimeInformationFragment"
+        android:name="com.hanafey.android.wol.FirstTimeInformationFragment"
+        android:label="Setup Information"
+        tools:layout="@layout/fragment_first_time_information"
+        />
+
+    <dialog
+        android:id="@+id/ErrorReportDialog"
+        android:name="com.hanafey.android.wol.ErrorReportDialog"
+        android:label="Error Report"
+        tools:layout="@layout/dialog_error_report"
+        >
+        <argument
+            android:name="error_report"
+            app:argType="string"
+            android:defaultValue="Error, argument error_report not provided!!"
+            />
+    </dialog>
+
+    <fragment
+        android:id="@+id/ErrorReportFragment"
+        android:name="com.hanafey.android.wol.ErrorReportFragment"
+        android:label="Error Report"
+        tools:layout="@layout/dialog_error_report"
+        >
+        <argument
+            android:name="error_report"
+            app:argType="string"
+            android:defaultValue="Error, argument error_report not provided!!"
+            />
+    </fragment>
 </navigation>

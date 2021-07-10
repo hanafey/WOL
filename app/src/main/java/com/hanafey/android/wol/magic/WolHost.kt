@@ -115,10 +115,15 @@ class WolHost(
         lock.withLock {
             pingedCountAlive = 0
             pingedCountDead = 0
-            pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
+            if (!pingMe) {
+                pingState = PingStates.NOT_PINGING
+            }
+            // pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
             pingException = null
             wakeupCount = 0
             wakeupException = null
+            lastWolWakeAt.update(Instant.EPOCH)
+            lastWolSentAt.update(Instant.EPOCH)
         }
     }
 
@@ -130,7 +135,9 @@ class WolHost(
         lock.withLock {
             pingedCountAlive = 0
             pingedCountDead = 0
-            pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
+            if (!pingMe) {
+                pingState = PingStates.NOT_PINGING
+            }
             pingException = null
         }
     }
