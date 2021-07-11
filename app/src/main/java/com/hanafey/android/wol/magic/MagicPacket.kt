@@ -5,7 +5,7 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 
 object MagicPacket {
-    private const val LTAG = "MagicPacket"
+    private const val ltag = "MagicPacket"
 
 
     /**

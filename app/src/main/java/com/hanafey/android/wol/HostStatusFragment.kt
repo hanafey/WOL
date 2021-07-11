@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter
 
 class HostStatusFragment : Fragment() {
 
-    private val LTAG = "HostStatusFragment"
+    private val ltag = "HostStatusFragment"
     private val mvm: MainViewModel by activityViewModels()
 
     private var _binding: FragmentHostStatusBinding? = null
@@ -89,8 +89,8 @@ class HostStatusFragment : Fragment() {
     }
 
     private fun updateUi(wh: WolHost) {
-        ui.wolStatusTitle.text = "Name: ${wh.title}"
-        ui.wolStatusAddress.text = "Address: ${wh.pingName} Ping Count: ${wh.pingedCountAlive}/${wh.pingedCountDead}"
+        ui.wolStatusTitle.text = getString(R.string.host_title, wh.title)
+        ui.wolStatusAddress.text = getString(R.string.host_address, wh.pingName, wh.pingedCountAlive, wh.pingedCountDead)
         ui.pingStatus.text = when (wh.pingState) {
             WolHost.PingStates.NOT_PINGING -> {
                 ui.wolStatusTitle.backgroundTintList = pingOtherTint
@@ -125,7 +125,7 @@ class HostStatusFragment : Fragment() {
         ui.wolButtonGroup.visibility = if (showWol) View.VISIBLE else View.GONE
 
         ui.wolMacAddress.text = wolMacMessage(wh)
-        ui.wolSentAt.text = wolStatusMessage(wh)
+        ui.wolSentAt.text = wolStatusMessage()
         ui.wolWaiting.text = wolWaitingMessage(wh)
         ui.wolWakeAt.text = wolAwokeMessage(wh)
     }
@@ -150,7 +150,7 @@ class HostStatusFragment : Fragment() {
         return "MAC: ${wh.macAddress}"
     }
 
-    private fun wolStatusMessage(wh: WolHost): String {
+    private fun wolStatusMessage(): String {
         return wolStats.latencyHistoryMessage
     }
 

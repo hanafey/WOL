@@ -8,7 +8,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.wol.magic.MagicPacket
 
 class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener, SharedPreferences.OnSharedPreferenceChangeListener {
-    private val LTAG = "SettingsFragment"
+    private val ltag = "SettingsFragment"
     private val mvm: MainViewModel by activityViewModels()
     private val ipNameRegEx = Regex("""(^\d+\.\d+\.\d+\.\d+$)|(^[a-z][a-z\d]*$)""", RegexOption.IGNORE_CASE)
     private val broadcastRegEx = Regex("""^\d+\.\d+\.\d+\.\d+$""")

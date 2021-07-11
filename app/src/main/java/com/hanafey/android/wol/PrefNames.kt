@@ -41,14 +41,14 @@ enum class PrefNames {
             // E.g. with a host index THIS_IS_A_NAME_02
             val li = string.indexOfLast { it == '_' }
             return if (li == -1) {
-                PrefNames.valueOf(string) to -1
+                valueOf(string) to -1
             } else {
                 val hostIndexString = string.substring(li + 1)
                 return try {
                     val number = hostIndexString.toInt()
-                    PrefNames.valueOf(string.substring(0, li)) to number
+                    valueOf(string.substring(0, li)) to number
                 } catch (ex: Exception) {
-                    PrefNames.valueOf(string) to -1
+                    valueOf(string) to -1
                 }
             }
         }

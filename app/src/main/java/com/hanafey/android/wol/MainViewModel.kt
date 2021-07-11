@@ -17,7 +17,7 @@ import java.time.Instant
 import kotlin.concurrent.withLock
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val LTAG = "MainViewModel"
+    private val ltag = "MainViewModel"
 
     val targets = listOf(
         WolHost(0, "HOST 1", "192.168.1.11", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
@@ -61,7 +61,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        tlog(LTAG) { "MainViewModel: Instantiated." }
+        tlog(ltag) { "MainViewModel: Instantiated." }
     }
 
     /**
@@ -71,7 +71,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun pingTargetsIfNeeded() {
         if (pingActive) return // ======================================== >>>
 
-        tlog(LTAG) { "pingTargets:" }
+        tlog(ltag) { "pingTargets:" }
 
         pingActive = true
         pingJobs = targets.map { wh ->
@@ -111,11 +111,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun pingTarget(host: WolHost): Job {
-        tlog(LTAG) { "pingTarget: Reset state ===================================================" }
+        tlog(ltag) { "pingTarget: Reset state ===================================================" }
         host.resetPingState()
         _targetPingChanged.value = host.pKey
 
-        return viewModelScope.launch() {
+        return viewModelScope.launch {
             var address: InetAddress? = null
             var pingName: String = host.pingName // host.pingName may be changed in a settings and the address must be looked up.
             var exception: Throwable? = null
@@ -126,9 +126,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (address == null || pingName != host.pingName) {
                         address = withContext(Dispatchers.IO) {
                             try {
-                                val addr = InetAddress.getByName(host.pingName)
+                                @Suppress("BlockingMethodInNonBlockingContext")
+                                val inetAddress = InetAddress.getByName(host.pingName)
                                 pingName = host.pingName
-                                addr
+                                inetAddress
                             } catch (ex: Throwable) {
                                 host.lock.withLock {
                                     host.pingException = ex
@@ -141,11 +142,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     if (address != null) {
-                        tlog(LTAG) { "${pingName}: Ping now." }
+                        tlog(ltag) { "${pingName}: Ping now." }
                         host.lastPingSentAt.update(Instant.now())
                         val pingResult = withContext(Dispatchers.IO) {
                             try {
-                                if (MagicPacket.ping(address, settingsData.pingResponseWaitMillis)) 1 else 0
+                                @Suppress("BlockingMethodInNonBlockingContext")
+                                val pingResult = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
+                                if (pingResult) 1 else 0
                             } catch (e: IOException) {
                                 exception = e
                                 -1
@@ -155,7 +158,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         when (pingResult) {
                             1 -> {
                                 pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
-                                tlog(LTAG) { "${pingName}: Ping true." }
+                                tlog(ltag) { "${pingName}: Ping true." }
                                 host.lock.withLock {
                                     if (host.pingMe) {
                                         // Ping can take time, and host may have been turned off while waiting result
@@ -178,7 +181,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                             0 -> {
                                 pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
-                                tlog(LTAG) { "${pingName}: Ping false." }
+                                tlog(ltag) { "${pingName}: Ping false." }
                                 // TODO: ping non response is delayed. Do we need to worry about pingMe state changing?
                                 host.lock.withLock {
                                     host.lastPingResponseAt.update(Instant.EPOCH)
@@ -200,7 +203,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             }
                         }
 
-                        tlog(LTAG) { "${pingName}: Post Value ${host.pKey}." }
+                        tlog(ltag) { "${pingName}: Post Value ${host.pKey}." }
                     }
                     _targetPingChanged.value = host.pKey
                 }
@@ -231,9 +234,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun wakeTarget(host: WolHost): Job {
-        return viewModelScope.launch() {
+        return viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 try {
+                    @Suppress("BlockingMethodInNonBlockingContext")
                     MagicPacket.sendWol(host.macAddress)
                     host.lastWolSentAt.update(Instant.now())
                     host.wakeupCount++

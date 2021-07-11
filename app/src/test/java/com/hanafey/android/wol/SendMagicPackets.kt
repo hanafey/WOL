@@ -9,11 +9,11 @@ import java.time.Instant
 import kotlin.system.exitProcess
 
 object SendMagicPackets {
-    private val LTAG = "SendMagicPackets"
+    private const val ltag = "SendMagicPackets"
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val LTAG = "MagicPacketTest"
+        val ltag = "MagicPacketTest"
 
         if (args.size < 2 || args.size > 3) {
             println("Usage: java MagicPacket <broadcast-ip> <mac-address> [<ping-ip>]")
@@ -27,7 +27,7 @@ object SendMagicPackets {
 
         runBlocking {
             EXT_EPOCH = Instant.now()
-            tlog(LTAG) { "Launch second ping and wol." }
+            tlog(ltag) { "Launch second ping and wol." }
             launch(Dispatchers.IO) {
                 if (pingStr.isNotEmpty()) doPingTest("PING", pingStr)
                 if (macStr.length >= 12) doWolTest("WOL", ipStr, macStr)
@@ -38,11 +38,12 @@ object SendMagicPackets {
     private suspend fun doPingTest(name: String, pingStr: String) {
         for (i in 1..5) {
             try {
-                tlog(LTAG) { "$name::  send $pingStr" }
+                tlog(ltag) { "$name::  send $pingStr" }
+                @Suppress("BlockingMethodInNonBlockingContext")
                 val pingable = MagicPacket.ping(pingStr)
-                tlog(LTAG) { "$name::  result $pingable $pingStr" }
+                tlog(ltag) { "$name::  result $pingable $pingStr" }
             } catch (e: Throwable) {
-                tlog(LTAG) { "$name:: FAILED: $e" }
+                tlog(ltag) { "$name:: FAILED: $e" }
             }
             delay(500L)
         }
@@ -51,13 +52,14 @@ object SendMagicPackets {
     private suspend fun doWolTest(name: String, ipStr: String, macStr: String) {
         try {
             for (i in 1..5) {
-                tlog(LTAG) { "$name::  start $ipStr, $macStr" }
+                tlog(ltag) { "$name::  start $ipStr, $macStr" }
+                @Suppress("BlockingMethodInNonBlockingContext")
                 MagicPacket.sendWol(macStr, ipStr, MagicPacket.PORT)
-                tlog(LTAG) { "$name::  end $ipStr, $macStr" }
+                tlog(ltag) { "$name::  end $ipStr, $macStr" }
                 delay(1000L)
             }
         } catch (e: Throwable) {
-            tlog(LTAG) { "$name:: FAILED: $e" }
+            tlog(ltag) { "$name:: FAILED: $e" }
         }
     }
 

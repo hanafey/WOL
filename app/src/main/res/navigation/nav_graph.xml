@@ -32,20 +32,6 @@
             />
     </fragment>
 
-    <dialog
-        android:id="@+id/HostStatusDialog"
-        android:name="com.hanafey.android.wol.HostStatusDialog"
-        android:label="HostStatusDialog"
-        tools:layout="@layout/dialog_host_status"
-        />
-
-    <dialog
-        android:id="@+id/WolStatusDialog"
-        android:name="com.hanafey.android.wol.WolStatusDialog"
-        android:label="WolStatusDialog"
-        tools:layout="@layout/dialog_wol_status"
-        />
-
     <fragment
         android:id="@+id/FirstTimeInformationFragment"
         android:name="com.hanafey.android.wol.FirstTimeInformationFragment"

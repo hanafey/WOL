@@ -4,13 +4,14 @@
     <!-- Strings used for fragments for navigation -->
     <string name="main_fragment_label">WOL Bliss</string>
 
-    <string name="ping_timeout_message">%1$s TIMED OUT! Sleeping?</string>
-    <string name="ping_success_message">%1$s accessible! Wide Awake?</string>
-    <string name="ping_failed_message">%1$s ping failed! %2$s\n%3$s</string>
     <string name="wake_attempt_message">%1$s WAKE UP! %2$s</string>
     <string name="wake_failed_message">%1$s WAKE failed! %2$s\n%3$s</string>
 
     <string name="show_help">Help</string>
     <string name="do_not_show_next_time">Do not show next time</string>
     <string name="new_user_help">First time users must configure their hosts. Please navigate to the help site.</string>
+    <string name="okay">Okay</string>
+    <string name="send_wol_magic_packet">Send WOL Magic Packet</string>
+    <string name="host_title">Name: %1$s</string>
+    <string name="host_address">"Address: %1$s Ping Count: %2$d / %3$d"</string>
 </resources>

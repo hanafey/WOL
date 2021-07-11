@@ -14,7 +14,7 @@ import com.hanafey.android.wol.databinding.FragmentFirstTimeInformationBinding
 
 
 class FirstTimeInformationFragment : Fragment() {
-    private val LTAG = "FirstTimeInformationFragment"
+    private val ltag = "FirstTimeInformationFragment"
     private val mvm: MainViewModel by activityViewModels()
 
     private var _binding: FragmentFirstTimeInformationBinding? = null

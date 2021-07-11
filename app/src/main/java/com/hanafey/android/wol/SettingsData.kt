@@ -5,7 +5,9 @@ import com.hanafey.android.wol.magic.WolHost
 
 class SettingsData(val spm: SharedPreferences) {
 
-    private val MAX_WOL_HISTORY = 25
+    companion object {
+        private const val MAX_WOL_HISTORY = 25
+    }
 
     /**
      * Normally a pingable host is running thus a WOL packet is meaningless, but is is also

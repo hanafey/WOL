@@ -16,8 +16,8 @@ import kotlin.math.roundToInt
 var EXT_EPOCH: Instant = Instant.now()
 
 internal inline fun dlog(tag: String, enabled: Boolean = true, message: () -> String) {
-    if (enabled) {
-        if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG) {
+        if (enabled) {
             if (Log.isLoggable(tag, Log.ERROR)) {
                 val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
                 val durationString = "[%8.3f]".format(duration)
@@ -28,18 +28,22 @@ internal inline fun dlog(tag: String, enabled: Boolean = true, message: () -> St
 }
 
 internal inline fun elog(tag: String, enabled: Boolean = true, message: () -> String) {
-    if (enabled) {
-        if (Log.isLoggable(tag, Log.ERROR)) {
-            Log.println(Log.ERROR, tag, message())
+    if (BuildConfig.DEBUG) {
+        if (enabled) {
+            if (Log.isLoggable(tag, Log.ERROR)) {
+                Log.println(Log.ERROR, tag, message())
+            }
         }
     }
 }
 
 internal fun tlog(tag: String, enabled: Boolean = true, message: () -> String) {
-    if (enabled) {
-        val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
-        val durationString = "%8.3f".format(duration)
-        println("$tag: $durationString: ${message()}")
+    if (BuildConfig.DEBUG) {
+        if (enabled) {
+            val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
+            val durationString = "%8.3f".format(duration)
+            println("$tag: $durationString: ${message()}")
+        }
     }
 }
 

@@ -6,7 +6,6 @@ import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
@@ -23,10 +22,9 @@ import kotlin.concurrent.withLock
  */
 class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
-    private val LTAG = "MainFragment"
+    private val ltag = "MainFragment"
 
     private val mvm: MainViewModel by activityViewModels()
-    private val fvm: MainFragmentViewModel by viewModels()
 
     private var _binding: FragmentMainBinding? = null
     private val ui get() = _binding!!
@@ -100,7 +98,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        if (savedInstanceState == null) initializeView(view)
+        // if (savedInstanceState == null) initializeView(view)
 
         pingOffTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_off)!!
         pingFrozenTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_frozen)!!
@@ -123,7 +121,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             uiWake[ix].setOnClickListener(PingStateClickListener(wh, true))
         }
 
-
         findNavController().addOnDestinationChangedListener(this)
 
         mvm.pingTargetsIfNeeded()
@@ -136,7 +133,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             mvm.firstVisit = false
         }
     }
-
 
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_main, menu)
@@ -151,9 +147,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private fun initializeView(v: View) {
     }
 
     private fun observePingLiveData() {
@@ -177,7 +170,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 val psb = uiPingState[ix]
                 val pingCounts = uiPingCounts[ix]
 
-                tlog(LTAG) { "Ping Observe: ${target.pingState}" }
+                tlog(ltag) { "Ping Observe: ${target.pingState}" }
                 when (target.pingState) {
                     WolHost.PingStates.NOT_PINGING -> {
                         target.resetState()
@@ -271,9 +264,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     // TODO: Not currently used. [onClick] set frozen ui, and the dialog resets the frozen state on dismiss.
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
         when (destination.id) {
-            R.id.HostStatusDialog -> {
-            }
-
             else -> {
             }
         }

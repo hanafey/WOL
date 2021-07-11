@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
@@ -14,13 +13,11 @@ import com.hanafey.android.wol.databinding.DialogErrorReportBinding
 
 class ErrorReportFragment : Fragment() {
 
-    private val mvm: MainViewModel by activityViewModels()
-
     private var _binding: DialogErrorReportBinding? = null
     private val ui: DialogErrorReportBinding
         get() = _binding!!
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = DialogErrorReportBinding.inflate(inflater, container, false)
         // SEE: https://stackoverflow.com/questions/57449900/letting-webview-on-android-work-with-prefers-color-scheme-dark
         if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {

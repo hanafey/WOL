@@ -38,9 +38,9 @@ android {
         applicationId "com.hanafey.android.wol"
         minSdkVersion 26
         targetSdkVersion 30
-        // Not Uploaded to Play Store
+        // Uploaded to Play Store
         versionCode 3
-        versionName "1.0.1-alpha"
+        versionName "1.0.1-beta"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config
@@ -81,7 +81,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.3.5'
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.5'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0-native-mt'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1'
     implementation "androidx.preference:preference-ktx:1.1.1"
     implementation 'androidx.webkit:webkit:1.4.0'
     testImplementation 'junit:junit:4.13.2'
