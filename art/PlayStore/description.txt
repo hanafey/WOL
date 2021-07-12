@@ -1,0 +1,10 @@
+WOL Bliss
+
+Sends Wake On LAN Magic Packets to remotely wake up devices that support WOL.
+
+Sends Wake On LAN Magic Packets to remotely wake up devices that support WOL.
+
+The devices are pinged in order to see if a device in on or off-line, and this provides feedback on when a device wakes up.
+
+Up to 5 devices can be controlled, and WOL-Bliss keeps statistics on how long each device typically takes to be awakened. This gives an idea if a device my need to be visited in person!
+
