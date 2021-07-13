@@ -170,7 +170,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 val psb = uiPingState[ix]
                 val pingCounts = uiPingCounts[ix]
 
-                tlog(ltag) { "Ping Observe: ${target.pingState}" }
                 when (target.pingState) {
                     WolHost.PingStates.NOT_PINGING -> {
                         target.resetState()

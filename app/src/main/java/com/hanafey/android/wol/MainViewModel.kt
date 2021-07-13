@@ -60,9 +60,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _targetPingChanged.value = wh.pKey
     }
 
-    init {
-        tlog(ltag) { "MainViewModel: Instantiated." }
-    }
 
     /**
      * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.enabled] and [WolHost.pingMe]
@@ -70,8 +67,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun pingTargetsIfNeeded() {
         if (pingActive) return // ======================================== >>>
-
-        tlog(ltag) { "pingTargets:" }
 
         pingActive = true
         pingJobs = targets.map { wh ->
@@ -111,7 +106,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun pingTarget(host: WolHost): Job {
-        tlog(ltag) { "pingTarget: Reset state ===================================================" }
         host.resetPingState()
         _targetPingChanged.value = host.pKey
 
@@ -142,7 +136,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     if (address != null) {
-                        tlog(ltag) { "${pingName}: Ping now." }
                         host.lastPingSentAt.update(Instant.now())
                         val pingResult = withContext(Dispatchers.IO) {
                             try {
@@ -158,7 +151,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         when (pingResult) {
                             1 -> {
                                 pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
-                                tlog(ltag) { "${pingName}: Ping true." }
                                 host.lock.withLock {
                                     if (host.pingMe) {
                                         // Ping can take time, and host may have been turned off while waiting result
@@ -181,7 +173,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                             0 -> {
                                 pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
-                                tlog(ltag) { "${pingName}: Ping false." }
                                 // TODO: ping non response is delayed. Do we need to worry about pingMe state changing?
                                 host.lock.withLock {
                                     host.lastPingResponseAt.update(Instant.EPOCH)
@@ -202,8 +193,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                             }
                         }
-
-                        tlog(ltag) { "${pingName}: Post Value ${host.pKey}." }
                     }
                     _targetPingChanged.value = host.pKey
                 }
