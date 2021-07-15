@@ -27,8 +27,8 @@
         >
         <argument
             android:name="show_wol"
-            app:argType="boolean"
             android:defaultValue="false"
+            app:argType="boolean"
             />
     </fragment>
 
@@ -47,8 +47,8 @@
         >
         <argument
             android:name="error_report"
-            app:argType="string"
             android:defaultValue="Error, argument error_report not provided!!"
+            app:argType="string"
             />
     </dialog>
 
@@ -60,8 +60,8 @@
         >
         <argument
             android:name="error_report"
-            app:argType="string"
             android:defaultValue="Error, argument error_report not provided!!"
+            app:argType="string"
             />
     </fragment>
 </navigation>

@@ -38,9 +38,9 @@ android {
         applicationId "com.hanafey.android.wol"
         minSdkVersion 26
         targetSdkVersion 30
-        // Uploaded to Play Store
-        versionCode 3
-        versionName "1.0.1-beta"
+        // Not Uploaded to Play Store
+        versionCode 4
+        versionName "1.0.2-beta"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config
