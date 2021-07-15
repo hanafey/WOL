@@ -185,8 +185,8 @@ class HostStatusFragment : Fragment() {
     }
 
     private fun observePingLiveData() {
-        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            if (wh.pKey == ix) {
+        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { px ->
+            if (wh.pKey == px) {
                 updateUi(wh)
             }
         }

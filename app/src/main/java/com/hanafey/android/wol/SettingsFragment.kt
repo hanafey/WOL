@@ -132,12 +132,8 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                 val sectionKey = PrefNames.HOST_SECTION.pref(ix)
                 val target = mvm.targets[ix]
                 findPreference<PreferenceCategory>(sectionKey)?.isVisible = isEnabled
-                target.enabled = isEnabled
-                if (!isEnabled) {
-                    target.pingMe = false
-                }
-                mvm.settingsData.savePingEnabled(target)
-                mvm.signalPingTargetChanged(target)
+                mvm.targets[ix].enabled = isEnabled
+                mvm.settingsData.hostDataChanged = true
                 true
             }
 
@@ -149,6 +145,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                     false
                 } else {
                     mvm.targets[ix].title = value
+                    mvm.settingsData.hostDataChanged = true
                     true
                 }
             }
@@ -168,6 +165,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                     }
                     else -> {
                         mvm.targets[ix].pingName = value
+                        mvm.settingsData.hostDataChanged = true
                         true
                     }
                 }
@@ -188,6 +186,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                     }
                     else -> {
                         mvm.targets[ix].broadcastIp = value
+                        mvm.settingsData.hostDataChanged = true
                         true
                     }
                 }
@@ -206,6 +205,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                         try {
                             val mac = MagicPacket.standardizeMac(value)
                             mvm.targets[ix].macAddress = mac
+                            mvm.settingsData.hostDataChanged = true
                             true
                         } catch (_: Exception) {
                             Snackbar.make(requireView(), "Must be like a1:b2:c3:d4:e5:f6", Snackbar.LENGTH_LONG).show()
@@ -272,7 +272,6 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
             // Non UI settings
             PrefNames.HOST_TIME_TO_WAKE -> true
             PrefNames.HOST_SECTION -> true
-            PrefNames.HOST_PKEY -> true
             PrefNames.HOST_PING_ME -> true
             PrefNames.VERSION_ACKNOWLEDGED -> true
         }

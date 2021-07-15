@@ -62,8 +62,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
     /**
-     * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.enabled] and [WolHost.pingMe]
-     * both true.
+     * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.pingMe] true.
+     * [pingJobsStateLiveData] will register an event only if pinging is not already active.
      */
     fun pingTargetsIfNeeded() {
         if (pingActive) return // ======================================== >>>
@@ -73,6 +73,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             pingTarget(wh)
         }
         _pingJobsState.value = 1
+    }
+
+    /**
+     * Stops ping jobs, and restarts them. Stopping is delayed, so starting is also delayed. [pingJobsStateLiveData]
+     * can be observed to react to the changed states. If pinging is not active only the transition to active will
+     * be registered.
+     */
+    fun pingTargetsAgain() {
+        tlog(ltag) { "pingTargetsAgain: kill" }
+        viewModelScope.launch {
+            if (pingJobs.isNotEmpty()) {
+                pingActive = false
+                joinAll(*pingJobs.toTypedArray())
+                pingJobs = emptyList()
+                _pingJobsState.value = 0
+            }
+
+            tlog(ltag) { "pingTargetsAgain: ping" }
+
+            pingActive = true
+            pingJobs = targets.map { wh ->
+                pingTarget(wh)
+            }
+            _pingJobsState.value = 1
+        }
     }
 
     fun killTargets() {

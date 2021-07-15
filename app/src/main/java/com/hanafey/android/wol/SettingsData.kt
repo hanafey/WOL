@@ -10,6 +10,12 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     /**
+     * Before navigating to [SettingsFragment] set to false. If any host data is changed [SettingsFragment] will set
+     * it to true. When [MainFragment] is created if this is false then pinging must be stopped and restarted.
+     */
+    var hostDataChanged = false
+
+    /**
      * Normally a pingable host is running thus a WOL packet is meaningless, but is is also
      * harmless. Good for testing so the WOL packet can be observed on the network.
      */
@@ -23,7 +29,7 @@ class SettingsData(val spm: SharedPreferences) {
         readSettings(mvm)
     }
 
-    fun savePingEnabled(wh: WolHost) {
+    fun savePingMe(wh: WolHost) {
         val editor = spm.edit()
         val prefName = PrefNames.HOST_PING_ME.pref(wh.pKey)
         editor.putBoolean(prefName, wh.pingMe)
@@ -63,7 +69,7 @@ class SettingsData(val spm: SharedPreferences) {
 
     private fun readTimeToWakeHistory(mvm: MainViewModel) {
         for (wh in mvm.targets) {
-            val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.title)
+            val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.pKey)
             val string: String = spm.getString(prefName, "") ?: ""
             val strings = if (string.isNotBlank()) {
                 string.split(',')
@@ -92,12 +98,13 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     fun writeTimeToWakeHistory(wh: WolHost) {
-        val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.title)
+        val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.pKey)
         val truncatedHistory = if (wh.wolToWakeHistory.size > MAX_WOL_HISTORY) {
             wh.wolToWakeHistory.subList(wh.wolToWakeHistory.size - MAX_WOL_HISTORY, wh.wolToWakeHistory.size)
         } else {
             wh.wolToWakeHistory
         }
+        wh.wolToWakeHistory = truncatedHistory
         val strings = truncatedHistory.map { it.toString() }
         val string = strings.joinToString(",")
         with(spm.edit()) {

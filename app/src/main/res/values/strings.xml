@@ -14,4 +14,5 @@
     <string name="send_wol_magic_packet">Send WOL Magic Packet</string>
     <string name="host_title">Name: %1$s</string>
     <string name="host_address">"Address: %1$s Ping Count: %2$d / %3$d"</string>
+    <string name="info_no_hosts_enabled">The screen is blank because no hosts are enabled!</string>
 </resources>

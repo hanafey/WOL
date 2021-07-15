@@ -4,7 +4,6 @@ enum class PrefNames {
     HOST_TIME_TO_WAKE,
     HOST_ENABLED,
     HOST_SECTION,
-    HOST_PKEY,
     HOST_PING_ME,
     HOST_TITLE,
     HOST_PING_NAME,
@@ -14,12 +13,6 @@ enum class PrefNames {
     PING_WAIT,
     VERSION_ACKNOWLEDGED;
 
-    /**
-     * String form of preference name. For prefs that are host name dependent provide the host name.
-     */
-    fun pref(hostName: String): String {
-        return if (hostName.isBlank()) toString() else toString() + "_$hostName"
-    }
 
     /**
      * String form of preference name. For prefs that are host name dependent by an integer key provide the key

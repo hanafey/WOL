@@ -111,6 +111,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             uiHosts[ix].visibility = if (wh.enabled) View.VISIBLE else View.GONE
 
             uiPingEnabled[ix].isChecked = wh.pingMe
+
             uiPingEnabled[ix].text = wh.title
             uiPingEnabled[ix].setOnClickListener(PingClickListener(wh))
 
@@ -123,7 +124,11 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
         findNavController().addOnDestinationChangedListener(this)
 
-        mvm.pingTargetsIfNeeded()
+        if (mvm.settingsData.hostDataChanged) {
+            mvm.pingTargetsAgain()
+        } else {
+            mvm.pingTargetsIfNeeded()
+        }
 
         observePingLiveData()
         observeWakeLiveData()
@@ -131,6 +136,10 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
             findNavController().navigate(R.id.FirstTimeInformationFragment)
             mvm.firstVisit = false
+        } else {
+            if (mvm.targets.count { it.enabled } == 0) {
+                Snackbar.make(ui.root, getString(R.string.info_no_hosts_enabled), Snackbar.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -141,6 +150,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.mi_settings -> {
+                mvm.settingsData.hostDataChanged = false
                 findNavController().navigate(R.id.SettingsFragment)
                 true
             }
@@ -165,7 +175,27 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             }
 
             target.lock.withLock {
-                uiHosts[ix].visibility = if (target.enabled) View.VISIBLE else View.GONE
+                if (target.enabled) {
+                    if (uiHosts[ix].visibility != View.VISIBLE) {
+                        // Changed to enabled
+                        uiHosts[ix].visibility = View.VISIBLE
+                        uiPingEnabled[ix].isChecked = target.pingMe
+                    }
+                } else {
+                    if (uiHosts[ix].visibility != View.GONE) {
+                        // Changed to not enabled
+                        uiHosts[ix].visibility = View.GONE
+                        if (target.pingMe) {
+                            // Not enabled also means not pingMe
+                            target.lock.withLock {
+                                target.pingMe = false
+                                mvm.settingsData.savePingMe(target)
+                                target.pingState = WolHost.PingStates.INDETERMINATE
+                                uiPingEnabled[ix].isChecked = target.pingMe
+                            }
+                        }
+                    }
+                }
 
                 val psb = uiPingState[ix]
                 val pingCounts = uiPingCounts[ix]
@@ -291,11 +321,12 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 if (target.pingMe != v.isChecked) {
                     // State is changing
                     target.pingMe = v.isChecked
-                    mvm.settingsData.savePingEnabled(target)
+                    mvm.settingsData.savePingMe(target)
                 }
 
                 uiPingState[ix].isEnabled = v.isChecked
                 uiWake[ix].isEnabled = v.isChecked
+
                 if (!target.pingMe) {
                     // Ping is disabled for this host
                     target.resetState()

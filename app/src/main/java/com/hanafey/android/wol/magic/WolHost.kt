@@ -5,7 +5,8 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * @param pKey A unique key for each host that also orders a set of hosts.
+ * @param pKey A unique key for each host that also orders a set of hosts. Currently this
+ * is used in conjunction with a list, and [pKey] must be array index position.
  * @param title User understandable name for the WOL target.
  * @param pingName Name of ip address of WOL target. This is used to ping to see if host is
  * awake. Examples "192.168.1.250", "nasa"
