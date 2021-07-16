@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:ordering="sequentially"
+    >
+    <!-- We do this so the reset point for the animated vector is scaled at 1-->
+    <objectAnimator
+        android:duration="0"
+        android:repeatCount="0"
+        >
+        <propertyValuesHolder
+            android:propertyName="scaleX"
+            android:valueFrom="0.175"
+            android:valueTo="0.175"
+            />
+        <propertyValuesHolder
+            android:propertyName="scaleY"
+            android:valueFrom="0.175"
+            android:valueTo="0.175"
+            />
+    </objectAnimator>
+
+    <!-- This is the real animation -->
+    <objectAnimator
+        android:duration="500"
+        android:interpolator="@anim/rapid_deceleration_interpolator"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"
+        >
+        <propertyValuesHolder
+            android:propertyName="scaleX"
+            android:valueTo="0.175"
+            />
+        <propertyValuesHolder
+            android:propertyName="scaleY"
+            android:valueTo="0.175"
+            />
+    </objectAnimator>
+</set>

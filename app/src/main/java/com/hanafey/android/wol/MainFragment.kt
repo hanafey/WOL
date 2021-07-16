@@ -133,7 +133,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         observePingLiveData()
         observeWakeLiveData()
 
-        if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
+        if (true || mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
             findNavController().navigate(R.id.FirstTimeInformationFragment)
             mvm.firstVisit = false
         } else {

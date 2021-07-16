@@ -35,6 +35,14 @@ class FirstTimeInformationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         ui.visitWebSiteButton.setOnClickListener {
+            openWebPage("https://wol-bliss.hanafey.com")
+        }
+
+        ui.visitReleaseNotesButton.setOnClickListener {
+            openWebPage("https://wol-bliss.hanafey.com/release-notes")
+        }
+
+        ui.visitHostSetupButton.setOnClickListener {
             openWebPage("https://wol-bliss.hanafey.com/host-setup")
         }
 

@@ -36,7 +36,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="24dp"
-        android:text="@string/show_help"
+        android:text="Web Site"
+        app:icon="@drawable/ic_baseline_help_24"
+        />
+    <Button
+        android:id="@+id/visit_host_setup_button"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/visit_web_site_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"
+        android:text="Host Setup"
+        app:icon="@drawable/ic_baseline_help_24"
+        />
+    <Button
+        android:id="@+id/visit_release_notes_button"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/visit_host_setup_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"
+        android:text="Release Notes"
         app:icon="@drawable/ic_baseline_help_24"
         />
 

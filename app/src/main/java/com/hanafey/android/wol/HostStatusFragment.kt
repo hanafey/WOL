@@ -1,6 +1,7 @@
 package com.hanafey.android.wol
 
 import android.content.res.ColorStateList
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -63,9 +64,25 @@ class HostStatusFragment : Fragment() {
             wh = wft
             wolStats = WolStats(wh)
             updateUi(wh)
-            ui.wolButton.setOnClickListener {
+            ui.wolButton.setOnLongClickListener {
                 mvm.wakeTarget(wh)
-                Snackbar.make(view, "WOL magic packet set to ${wh.title}", Snackbar.LENGTH_SHORT).show()
+                (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
+                    if (anim.isRunning) {
+                        anim.stop()
+                        anim.reset()
+                    }
+                    anim.start()
+                }
+                true
+            }
+            ui.wolButton.setOnClickListener {
+                (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
+                    if (anim.isRunning) {
+                        anim.stop()
+                        anim.reset()
+                    }
+                }
+                Snackbar.make(view, "LONG press if you mean to wake host up!", Snackbar.LENGTH_LONG).show()
             }
 
             lifecycleScope.launch {
@@ -143,6 +160,12 @@ class HostStatusFragment : Fragment() {
             }
         } else {
             ui.wolProgress.visibility = View.GONE
+            (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
+                if (anim.isRunning) {
+                    anim.stop()
+                    anim.reset()
+                }
+            }
         }
     }
 
