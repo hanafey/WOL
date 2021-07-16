@@ -1,6 +1,8 @@
 package com.hanafey.android.wol
 
+import android.content.Intent
 import android.content.res.ColorStateList
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.core.content.ContextCompat
@@ -133,7 +135,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         observePingLiveData()
         observeWakeLiveData()
 
-        if (true || mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
+        if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
             findNavController().navigate(R.id.FirstTimeInformationFragment)
             mvm.firstVisit = false
         } else {
@@ -149,6 +151,11 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.mi_web_site -> {
+                openWebPageIntent("https://wol-bliss.hanafey.com")
+                true
+            }
+
             R.id.mi_settings -> {
                 mvm.settingsData.hostDataChanged = false
                 findNavController().navigate(R.id.SettingsFragment)
@@ -156,6 +163,19 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             }
 
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun openWebPageIntent(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        } catch (e: Exception) {
+            val report = getString(R.string.error_doc_site, e.localizedMessage)
+            val bundle = Bundle().apply {
+                putString("error_report", report)
+            }
+            findNavController().navigate(R.id.ErrorReportFragment, bundle)
         }
     }
 

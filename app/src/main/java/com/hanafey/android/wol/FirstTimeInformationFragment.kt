@@ -35,15 +35,15 @@ class FirstTimeInformationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         ui.visitWebSiteButton.setOnClickListener {
-            openWebPage("https://wol-bliss.hanafey.com")
+            openWebPageIntent("https://wol-bliss.hanafey.com")
         }
 
         ui.visitReleaseNotesButton.setOnClickListener {
-            openWebPage("https://wol-bliss.hanafey.com/release-notes")
+            openWebPageIntent("https://wol-bliss.hanafey.com/release-notes")
         }
 
         ui.visitHostSetupButton.setOnClickListener {
-            openWebPage("https://wol-bliss.hanafey.com/host-setup")
+            openWebPageIntent("https://wol-bliss.hanafey.com/host-setup")
         }
 
         ui.showNextTimeCheckbox.setOnClickListener {
@@ -60,7 +60,7 @@ class FirstTimeInformationFragment : Fragment() {
         _binding = null
     }
 
-    private fun openWebPage(url: String) {
+    private fun openWebPageIntent(url: String) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
