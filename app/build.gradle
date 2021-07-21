@@ -39,8 +39,8 @@ android {
         minSdkVersion 26
         targetSdkVersion 30
         // Not Uploaded to Play Store
-        versionCode 5
-        versionName "1.0.3-beta"
+        versionCode 6
+        versionName "1.0.4-beta"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config

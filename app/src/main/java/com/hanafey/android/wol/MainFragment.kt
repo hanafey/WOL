@@ -277,19 +277,18 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             }
 
             val target = mvm.targets[ix]
-            val ex = target.wakeupException
+            val ex = target.lock.withLock {
+                val x = target.wakeupException
+                target.wakeupException = null
+                x
+            }
 
             if (ex != null) {
-                Snackbar.make(
-                    ui.root,
-                    getString(
-                        R.string.wake_failed_message,
-                        target.title,
-                        ex::class.java.simpleName,
-                        ex.localizedMessage
-                    ),
-                    Snackbar.LENGTH_LONG
-                ).show()
+                val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
+                val bundle = Bundle().apply {
+                    putString("error_report", report)
+                }
+                findNavController().navigate(R.id.ErrorReportFragment, bundle)
             } else {
                 Snackbar.make(
                     ui.root,

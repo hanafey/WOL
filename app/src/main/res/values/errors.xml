@@ -14,4 +14,54 @@
 </body>
 </html>
 ]]></string>
+
+    <string name="error_wake_failed_preamble"><![CDATA[
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Failed To Send WAKE-ON-LAN Packet</h1>
+    <p>
+        The following exception was thrown on the attempt to send a WOL packet to your host.
+        This could be an error with your target host setup, or it could be an issue with your network
+        connection.
+     </p>
+     <p>
+        If the host has worked before it is probably a network issue. Remember that WOL packets are broadcast,
+        and usually this means you must be on the same local area network via WiFi as the host you are
+        trying to wake up.
+     </p>
+]]></string>
+
+    <string name="error_wake_failed_postamble"><![CDATA[
+</body>
+</html>
+]]></string>
+
+
+    <string name="error_wake_failed_meat_general"><![CDATA[
+        <p>Look at the exception message for clues about the failure reason.
+    <p>
+        Exception:
+    </p>
+    <code>
+%1$s
+    </code>
+]]></string>
+
+    <string name="error_wake_failed_meat_unreachable"><![CDATA[
+    <ul>
+        <li>
+            Is WiFi enabled?
+        </li>
+        <li>
+            Are you on the same network by WiFi that the host you need to wake up is on?
+        </li>
+    </ul>
+    <p>
+        Exception:
+    </p>
+    <code>
+%1$s
+    </code>
+]]></string>
 </resources>

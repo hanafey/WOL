@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WOL Bliss</string>
+    <string name="app_name">WOLBliss</string>
     <string name="action_settings">Settings</string>
     <string name="action_web_site">Web Site</string>
     <!-- Strings used for fragments for navigation -->
@@ -14,6 +14,6 @@
     <string name="okay">Okay</string>
     <string name="send_wol_magic_packet">LONG Press to Wake-On-LAN</string>
     <string name="host_title">Name: %1$s</string>
-    <string name="host_address">"Address: %1$s Ping Count: %2$d / %3$d"</string>
+    <string name="host_address">"%1$s (%4$s)\nPings: +%2$d / -%3$d"</string>
     <string name="info_no_hosts_enabled">The screen is blank because no hosts are enabled!</string>
 </resources>

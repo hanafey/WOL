@@ -250,13 +250,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun wakeTarget(host: WolHost): Job {
         return viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                try {
-                    @Suppress("BlockingMethodInNonBlockingContext")
-                    MagicPacket.sendWol(host.macAddress)
-                    host.lastWolSentAt.update(Instant.now())
-                    host.wakeupCount++
-                } catch (ex: IOException) {
-                    host.wakeupException = ex
+                host.lock.withLock {
+                    try {
+                        @Suppress("BlockingMethodInNonBlockingContext")
+                        MagicPacket.sendWol(host.macAddress)
+                        host.lastWolSentAt.update(Instant.now())
+                        host.wakeupCount++
+                    } catch (ex: IOException) {
+                        host.wakeupException = ex
+                    }
                 }
             }
             _targetWakeChanged.value = host.pKey

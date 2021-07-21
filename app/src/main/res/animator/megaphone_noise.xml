@@ -4,13 +4,13 @@
     >
     <objectAnimator
         android:duration="1000"
-        android:interpolator="@anim/rapid_deceleration_interpolator"
         android:factor="2"
+        android:interpolator="@anim/rapid_deceleration_interpolator"
         android:propertyName="rotation"
         android:repeatCount="0"
+        android:startOffset="0"
         android:valueFrom="45"
         android:valueTo="-20"
-        android:startOffset="0"
         />
     <set android:ordering="together">
         <objectAnimator
@@ -36,14 +36,14 @@
             />
         <objectAnimator
             android:duration="200"
-            android:interpolator="@anim/rapid_deceleration_interpolator"
             android:factor="2"
+            android:interpolator="@anim/rapid_deceleration_interpolator"
             android:propertyName="rotation"
             android:repeatCount="infinite"
             android:repeatMode="reverse"
+            android:startOffset="0"
             android:valueFrom="-22"
             android:valueTo="-18"
-            android:startOffset="0"
             />
     </set>
 </set>

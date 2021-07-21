@@ -22,6 +22,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.concurrent.withLock
 
 class HostStatusFragment : Fragment() {
 
@@ -39,6 +40,8 @@ class HostStatusFragment : Fragment() {
     private var wolLateColor = 0
     private lateinit var wolStats: WolStats
     private var showWol: Boolean = false
+    private val preamble: String by lazy { getString(R.string.error_wake_failed_preamble) }
+    private val postamble: String by lazy { getString(R.string.error_wake_failed_postamble) }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -81,18 +84,25 @@ class HostStatusFragment : Fragment() {
                         anim.stop()
                         anim.reset()
                     }
+                    wolStats.cancelWaitingToAwake()
                 }
                 Snackbar.make(view, "LONG press if you mean to wake host up!", Snackbar.LENGTH_LONG).show()
             }
 
-            lifecycleScope.launch {
+            viewLifecycleOwner.lifecycleScope.launch {
                 while (true) {
                     updateProgress()
                     delay(100L)
                 }
             }
+            /* Note that this looks similar, but this 'lifecycleScope' is too long. It continues
+               after the view is destroyed.
+
+            lifecycleScope.launch { }
+            */
 
             observePingLiveData()
+            observeWakeLiveData()
         } else {
             // Presumable we got here by rotation
             findNavController().navigateUp()
@@ -107,7 +117,7 @@ class HostStatusFragment : Fragment() {
 
     private fun updateUi(wh: WolHost) {
         ui.wolStatusTitle.text = getString(R.string.host_title, wh.title)
-        ui.wolStatusAddress.text = getString(R.string.host_address, wh.pingName, wh.pingedCountAlive, wh.pingedCountDead)
+        ui.wolStatusAddress.text = getString(R.string.host_address, wh.pingName, wh.pingedCountAlive, wh.pingedCountDead, wh.broadcastIp)
         ui.pingStatus.text = when (wh.pingState) {
             WolHost.PingStates.NOT_PINGING -> {
                 ui.wolStatusTitle.backgroundTintList = pingOtherTint
@@ -215,6 +225,40 @@ class HostStatusFragment : Fragment() {
         }
     }
 
+    private fun observeWakeLiveData() {
+        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { px ->
+            if (wh.pKey == px) {
+                val ex = wh.lock.withLock {
+                    val x = wh.wakeupException
+                    // Only report exection once.
+                    wh.wakeupException = null
+                    x
+                }
+
+                if (ex != null) {
+                    val report = when {
+                        else -> {
+                            getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
+                        }
+                    }
+
+                    Bundle().let { bundle ->
+                        bundle.putString("error_report", wakeMessageComposer(report))
+                        findNavController().navigate(R.id.ErrorReportFragment, bundle)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun wakeMessageComposer(meat: String): String {
+        val sb = StringBuilder(meat.length + preamble.length + postamble.length + 64)
+        sb.append(preamble)
+        sb.append(meat)
+        sb.append(postamble)
+        return sb.toString()
+    }
+
     private class WolStats(val wh: WolHost) {
         val wolLastSentAt: Instant
             get() = wh.lastWolSentAt.state().first
@@ -264,6 +308,13 @@ class HostStatusFragment : Fragment() {
         fun isWaitingToAwake(): Boolean {
             val (instant, ack) = wh.lastWolSentAt.state()
             return instant != Instant.EPOCH && !ack
+        }
+
+        fun cancelWaitingToAwake() {
+            wh.lock.withLock {
+                wh.lastWolSentAt.update(Instant.EPOCH)
+                wh.lastWolWakeAt.update(Instant.EPOCH)
+            }
         }
 
         fun progress(now: Instant): Int {

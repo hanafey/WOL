@@ -31,9 +31,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="4dp"
+        android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
         android:textSize="16sp"
-        tools:text="Address"
+        tools:text="Address (bca:BroadCast)\nPings +5 / -7"
         />
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/ping_status"
@@ -136,8 +137,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="8dp"
-        app:icon="@drawable/ic_wakeup_wol_animate"
         android:contentDescription="Wake-On-LAN"
+        app:icon="@drawable/ic_wakeup_wol_animate"
         app:iconSize="64dp"
         />
     <com.google.android.material.progressindicator.LinearProgressIndicator
