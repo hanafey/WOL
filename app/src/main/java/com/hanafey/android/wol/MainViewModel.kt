@@ -10,11 +10,11 @@ import androidx.preference.PreferenceManager
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
-import kotlin.concurrent.withLock
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val ltag = "MainViewModel"
@@ -109,8 +109,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetPingStats() {
-        targets.map {
-            it.resetState()
+        viewModelScope.launch {
+            targets.map {
+                it.resetState()
+            }
         }
     }
 
@@ -131,10 +133,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun pingTarget(host: WolHost): Job {
-        host.resetPingState()
-        _targetPingChanged.value = host.pKey
 
         return viewModelScope.launch {
+            host.resetPingState()
+            _targetPingChanged.value = host.pKey
+
             var address: InetAddress? = null
             var pingName: String = host.pingName // host.pingName may be changed in a settings and the address must be looked up.
             var exception: Throwable? = null
@@ -145,12 +148,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (address == null || pingName != host.pingName) {
                         address = withContext(Dispatchers.IO) {
                             try {
-                                @Suppress("BlockingMethodInNonBlockingContext")
                                 val inetAddress = InetAddress.getByName(host.pingName)
                                 pingName = host.pingName
                                 inetAddress
                             } catch (ex: Throwable) {
-                                host.lock.withLock {
+                                host.mutex.withLock {
                                     host.pingException = ex
                                     host.pingState = WolHost.PingStates.EXCEPTION
                                     host.lastPingResponseAt.update(Instant.EPOCH)
@@ -164,7 +166,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         host.lastPingSentAt.update(Instant.now())
                         val pingResult = withContext(Dispatchers.IO) {
                             try {
-                                @Suppress("BlockingMethodInNonBlockingContext")
                                 val pingResult = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
                                 if (pingResult) 1 else 0
                             } catch (e: IOException) {
@@ -176,7 +177,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         when (pingResult) {
                             1 -> {
                                 pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
-                                host.lock.withLock {
+                                host.mutex.withLock {
                                     if (host.pingMe) {
                                         // Ping can take time, and host may have been turned off while waiting result
                                         host.pingState = WolHost.PingStates.ALIVE
@@ -199,7 +200,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             0 -> {
                                 pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
                                 // TODO: ping non response is delayed. Do we need to worry about pingMe state changing?
-                                host.lock.withLock {
+                                host.mutex.withLock {
                                     host.lastPingResponseAt.update(Instant.EPOCH)
                                     if (host.pingMe) {
                                         // Ping can take time, and host may have been turned off while waiting result
@@ -211,7 +212,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             }
 
                             else -> {
-                                host.lock.withLock {
+                                host.mutex.withLock {
                                     host.pingState = WolHost.PingStates.EXCEPTION
                                     host.pingException = exception
                                     host.lastPingResponseAt.update(Instant.EPOCH)
@@ -247,13 +248,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return targets.fold(0) { z, wh -> if (wh.pingMe) z + 1 else z }
     }
 
-    fun wakeTarget(host: WolHost): Job {
+    suspend fun wakeTarget(host: WolHost): Job {
         return viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                host.lock.withLock {
+                host.mutex.withLock {
                     try {
-                        @Suppress("BlockingMethodInNonBlockingContext")
-                        MagicPacket.sendWol(host.macAddress)
+                        repeat(host.magicPacketBundleCount) {
+                            if (it > 1) delay(host.magicPacketBundleSpacing)
+                            MagicPacket.sendWol(host.macAddress)
+                        }
                         host.lastWolSentAt.update(Instant.now())
                         host.wakeupCount++
                     } catch (ex: IOException) {

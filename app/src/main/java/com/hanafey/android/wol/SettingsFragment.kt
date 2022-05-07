@@ -7,7 +7,10 @@ import androidx.preference.*
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.wol.magic.MagicPacket
 
-class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener, SharedPreferences.OnSharedPreferenceChangeListener {
+class SettingsFragment : PreferenceFragmentCompat(),
+    Preference.OnPreferenceChangeListener,
+    SharedPreferences.OnSharedPreferenceChangeListener {
+
     private val ltag = "SettingsFragment"
     private val mvm: MainViewModel by activityViewModels()
     private val ipNameRegEx = Regex("""(^\d+\.\d+\.\d+\.\d+$)|(^[a-z][a-z\d]*$)""", RegexOption.IGNORE_CASE)
@@ -120,9 +123,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
         mvm.settingsData.spm.registerOnSharedPreferenceChangeListener(this)
     }
 
-    override fun onPreferenceChange(pref: Preference?, newValue: Any?): Boolean {
-        if (pref == null || newValue == null) return true
-
+    override fun onPreferenceChange(pref: Preference, newValue: Any?): Boolean {
         val (pk, hn) = PrefNames.fromString(pref.key)
         val ix = hn - 1
 
@@ -130,7 +131,6 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
             PrefNames.HOST_ENABLED -> {
                 val isEnabled = newValue as Boolean
                 val sectionKey = PrefNames.HOST_SECTION.pref(ix)
-                val target = mvm.targets[ix]
                 findPreference<PreferenceCategory>(sectionKey)?.isVisible = isEnabled
                 mvm.targets[ix].enabled = isEnabled
                 mvm.settingsData.hostDataChanged = true

@@ -1,5 +1,7 @@
 package com.hanafey.android.wol.magic
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -25,7 +27,7 @@ class WolHost(
     /**
      * Used to control mutation of properties that may changed on another thread.
      */
-    val lock = ReentrantLock(false)
+    val mutex = Mutex()
 
     /**
      * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
@@ -106,14 +108,23 @@ class WolHost(
      */
     var wakeupCount = 0
 
+    /**
+     * Number of magic packets in a bundle.
+     */
+    var magicPacketBundleCount = 3
+
+    /**
+     * Magic packet bundle spacing (mSec)
+     */
+    var magicPacketBundleSpacing = 100L
 
     /**
      * If the last wake up attempt threw an exception, this is it.
      */
     var wakeupException: Throwable? = null
 
-    fun resetState() {
-        lock.withLock {
+    suspend fun resetState() {
+        mutex.withLock {
             pingedCountAlive = 0
             pingedCountDead = 0
             if (!pingMe) {
@@ -132,8 +143,8 @@ class WolHost(
     /**
      * Resets [pingedCountAlive], [pingState], [pingException]. Synchronized.
      */
-    fun resetPingState() {
-        lock.withLock {
+    suspend fun resetPingState() {
+        mutex.withLock {
             pingedCountAlive = 0
             pingedCountDead = 0
             if (!pingMe) {

@@ -8,6 +8,7 @@ import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
@@ -17,7 +18,8 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textview.MaterialTextView
 import com.hanafey.android.wol.databinding.FragmentMainBinding
 import com.hanafey.android.wol.magic.WolHost
-import kotlin.concurrent.withLock
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -194,20 +196,20 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                 }
             }
 
-            target.lock.withLock {
-                if (target.enabled) {
-                    if (uiHosts[ix].visibility != View.VISIBLE) {
-                        // Changed to enabled
-                        uiHosts[ix].visibility = View.VISIBLE
-                        uiPingEnabled[ix].isChecked = target.pingMe
-                    }
-                } else {
-                    if (uiHosts[ix].visibility != View.GONE) {
-                        // Changed to not enabled
-                        uiHosts[ix].visibility = View.GONE
-                        if (target.pingMe) {
-                            // Not enabled also means not pingMe
-                            target.lock.withLock {
+            mvm.viewModelScope.launch {
+                target.mutex.withLock {
+                    if (target.enabled) {
+                        if (uiHosts[ix].visibility != View.VISIBLE) {
+                            // Changed to enabled
+                            uiHosts[ix].visibility = View.VISIBLE
+                            uiPingEnabled[ix].isChecked = target.pingMe
+                        }
+                    } else {
+                        if (uiHosts[ix].visibility != View.GONE) {
+                            // Changed to not enabled
+                            uiHosts[ix].visibility = View.GONE
+                            if (target.pingMe) {
+                                // Not enabled also means not pingMe
                                 target.pingMe = false
                                 mvm.settingsData.savePingMe(target)
                                 target.pingState = WolHost.PingStates.INDETERMINATE
@@ -215,56 +217,56 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                             }
                         }
                     }
-                }
 
-                val psb = uiPingState[ix]
-                val pingCounts = uiPingCounts[ix]
+                    val psb = uiPingState[ix]
+                    val pingCounts = uiPingCounts[ix]
 
-                when (target.pingState) {
-                    WolHost.PingStates.NOT_PINGING -> {
-                        target.resetState()
-                        psb.backgroundTintList = pingOffTint
-                        psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_device_unknown_24)
-                    }
-
-                    WolHost.PingStates.INDETERMINATE -> {
-                        psb.backgroundTintList = pingOffTint
-                        psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_device_unknown_24)
-                    }
-
-                    WolHost.PingStates.ALIVE -> {
-                        if (mvm.pingFocussedTarget == target) {
-                            psb.backgroundTintList = pingFrozenTint
-                        } else {
-                            psb.backgroundTintList = pingResponsiveTint
+                    when (target.pingState) {
+                        WolHost.PingStates.NOT_PINGING -> {
+                            target.resetState()
+                            psb.backgroundTintList = pingOffTint
+                            psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_device_unknown_24)
                         }
-                        psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
-                        if (target.wolToWakeHistoryChanged) {
-                            target.wolToWakeHistoryChanged = false
-                            mvm.settingsData.writeTimeToWakeHistory(target)
+
+                        WolHost.PingStates.INDETERMINATE -> {
+                            psb.backgroundTintList = pingOffTint
+                            psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_device_unknown_24)
+                        }
+
+                        WolHost.PingStates.ALIVE -> {
+                            if (mvm.pingFocussedTarget == target) {
+                                psb.backgroundTintList = pingFrozenTint
+                            } else {
+                                psb.backgroundTintList = pingResponsiveTint
+                            }
+                            psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
+                            if (target.wolToWakeHistoryChanged) {
+                                target.wolToWakeHistoryChanged = false
+                                mvm.settingsData.writeTimeToWakeHistory(target)
+                            }
+                        }
+
+                        WolHost.PingStates.DEAD -> {
+                            if (mvm.pingFocussedTarget == target) {
+                                psb.backgroundTintList = pingFrozenTint
+                            } else {
+                                psb.backgroundTintList = pingUnResponsiveTint
+                            }
+                            psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_down_24)
+                        }
+
+                        WolHost.PingStates.EXCEPTION -> {
+                            psb.backgroundTintList = pingExceptionTint
+                            psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_error_24)
                         }
                     }
-
-                    WolHost.PingStates.DEAD -> {
-                        if (mvm.pingFocussedTarget == target) {
-                            psb.backgroundTintList = pingFrozenTint
-                        } else {
-                            psb.backgroundTintList = pingUnResponsiveTint
-                        }
-                        psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_down_24)
+                    val wakeMessage = if (target.pingMe) {
+                        "%d/%d".format(target.pingedCountAlive, target.pingedCountDead)
+                    } else {
+                        ""
                     }
-
-                    WolHost.PingStates.EXCEPTION -> {
-                        psb.backgroundTintList = pingExceptionTint
-                        psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_error_24)
-                    }
+                    pingCounts.text = wakeMessage
                 }
-                val wakeMessage = when {
-                    target.pingMe -> "%d/%d".format(target.pingedCountAlive, target.pingedCountDead)
-
-                    else -> ""
-                }
-                pingCounts.text = wakeMessage
             }
         }
     }
@@ -277,28 +279,30 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             }
 
             val target = mvm.targets[ix]
-            val ex = target.lock.withLock {
-                val x = target.wakeupException
-                target.wakeupException = null
-                x
-            }
-
-            if (ex != null) {
-                val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
-                val bundle = Bundle().apply {
-                    putString("error_report", report)
+            mvm.viewModelScope.launch {
+                val ex = target.mutex.withLock {
+                    val x = target.wakeupException
+                    target.wakeupException = null
+                    x
                 }
-                findNavController().navigate(R.id.ErrorReportFragment, bundle)
-            } else {
-                Snackbar.make(
-                    ui.root,
-                    getString(
-                        R.string.wake_attempt_message,
-                        target.title,
-                        target.macAddress
-                    ),
-                    Snackbar.LENGTH_LONG
-                ).show()
+
+                if (ex != null) {
+                    val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
+                    val bundle = Bundle().apply {
+                        putString("error_report", report)
+                    }
+                    findNavController().navigate(R.id.ErrorReportFragment, bundle)
+                } else {
+                    Snackbar.make(
+                        ui.root,
+                        getString(
+                            R.string.wake_attempt_message,
+                            target.title,
+                            target.macAddress
+                        ),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
@@ -319,14 +323,16 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
     inner class PingStateClickListener(private val wh: WolHost, private val showWol: Boolean) : View.OnClickListener {
         override fun onClick(v: View?) {
-            wh.lock.withLock {
-                mvm.wolFocussedTarget = wh
-                findNavController().navigate(
-                    R.id.HostStatusFragment,
-                    Bundle().apply {
-                        putBoolean("show_wol", showWol)
-                    }
-                )
+            mvm.viewModelScope.launch {
+                wh.mutex.withLock {
+                    mvm.wolFocussedTarget = wh
+                    findNavController().navigate(
+                        R.id.HostStatusFragment,
+                        Bundle().apply {
+                            putBoolean("show_wol", showWol)
+                        }
+                    )
+                }
             }
         }
     }
@@ -335,28 +341,30 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         override fun onClick(v: View?) {
             require(v is SwitchMaterial) { "This listener requires SwitchMaterial as the owner." }
 
-            target.lock.withLock {
-                val ix = target.pKey
-                if (target.pingMe != v.isChecked) {
-                    // State is changing
-                    target.pingMe = v.isChecked
-                    mvm.settingsData.savePingMe(target)
+            mvm.viewModelScope.launch {
+                target.mutex.withLock {
+                    val ix = target.pKey
+                    if (target.pingMe != v.isChecked) {
+                        // State is changing
+                        target.pingMe = v.isChecked
+                        mvm.settingsData.savePingMe(target)
+                    }
+
+                    uiPingState[ix].isEnabled = v.isChecked
+                    uiWake[ix].isEnabled = v.isChecked
+
+                    if (!target.pingMe) {
+                        // Ping is disabled for this host
+                        target.resetState()
+                        uiPingState[ix].backgroundTintList = pingOffTint
+                        uiPingState[ix].icon = ContextCompat.getDrawable(
+                            requireActivity(),
+                            R.drawable.ic_baseline_device_unknown_24
+                        )
+                    }
+
+                    mvm.signalPingTargetChanged(target)
                 }
-
-                uiPingState[ix].isEnabled = v.isChecked
-                uiWake[ix].isEnabled = v.isChecked
-
-                if (!target.pingMe) {
-                    // Ping is disabled for this host
-                    target.resetState()
-                    uiPingState[ix].backgroundTintList = pingOffTint
-                    uiPingState[ix].icon = ContextCompat.getDrawable(
-                        requireActivity(),
-                        R.drawable.ic_baseline_device_unknown_24
-                    )
-                }
-
-                mvm.signalPingTargetChanged(target)
             }
         }
     }

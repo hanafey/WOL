@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
@@ -17,12 +18,12 @@ import com.hanafey.android.wol.databinding.FragmentHostStatusBinding
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import kotlin.concurrent.withLock
 
 class HostStatusFragment : Fragment() {
 
@@ -68,7 +69,9 @@ class HostStatusFragment : Fragment() {
             wolStats = WolStats(wh)
             updateUi(wh)
             ui.wolButton.setOnLongClickListener {
-                mvm.wakeTarget(wh)
+                mvm.viewModelScope.launch {
+                    mvm.wakeTarget(wh)
+                }
                 (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
                     if (anim.isRunning) {
                         anim.stop()
@@ -84,7 +87,9 @@ class HostStatusFragment : Fragment() {
                         anim.stop()
                         anim.reset()
                     }
-                    wolStats.cancelWaitingToAwake()
+                    mvm.viewModelScope.launch {
+                        wolStats.cancelWaitingToAwake()
+                    }
                 }
                 Snackbar.make(view, "LONG press if you mean to wake host up!", Snackbar.LENGTH_LONG).show()
             }
@@ -225,26 +230,29 @@ class HostStatusFragment : Fragment() {
         }
     }
 
+    /**
+     * Observe completion of sending WOL packets to our host, and report any exception.
+     * Absent problem, do nothing -- the host will repond or not, and pinging will
+     * monitor when and if it comes online.
+     */
     private fun observeWakeLiveData() {
         mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { px ->
             if (wh.pKey == px) {
-                val ex = wh.lock.withLock {
-                    val x = wh.wakeupException
-                    // Only report exection once.
-                    wh.wakeupException = null
-                    x
-                }
-
-                if (ex != null) {
-                    val report = when {
-                        else -> {
-                            getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
-                        }
+                mvm.viewModelScope.launch {
+                    val ex = wh.mutex.withLock {
+                        val x = wh.wakeupException
+                        // Only report exection once.
+                        wh.wakeupException = null
+                        x
                     }
 
-                    Bundle().let { bundle ->
-                        bundle.putString("error_report", wakeMessageComposer(report))
-                        findNavController().navigate(R.id.ErrorReportFragment, bundle)
+                    if (ex != null) {
+                        val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
+
+                        Bundle().let { bundle ->
+                            bundle.putString("error_report", wakeMessageComposer(report))
+                            findNavController().navigate(R.id.ErrorReportFragment, bundle)
+                        }
                     }
                 }
             }
@@ -310,8 +318,8 @@ class HostStatusFragment : Fragment() {
             return instant != Instant.EPOCH && !ack
         }
 
-        fun cancelWaitingToAwake() {
-            wh.lock.withLock {
+        suspend fun cancelWaitingToAwake() {
+            wh.mutex.withLock {
                 wh.lastWolSentAt.update(Instant.EPOCH)
                 wh.lastWolWakeAt.update(Instant.EPOCH)
             }
