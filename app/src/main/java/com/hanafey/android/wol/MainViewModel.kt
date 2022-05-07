@@ -20,7 +20,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val ltag = "MainViewModel"
 
     val targets = listOf(
-        WolHost(0, "HOST 1", "192.168.1.11", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
+        WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
         WolHost(1, "HOST 2", "192.168.1.12", "a2:b2:c2:d2:e2:f2", "192.168.1.255"),
         WolHost(2, "HOST 3", "192.168.1.13", "a3:b3:c3:d3:e3:f3", "192.168.1.255"),
         WolHost(3, "HOST 4", "192.168.1.14", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),

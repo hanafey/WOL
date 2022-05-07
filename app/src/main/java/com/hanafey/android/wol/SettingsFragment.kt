@@ -2,6 +2,7 @@ package com.hanafey.android.wol
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.InputType
 import androidx.fragment.app.activityViewModels
 import androidx.preference.*
 import com.google.android.material.snackbar.Snackbar
@@ -28,6 +29,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
                 setDefaultValue(mvm.settingsData.pingDelayMillis.toString())
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                 onPreferenceChangeListener = this@SettingsFragment
+                setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
             }
         )
 
@@ -38,6 +40,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
                 setDefaultValue(mvm.settingsData.pingResponseWaitMillis.toString())
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                 onPreferenceChangeListener = this@SettingsFragment
+                setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
             }
         )
 
@@ -110,6 +113,28 @@ class SettingsFragment : PreferenceFragmentCompat(),
                             setDefaultValue(wh.broadcastIp)
                             summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                             onPreferenceChangeListener = this@SettingsFragment
+                        }
+                    )
+
+                    pc.addPreference(
+                        EditTextPreference(context).apply {
+                            key = PrefNames.PING_BUNDLE_COUNT.pref(wh.pKey)
+                            title = "Number of WOL packets in wake up message (1 to 25)"
+                            setDefaultValue(wh.magicPacketBundleCount.toString())
+                            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                            onPreferenceChangeListener = this@SettingsFragment
+                            setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
+                        }
+                    )
+
+                    pc.addPreference(
+                        EditTextPreference(context).apply {
+                            key = PrefNames.PING_BUNDLE_DELAY.pref(wh.pKey)
+                            title = "Delay between WOL packets in mSec (10 to 1000)"
+                            setDefaultValue(wh.magicPacketBundleSpacing.toString())
+                            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                            onPreferenceChangeListener = this@SettingsFragment
+                            setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
                         }
                     )
 
@@ -263,6 +288,68 @@ class SettingsFragment : PreferenceFragmentCompat(),
                             }
                         } catch (ex: Exception) {
                             Snackbar.make(requireView(), "Ping response wait  must be an integer", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
+            PrefNames.PING_BUNDLE_COUNT -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Positive Integer required", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+
+                            if (intValue < 1) {
+                                Snackbar.make(requireView(), "Number of WOL packets must be at least one.", Snackbar.LENGTH_LONG).show()
+                                false
+                            } else if (intValue > 25) {
+                                Snackbar.make(requireView(), "Number of WOL packets cannot be more than 25.", Snackbar.LENGTH_LONG).show()
+                                false
+                            } else {
+                                mvm.targets[ix].magicPacketBundleCount = intValue.toInt()
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Positive Integer required", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
+            PrefNames.PING_BUNDLE_DELAY -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Positive Integer required", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+
+                            if (intValue < 10) {
+                                Snackbar.make(requireView(), "Delay between WOL packets must be at least 10 msec.", Snackbar.LENGTH_LONG).show()
+                                false
+                            } else if (intValue > 1000) {
+                                Snackbar.make(requireView(), "Delay between WOL packets must be less than 1000 msec.", Snackbar.LENGTH_LONG).show()
+                                false
+                            } else {
+                                mvm.targets[ix].magicPacketBundleSpacing = intValue.toLong()
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Positive Integer required", Snackbar.LENGTH_LONG).show()
                             false
                         }
                     }
