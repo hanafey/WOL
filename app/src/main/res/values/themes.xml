@@ -37,6 +37,12 @@
 
         <!-- Status bar color. -->
         <item name="android:statusBarColor">@color/primaryStatus_day</item>
+
+        <!-- Customize your theme here. -->
+        <item name="colorPingable">@color/pingable</item>
+        <item name="colorUnPingable">@color/unPingable</item>
+        <item name="colorFrozenPingable">@color/frozenPingable</item>
+        <item name="colorDialogSurface">@color/dialogSurface</item>
     </style>
 
     <style name="Theme.App.NoActionBar">

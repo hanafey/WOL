@@ -9,13 +9,6 @@
     <color name="white">#FFFFFFFF</color>
 
 
-    <color name="pingable_dark">#7ACC7A</color>
-    <color name="pingable">#006600</color>
-    <color name="unPingable">#0019A6</color>
-    <color name="unPingable_dark">#64B5F6</color>
-    <color name="frozenPingable">#878686</color>
-    <color name="dialogSurface">#FFECB3</color>
-    <color name="dialogSurface_dark">#1A237E</color>
 
     <!--DAY -->
     <color name="primary_day">#9c27b0</color>
@@ -38,6 +31,12 @@
     <color name="onError_day">#000000</color>
     <color name="accent_day">#005183</color>
 
+    <!-- App Specific-->
+    <color name="pingable">#006600</color>
+    <color name="unPingable">#0019A6</color>
+    <color name="frozenPingable">#878686</color>
+    <color name="dialogSurface">#FFECB3</color>
+
     <!-- NIGHT -->
     <color name="primary_night">#bb86fc</color>
     <color name="primaryStatus_night">#8E24AA</color>
@@ -58,4 +57,10 @@
     <color name="onSurface_night">#FFFFFF</color>
     <color name="onError_night">#ffffff</color>
     <color name="accent_night">#84FFFF</color>
+
+    <!-- App Specific-->
+    <color name="pingable_dark">#7ACC7A</color>
+    <color name="unPingable_dark">#64B5F6</color>
+    <color name="frozenPingable_dark">#878686</color>
+    <color name="dialogSurface_dark">#1A237E</color>
 </resources>

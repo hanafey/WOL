@@ -30,6 +30,12 @@
 
         <!-- Status bar color. -->
         <item name="android:statusBarColor">@color/primaryStatus_night</item>
+
+        <!-- Customize your theme here. -->
+        <item name="colorPingable">@color/pingable_dark</item>
+        <item name="colorUnPingable">@color/unPingable_dark</item>
+        <item name="colorFrozenPingable">@color/frozenPingable_dark</item>
+        <item name="colorDialogSurface">@color/dialogSurface_dark</item>
     </style>
 
     <style name="Theme.BP.PopupOverlay"
