@@ -1,31 +1,62 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.WOL" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
-        <item name="colorPingable">@color/pingable</item>
-        <item name="colorUnPingable">@color/unPingable</item>
-        <item name="colorFrozenPingable">@color/frozenPingable</item>
-        <item name="colorDialogSurface">@color/dialogSurface</item>
+
+    <style name="BaseThemeApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="toolbarStyle">@style/Toolbar.Special</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.App.Dialog.Alert</item>
     </style>
 
-    <style name="Theme.WOL.NoActionBar">
+    <!-- Base application theme. -->
+    <style name="Theme.App" parent="BaseThemeApp">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary_day</item>
+        <item name="colorPrimaryVariant">@color/primaryVariant_day</item>
+        <item name="colorOnPrimary">@color/onPrimary_day</item>
+
+        <item name="colorSurface">@color/surface_day</item>
+        <item name="colorOnSurface">@color/onSurface_day</item>
+
+        <item name="android:colorBackground">@color/background_day</item>
+        <item name="colorOnBackground">@color/onBackground_day</item>
+
+        <item name="colorBackgroundFloating">@color/background_floating_day</item>
+        <item name="android:colorBackgroundFloating">@color/background_floating_day</item>
+
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/secondary_day</item>
+        <item name="colorSecondaryVariant">@color/secondaryVariant_day</item>
+        <item name="colorOnSecondary">@color/onSecondary_day</item>
+
+        <!-- Error brand color. -->
+        <item name="colorError">@color/error_day</item>
+        <item name="colorOnError">@color/onError_day</item>
+
+        <!-- Toolbar -->
+        <item name="colorSurfaceToolbarSpecial">@color/purple_500</item>
+        <item name="colorOnSurfaceToolbarSpecial">@color/white</item>
+
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">@color/primaryStatus_day</item>
+    </style>
+
+    <style name="Theme.App.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.WOL.AppBarOverlay"
+    <style name="Theme.App.AppBarOverlay"
         parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="Theme.WOL.PopupOverlay"
+    <style name="Theme.App.PopupOverlay"
         parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="ThemeOverlay.App.MaterialAlertDialog" parent="@style/ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorSurface">?attr/colorBackgroundFloating</item>
+        <item name="android:backgroundDimAmount">0.5</item>
+    </style>
+
+    <style name="ThemeOverlay.App.Dialog.Alert" parent="@style/ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="colorSurface">?attr/colorBackgroundFloating</item>
+        <item name="android:backgroundDimAmount">0.5</item>
+    </style>
 </resources>

@@ -8,6 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
+
     <color name="pingable_dark">#7ACC7A</color>
     <color name="pingable">#006600</color>
     <color name="unPingable">#0019A6</color>
@@ -15,4 +16,46 @@
     <color name="frozenPingable">#878686</color>
     <color name="dialogSurface">#FFECB3</color>
     <color name="dialogSurface_dark">#1A237E</color>
+
+    <!--DAY -->
+    <color name="primary_day">#9c27b0</color>
+    <color name="primaryStatus_day">#BA68C8</color>
+    <color name="primaryVariant_day">#6a0080</color>
+    <color name="primaryVariantOther_day">#d05ce3</color>
+
+    <color name="secondary_day">#2E7D32</color>
+    <color name="secondaryVariant_day">#002984</color>
+
+    <color name="background_day">#ffffff</color>
+    <color name="background_floating_day">#B39DDB</color>
+    <color name="surface_day">#ffffff</color>
+    <color name="error_day">#FF0000</color>
+
+    <color name="onPrimary_day">#ffffff</color>
+    <color name="onSecondary_day">#FFFFFFFF</color>
+    <color name="onBackground_day">#000000</color>
+    <color name="onSurface_day">#000000</color>
+    <color name="onError_day">#000000</color>
+    <color name="accent_day">#005183</color>
+
+    <!-- NIGHT -->
+    <color name="primary_night">#bb86fc</color>
+    <color name="primaryStatus_night">#8E24AA</color>
+    <color name="primaryVariant_night">#D3AEFF</color>
+    <color name="primaryVariantOther_night">#401C8F</color>
+
+    <color name="secondary_night">#81C784</color>
+    <color name="secondaryVariant_night">#018786</color>
+
+    <color name="background_night">#000000</color>
+    <color name="background_floating_night">#281478</color>
+    <color name="surface_night">#0A0A0A</color>
+    <color name="error_night">#A00000</color>
+
+    <color name="onPrimary_night">#000000</color>
+    <color name="onSecondary_night">#000000</color>
+    <color name="onBackground_night">#ffffff</color>
+    <color name="onSurface_night">#FFFFFF</color>
+    <color name="onError_night">#ffffff</color>
+    <color name="accent_night">#84FFFF</color>
 </resources>

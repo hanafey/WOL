@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <style name="Widget.AppTheme.Button.IconButton" parent="Widget.MaterialComponents.Button">
         <item name="android:minWidth">0dp</item>
         <item name="android:insetLeft">0dp</item>
@@ -11,5 +10,18 @@
         <item name="android:paddingEnd">8dp</item>
         <item name="iconPadding">0dp</item>
         <item name="iconSize">48dp</item>
+    </style>
+
+    <style name="Toolbar.Special" parent="@style/Widget.MaterialComponents.Toolbar.Primary">
+        <item name="android:background">?attr/colorSurfaceToolbarSpecial</item>
+        <item name="titleTextColor">?attr/colorOnSurfaceToolbarSpecial</item>
+        <item name="subtitleTextColor">?attr/colorOnSurfaceToolbarSpecial</item>
+        <!-- Note: this theme overlay will only work if the style is applied directly to a Toolbar. -->
+        <item name="android:theme">@style/ThemeOverlay.Toolbar.Special</item>
+    </style>
+
+    <style name="ThemeOverlay.Toolbar.Special" parent="">
+        <item name="colorControlNormal">?attr/colorOnSurfaceToolbarSpecial</item>
+        <item name="actionMenuTextColor">?attr/colorOnSurfaceToolbarSpecial</item>
     </style>
 </resources>
