@@ -1,7 +1,6 @@
 package com.hanafey.android.wol.magic
 
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -140,17 +139,14 @@ class WolHost(
 
     /**
      * Resets [pingedCountAlive], [pingState], [pingException].
-     * Locks [WolHost.mutex], and this is not reentrant.
      */
-    suspend fun resetPingState() {
-        mutex.withLock {
-            pingedCountAlive = 0
-            pingedCountDead = 0
-            if (!pingMe) {
-                pingState = PingStates.NOT_PINGING
-            }
-            pingException = null
+    fun resetPingState() {
+        pingedCountAlive = 0
+        pingedCountDead = 0
+        if (!pingMe) {
+            pingState = PingStates.NOT_PINGING
         }
+        pingException = null
     }
 
 

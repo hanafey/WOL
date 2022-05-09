@@ -88,7 +88,9 @@ class HostStatusFragment : Fragment() {
                         anim.reset()
                     }
                     mvm.viewModelScope.launch {
-                        wolStats.cancelWaitingToAwake()
+                        wh.mutex.withLock {
+                            wolStats.cancelWaitingToAwake()
+                        }
                     }
                 }
                 Snackbar.make(view, "LONG press if you mean to wake host up!", Snackbar.LENGTH_LONG).show()
@@ -319,12 +321,9 @@ class HostStatusFragment : Fragment() {
             return instant != Instant.EPOCH && !ack
         }
 
-        suspend fun cancelWaitingToAwake() {
-            // FIX: lock in function
-            wh.mutex.withLock {
-                wh.lastWolSentAt.update(Instant.EPOCH)
-                wh.lastWolWakeAt.update(Instant.EPOCH)
-            }
+        fun cancelWaitingToAwake() {
+            wh.lastWolSentAt.update(Instant.EPOCH)
+            wh.lastWolWakeAt.update(Instant.EPOCH)
         }
 
         fun progress(now: Instant): Int {

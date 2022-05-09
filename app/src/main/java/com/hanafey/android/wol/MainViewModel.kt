@@ -132,13 +132,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
               */
     }
 
-    /**
-     * Locks [WolHost.mutex], and this is not reentrant.
-     */
     private fun pingTarget(host: WolHost): Job {
 
         return viewModelScope.launch {
-            host.resetPingState()
+            host.mutex.withLock {
+                host.resetPingState()
+            }
             _targetPingChanged.value = host.pKey
 
             var address: InetAddress? = null
@@ -230,7 +229,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (neededDelay > 10) delay(neededDelay)
             }
 
-            host.resetPingState()
+            host.mutex.withLock {
+                host.resetPingState()
+            }
             _targetPingChanged.value = host.pKey
         }
     }
@@ -251,10 +252,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return targets.fold(0) { z, wh -> if (wh.pingMe) z + 1 else z }
     }
 
-    /**
-     * Locks [WolHost.mutex], and this is not reentrant.
-     */
-    suspend fun wakeTarget(host: WolHost): Job {
+    fun wakeTarget(host: WolHost): Job {
         return viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 host.mutex.withLock {

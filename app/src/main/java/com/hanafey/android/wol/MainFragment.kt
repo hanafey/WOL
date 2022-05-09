@@ -136,6 +136,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
 
         observePingLiveData()
+        // FIX: Not needed.
         observeWakeLiveData()
 
         if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
@@ -272,6 +273,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     }
 
     // TODO: Do we need a wake data listener? Ping state shows wake or sleeping...
+    // FIX: Not needed.
     private fun observeWakeLiveData() {
         mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { ix ->
             if (ix < 0 || ix >= mvm.targets.size) {
