@@ -74,9 +74,9 @@ class SettingsData(val spm: SharedPreferences) {
             val strings = if (string.isNotBlank()) {
                 string.split(',')
             } else {
-                // debugger: No defaults are appropriate.
-                // emptyList()
-                listOf("30000", "35000", "25000")
+                // Fake history. Better than empty because at least the
+                // progress bar shows for the new user.
+                listOf("10000", "15000")
             }
 
             val ints = strings.map {
