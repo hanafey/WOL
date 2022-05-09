@@ -132,6 +132,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
               */
     }
 
+    /**
+     * Locks [WolHost.mutex], and this is not reentrant.
+     */
     private fun pingTarget(host: WolHost): Job {
 
         return viewModelScope.launch {
@@ -248,6 +251,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return targets.fold(0) { z, wh -> if (wh.pingMe) z + 1 else z }
     }
 
+    /**
+     * Locks [WolHost.mutex], and this is not reentrant.
+     */
     suspend fun wakeTarget(host: WolHost): Job {
         return viewModelScope.launch {
             withContext(Dispatchers.IO) {

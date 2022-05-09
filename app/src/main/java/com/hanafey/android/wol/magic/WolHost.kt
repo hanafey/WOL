@@ -123,25 +123,24 @@ class WolHost(
      */
     var wakeupException: Throwable? = null
 
-    suspend fun resetState() {
-        mutex.withLock {
-            pingedCountAlive = 0
-            pingedCountDead = 0
-            if (!pingMe) {
-                pingState = PingStates.NOT_PINGING
-            }
-            // pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
-            pingException = null
-            wakeupCount = 0
-            wakeupException = null
-            lastWolWakeAt.update(Instant.EPOCH)
-            lastWolSentAt.update(Instant.EPOCH)
+    fun resetState() {
+        pingedCountAlive = 0
+        pingedCountDead = 0
+        if (!pingMe) {
+            pingState = PingStates.NOT_PINGING
         }
+        // pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
+        pingException = null
+        wakeupCount = 0
+        wakeupException = null
+        lastWolWakeAt.update(Instant.EPOCH)
+        lastWolSentAt.update(Instant.EPOCH)
     }
 
 
     /**
-     * Resets [pingedCountAlive], [pingState], [pingException]. Synchronized.
+     * Resets [pingedCountAlive], [pingState], [pingException].
+     * Locks [WolHost.mutex], and this is not reentrant.
      */
     suspend fun resetPingState() {
         mutex.withLock {
@@ -192,6 +191,11 @@ class WolHost(
     override fun compareTo(other: WolHost): Int {
         return pKey - other.pKey
     }
+
+    override fun toString(): String {
+        return "WolHost(pKey=$pKey, title='$title', pingName='$pingName', enabled=$enabled, pingMe=$pingMe)"
+    }
+
 
     enum class PingStates {
         /**

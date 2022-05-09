@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.widget.CompoundButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -117,7 +118,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             uiPingEnabled[ix].isChecked = wh.pingMe
 
             uiPingEnabled[ix].text = wh.title
-            uiPingEnabled[ix].setOnClickListener(PingClickListener(wh))
+            uiPingEnabled[ix].setOnCheckedChangeListener(PingCheckedChangeListener(wh))
 
             uiPingState[ix].setOnClickListener(PingStateClickListener(wh, false))
             uiPingState[ix].isEnabled = wh.pingMe
@@ -182,7 +183,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     }
 
     private fun observePingLiveData() {
-
         mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
             val target = when {
                 ix == -1 -> {
@@ -337,8 +337,8 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
     }
 
-    inner class PingClickListener(private val target: WolHost) : View.OnClickListener {
-        override fun onClick(v: View?) {
+    inner class PingCheckedChangeListener(private val target: WolHost) : CompoundButton.OnCheckedChangeListener {
+        override fun onCheckedChanged(v: CompoundButton?, isChecked: Boolean) {
             require(v is SwitchMaterial) { "This listener requires SwitchMaterial as the owner." }
 
             mvm.viewModelScope.launch {
@@ -362,9 +362,9 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
                             R.drawable.ic_baseline_device_unknown_24
                         )
                     }
-
-                    mvm.signalPingTargetChanged(target)
                 }
+
+                mvm.signalPingTargetChanged(target)
             }
         }
     }

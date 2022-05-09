@@ -116,7 +116,8 @@ class HostStatusFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        mvm.wolFocussedTarget = null
+        // FIX: Why was this here??? It means rotation goes up.
+        // mvm.wolFocussedTarget = null
         _binding = null
     }
 
@@ -319,6 +320,7 @@ class HostStatusFragment : Fragment() {
         }
 
         suspend fun cancelWaitingToAwake() {
+            // FIX: lock in function
             wh.mutex.withLock {
                 wh.lastWolSentAt.update(Instant.EPOCH)
                 wh.lastWolWakeAt.update(Instant.EPOCH)
