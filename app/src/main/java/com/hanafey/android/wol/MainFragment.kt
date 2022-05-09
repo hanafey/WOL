@@ -136,8 +136,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
 
         observePingLiveData()
-        // FIX: Not needed.
-        observeWakeLiveData()
 
         if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
             findNavController().navigate(R.id.FirstTimeInformationFragment)
@@ -272,42 +270,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
         }
     }
 
-    // TODO: Do we need a wake data listener? Ping state shows wake or sleeping...
-    // FIX: Not needed.
-    private fun observeWakeLiveData() {
-        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            if (ix < 0 || ix >= mvm.targets.size) {
-                return@observe // ======================================== >>>
-            }
-
-            val target = mvm.targets[ix]
-            mvm.viewModelScope.launch {
-                val ex = target.mutex.withLock {
-                    val x = target.wakeupException
-                    target.wakeupException = null
-                    x
-                }
-
-                if (ex != null) {
-                    val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
-                    val bundle = Bundle().apply {
-                        putString("error_report", report)
-                    }
-                    findNavController().navigate(R.id.ErrorReportFragment, bundle)
-                } else {
-                    Snackbar.make(
-                        ui.root,
-                        getString(
-                            R.string.wake_attempt_message,
-                            target.title,
-                            target.macAddress
-                        ),
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()

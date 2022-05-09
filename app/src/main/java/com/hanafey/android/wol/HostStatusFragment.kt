@@ -118,8 +118,6 @@ class HostStatusFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // FIX: Why was this here??? It means rotation goes up.
-        // mvm.wolFocussedTarget = null
         _binding = null
     }
 
