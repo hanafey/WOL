@@ -9,6 +9,9 @@ import android.widget.CompoundButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -25,7 +28,7 @@ import kotlinx.coroutines.sync.withLock
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
-class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
+class MainFragment : Fragment(), NavController.OnDestinationChangedListener, LifecycleEventObserver {
 
     private val ltag = "MainFragment"
 
@@ -47,6 +50,10 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
     private lateinit var pingResponsiveTint: ColorStateList
     private lateinit var pingUnResponsiveTint: ColorStateList
     private lateinit var pingExceptionTint: ColorStateList
+
+    init {
+        lifecycle.addObserver(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -129,12 +136,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
 
         findNavController().addOnDestinationChangedListener(this)
 
-        if (mvm.settingsData.hostDataChanged) {
-            mvm.pingTargetsAgain()
-        } else {
-            mvm.pingTargetsIfNeeded()
-        }
-
         observePingLiveData()
 
         if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
@@ -165,6 +166,35 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener {
             }
 
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        dlog(ltag) { "[rnyrwo] $event" }
+        when (event) {
+            Lifecycle.Event.ON_CREATE -> Unit
+
+            Lifecycle.Event.ON_RESUME -> Unit
+
+            Lifecycle.Event.ON_START -> {
+                if (mvm.settingsData.hostDataChanged) {
+                    mvm.pingTargetsAgain(false)
+                } else {
+                    mvm.pingTargetsIfNeeded(false)
+                }
+            }
+
+            Lifecycle.Event.ON_PAUSE -> Unit
+
+            Lifecycle.Event.ON_STOP -> {
+                mvm.killPingTargets()
+            }
+
+            Lifecycle.Event.ON_DESTROY -> Unit
+
+            Lifecycle.Event.ON_ANY -> {
+                // If when is complete this is never reached.
+            }
         }
     }
 

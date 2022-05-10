@@ -65,12 +65,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.pingMe] true.
      * [pingJobsStateLiveData] will register an event only if pinging is not already active.
      */
-    fun pingTargetsIfNeeded() {
+    fun pingTargetsIfNeeded(resetState: Boolean) {
         if (pingActive) return // ======================================== >>>
 
         pingActive = true
         pingJobs = targets.map { wh ->
-            pingTarget(wh)
+            pingTarget(wh, resetState)
         }
         _pingJobsState.value = 1
     }
@@ -80,7 +80,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * can be observed to react to the changed states. If pinging is not active only the transition to active will
      * be registered.
      */
-    fun pingTargetsAgain() {
+    fun pingTargetsAgain(resetState: Boolean) {
         tlog(ltag) { "pingTargetsAgain: kill" }
         viewModelScope.launch {
             if (pingJobs.isNotEmpty()) {
@@ -92,19 +92,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             tlog(ltag) { "pingTargetsAgain: ping" }
 
-            pingActive = true
-            pingJobs = targets.map { wh ->
-                pingTarget(wh)
-            }
-            _pingJobsState.value = 1
-        }
-    }
-
-    fun killTargets() {
-        pingActive = false
-        viewModelScope.launch {
-            joinAll(*pingJobs.toTypedArray())
-            _pingJobsState.value = 0
+            pingTargetsIfNeeded(resetState)
         }
     }
 
@@ -117,28 +105,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Stop the ping targets jobs.
+     * Stop the ping targets jobs. The jobs end because the loop that drives them
+     * is based on [pingActive], and this is set false as the first step.
+     * We then wait for jobs to end, and then empty [pingJobs] and set [_pingJobsState]
+     * to zero,
      */
     fun killPingTargets() {
         pingActive = false
         viewModelScope.launch {
             joinAll(*pingJobs.toTypedArray())
             pingJobs = emptyList()
+            _pingJobsState.value = 0
         }
-        /* TODO: Just let them end...
-              pingJobs.forEach { (job, ex) ->
-                  job?.cancel("Cancelled on request.")
-              }
-              */
+
+        /*
+        // Kill the jobs
+        pingJobs.forEach { job ->
+            job.cancel("Cancelled on request.")
+        }
+        */
     }
 
-    private fun pingTarget(host: WolHost): Job {
+    private fun pingTarget(host: WolHost, resetState: Boolean): Job {
 
         return viewModelScope.launch {
-            host.mutex.withLock {
-                host.resetPingState()
+            if (resetState) {
+                host.mutex.withLock {
+                    host.resetPingState()
+                }
+                _targetPingChanged.value = host.pKey
             }
-            _targetPingChanged.value = host.pKey
 
             var address: InetAddress? = null
             var pingName: String = host.pingName // host.pingName may be changed in a settings and the address must be looked up.
@@ -229,8 +225,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (neededDelay > 10) delay(neededDelay)
             }
 
-            host.mutex.withLock {
-                host.resetPingState()
+            if (resetState) {
+                host.mutex.withLock {
+                    host.resetPingState()
+                }
             }
             _targetPingChanged.value = host.pKey
         }
