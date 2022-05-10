@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+    namespace 'com.hanafey.android.wol'
+
     def localProperties = new Properties()
     localProperties.load(new FileInputStream(rootProject.file("local.properties")))
     def ec = []
