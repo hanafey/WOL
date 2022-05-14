@@ -33,14 +33,14 @@ android {
             keyPassword localProperties['upload-key-pw']
         }
     }
-    compileSdkVersion 31
+    compileSdkVersion 32
 
     defaultConfig {
         applicationId "com.hanafey.android.wol"
         minSdkVersion 26
-        targetSdkVersion 31
-        versionCode 8
-        versionName "1.0.6-beta"
+        targetSdkVersion 32
+        versionCode 9
+        versionName "1.0.7"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config
