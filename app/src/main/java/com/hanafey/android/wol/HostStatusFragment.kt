@@ -9,8 +9,9 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
@@ -25,7 +26,9 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-class HostStatusFragment : Fragment() {
+class HostStatusFragment : Fragment(),
+    LifecycleEventObserver,
+    NavController.OnDestinationChangedListener {
 
     private val ltag = "HostStatusFragment"
     private val mvm: MainViewModel by activityViewModels()
@@ -44,6 +47,9 @@ class HostStatusFragment : Fragment() {
     private val preamble: String by lazy { getString(R.string.error_wake_failed_preamble) }
     private val postamble: String by lazy { getString(R.string.error_wake_failed_postamble) }
 
+    init {
+        lifecycle.addObserver(this)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHostStatusBinding.inflate(inflater, container, false)
@@ -61,16 +67,21 @@ class HostStatusFragment : Fragment() {
         wolLateColor = MaterialColors.getColor(view, R.attr.colorError)
         pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive_dialog)!!
         pingResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_responsive_dialog)!!
-        pingOtherTint = ContextCompat.getColorStateList(requireContext(), R.color.mtrl_btn_bg_color_selector)!!
+        pingOtherTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_other_dialog)!!
 
         val wft = mvm.wolFocussedTarget
         if (wft != null) {
             wh = wft
             wolStats = WolStats(wh)
             updateUi(wh)
+
             ui.wolButton.setOnLongClickListener {
                 mvm.viewModelScope.launch {
-                    mvm.wakeTarget(wh)
+                    if (!mvm.wakeTarget(wh)) {
+                        Snackbar.make(
+                            ui.root, "This is host is ping responsive. No WOL sent!", Snackbar.LENGTH_LONG
+                        ).show()
+                    }
                 }
                 (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
                     if (anim.isRunning) {
@@ -81,6 +92,7 @@ class HostStatusFragment : Fragment() {
                 }
                 true
             }
+
             ui.wolButton.setOnClickListener {
                 (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
                     if (anim.isRunning) {
@@ -114,6 +126,39 @@ class HostStatusFragment : Fragment() {
             // Presumable we got here by rotation
             findNavController().navigateUp()
         }
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        dlog(ltag) { "onStateChanged[rnyrwo] $event" }
+        when (event) {
+            Lifecycle.Event.ON_CREATE -> {
+                Unit
+            }
+            Lifecycle.Event.ON_START -> {
+                findNavController().addOnDestinationChangedListener(this)
+                mvm.cancelKillPingTargetsAfterWaiting()
+            }
+            Lifecycle.Event.ON_RESUME -> {
+                Unit
+            }
+            Lifecycle.Event.ON_PAUSE -> {
+                Unit
+            }
+            Lifecycle.Event.ON_STOP -> {
+                findNavController().removeOnDestinationChangedListener(this)
+            }
+            Lifecycle.Event.ON_DESTROY -> {
+                Unit
+            }
+            Lifecycle.Event.ON_ANY -> {
+                Unit
+            }
+        }
+    }
+
+
+    override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
+        dlog(ltag) { "onDestinationChanged[rnyrwo] ${destination.displayName}" }
     }
 
     override fun onDestroyView() {
@@ -314,6 +359,9 @@ class HostStatusFragment : Fragment() {
             return instant != Instant.EPOCH && ack
         }
 
+        /**
+         * True if [WolHost.lastWolSentAt.state] show an instant when WOL was sent, and not yet acknoledged
+         */
         fun isWaitingToAwake(): Boolean {
             val (instant, ack) = wh.lastWolSentAt.state()
             return instant != Instant.EPOCH && !ack

@@ -23,6 +23,7 @@ class SettingsData(val spm: SharedPreferences) {
 
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
+    var pingKillDelaySeconds = 60
     var versionAcknowledged = 0
 
     fun initializeModel(mvm: MainViewModel) {
@@ -37,10 +38,17 @@ class SettingsData(val spm: SharedPreferences) {
     }
 
     private fun readSettings(mvm: MainViewModel) {
-        var prefName = PrefNames.PING_DELAY.pref()
+        var prefName: String
+
+        prefName = PrefNames.PING_DELAY.pref()
         pingDelayMillis = spm.getString(prefName, pingDelayMillis.toString())?.toLong() ?: pingDelayMillis
+
         prefName = PrefNames.PING_WAIT.pref()
         pingResponseWaitMillis = spm.getString(prefName, pingResponseWaitMillis.toString())?.toInt() ?: pingResponseWaitMillis
+
+        prefName = PrefNames.PING_SUSPEND_DELAY.pref()
+        pingKillDelaySeconds = spm.getString(prefName, pingKillDelaySeconds.toString())?.toInt() ?: pingKillDelaySeconds
+
         prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()
         versionAcknowledged = spm.getInt(prefName, versionAcknowledged)
 

@@ -4,19 +4,31 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination
+import androidx.navigation.fragment.findNavController
 import androidx.preference.*
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.wol.magic.MagicPacket
 
 class SettingsFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
-    SharedPreferences.OnSharedPreferenceChangeListener {
+    SharedPreferences.OnSharedPreferenceChangeListener,
+    NavController.OnDestinationChangedListener,
+    LifecycleEventObserver {
 
     private val ltag = "SettingsFragment"
     private val mvm: MainViewModel by activityViewModels()
     private val ipNameRegEx = Regex("""(^\d+\.\d+\.\d+\.\d+$)|(^[a-z][a-z\d]*$)""", RegexOption.IGNORE_CASE)
     private val broadcastRegEx = Regex("""^\d+\.\d+\.\d+\.\d+$""")
     private val integerRegEx = Regex("""\d+""")
+
+    init {
+        lifecycle.addObserver(this)
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val context = preferenceManager.context
@@ -38,6 +50,17 @@ class SettingsFragment : PreferenceFragmentCompat(),
                 key = PrefNames.PING_WAIT.pref()
                 title = "Longest wait for ping response (mSec)"
                 setDefaultValue(mvm.settingsData.pingResponseWaitMillis.toString())
+                summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                onPreferenceChangeListener = this@SettingsFragment
+                setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
+            }
+        )
+
+        screen.addPreference(
+            EditTextPreference(context).apply {
+                key = PrefNames.PING_SUSPEND_DELAY.pref()
+                title = "Suspend ping when in background after this many seconds (zero means never)"
+                setDefaultValue(mvm.settingsData.pingKillDelaySeconds.toString())
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                 onPreferenceChangeListener = this@SettingsFragment
                 setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
@@ -294,6 +317,40 @@ class SettingsFragment : PreferenceFragmentCompat(),
                 }
             }
 
+            PrefNames.PING_SUSPEND_DELAY -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Ping suspend delay must be an integer", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+                            if (intValue < 0) {
+                                Snackbar.make(
+                                    requireView(), "Ping suspend must be at least 1 sec, or zero for never", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else if (intValue > 60 * 60) {
+                                Snackbar.make(
+                                    requireView(), "Ping suspend must be an hour or less (3600 sec)", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else {
+                                mvm.settingsData.pingKillDelaySeconds = intValue
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Ping suspend delay must be an integer", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
             PrefNames.PING_BUNDLE_COUNT -> {
                 val value = (newValue as String).trim()
 
@@ -384,5 +441,36 @@ class SettingsFragment : PreferenceFragmentCompat(),
     override fun onDestroyView() {
         super.onDestroyView()
         mvm.settingsData.spm.unregisterOnSharedPreferenceChangeListener(this)
+    }
+
+    override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
+        dlog(ltag) { "onDestinationChanged[rnyrwo]: ${destination.displayName}" }
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        dlog(ltag) { "onStateChanged[rnyrwo]: $event" }
+        when (event) {
+            Lifecycle.Event.ON_CREATE -> {
+                Unit
+            }
+            Lifecycle.Event.ON_START -> {
+                findNavController().addOnDestinationChangedListener(this)
+            }
+            Lifecycle.Event.ON_RESUME -> {
+                Unit
+            }
+            Lifecycle.Event.ON_PAUSE -> {
+                Unit
+            }
+            Lifecycle.Event.ON_STOP -> {
+                findNavController().removeOnDestinationChangedListener(this)
+            }
+            Lifecycle.Event.ON_DESTROY -> {
+                Unit
+            }
+            Lifecycle.Event.ON_ANY -> {
+                Unit
+            }
+        }
     }
 }

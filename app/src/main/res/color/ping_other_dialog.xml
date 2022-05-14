@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Copied from material library becuase it is marked private there. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorPrimary" android:state_enabled="true" />
+    <item android:alpha="0.12" android:color="?attr/colorOnSurface" />
+</selector>

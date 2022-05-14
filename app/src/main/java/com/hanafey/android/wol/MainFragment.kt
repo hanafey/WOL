@@ -60,6 +60,13 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
+        setHasOptionsMenu(true)
+
+        return ui.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         // Put the static names into lists
         uiHosts = listOf(
@@ -102,13 +109,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             ui.wakeHo05,
         )
 
-        setHasOptionsMenu(true)
-
-        return ui.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         // if (savedInstanceState == null) initializeView(view)
 
@@ -133,8 +133,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             uiWake[ix].isEnabled = wh.pingMe
             uiWake[ix].setOnClickListener(PingStateClickListener(wh, true))
         }
-
-        findNavController().addOnDestinationChangedListener(this)
 
         observePingLiveData()
 
@@ -177,6 +175,10 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             Lifecycle.Event.ON_RESUME -> Unit
 
             Lifecycle.Event.ON_START -> {
+                findNavController().addOnDestinationChangedListener(this)
+
+                mvm.cancelKillPingTargetsAfterWaiting()
+
                 if (mvm.settingsData.hostDataChanged) {
                     mvm.pingTargetsAgain(false)
                 } else {
@@ -187,7 +189,8 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             Lifecycle.Event.ON_PAUSE -> Unit
 
             Lifecycle.Event.ON_STOP -> {
-                mvm.killPingTargets()
+                findNavController().removeOnDestinationChangedListener(this)
+                mvm.killPingTargetsAfterWaiting()
             }
 
             Lifecycle.Event.ON_DESTROY -> Unit
@@ -309,6 +312,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
     // TODO: Not currently used. [onClick] set frozen ui, and the dialog resets the frozen state on dismiss.
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
+        dlog(ltag) { "[rnyrwo] onDestinationChanged: ${destination.displayName}" }
         when (destination.id) {
             else -> {
             }

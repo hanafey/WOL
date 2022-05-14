@@ -10,6 +10,7 @@ import androidx.preference.PreferenceManager
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.net.InetAddress
@@ -46,6 +47,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _pingJobsState = MutableLiveData(0)
 
     private var pingJobs: List<Job> = emptyList()
+
+    /**
+     * The delayed kill job kills pinging after waiting for a delay when the
+     * [TopFragment] state changes to stopped. This job is killed if the
+     * TopFragmet returns to running before the timeout expires. Other fragments
+     * can also request the pinging continue, for example the [HostStatusFragment]
+     * depends on pinging to monitor host status.
+     *
+     * We kill pings? No point sending pings if nobody is diplaying the result of
+     * the ping.
+     */
+    private var delayedKillJob: Job? = null
+    private val delayedKillMutex = Mutex()
+
+
     var pingActive = false
         private set
 
@@ -96,14 +112,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun resetPingStats() {
-        viewModelScope.launch {
-            targets.map {
-                it.resetState()
-            }
-        }
-    }
-
     /**
      * Stop the ping targets jobs. The jobs end because the loop that drives them
      * is based on [pingActive], and this is set false as the first step.
@@ -124,6 +132,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             job.cancel("Cancelled on request.")
         }
         */
+    }
+
+    fun killPingTargetsAfterWaiting() {
+        if (settingsData.pingKillDelaySeconds <= 0) {
+            dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: Delay is <= 0, no killing." }
+            return // ======================================== >>>
+        }
+
+        val exitingKillJob = delayedKillJob
+
+        delayedKillJob = viewModelScope.launch {
+            delayedKillMutex.withLock {
+                if (exitingKillJob != null) {
+                    exitingKillJob.cancelAndJoin()
+                }
+            }
+
+            dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: Before Delay ${settingsData.pingKillDelaySeconds} sec..." }
+            delay(settingsData.pingKillDelaySeconds * 1000L)
+
+            delayedKillMutex.withLock {
+                dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: After Delay. pingActive=$pingActive" }
+                if (pingActive) {
+                    dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: After Delay. pingActive=true" }
+                    pingActive = false
+                    joinAll(*pingJobs.toTypedArray())
+                    pingJobs = emptyList()
+                    _pingJobsState.value = 0
+                }
+                // NOTE: This is delayed, so it resets the value set at launch time.
+                delayedKillJob = null
+            }
+        }
+    }
+
+    fun cancelKillPingTargetsAfterWaiting() {
+        viewModelScope.launch {
+            delayedKillMutex.withLock {
+                dlog(ltag) { "[vfppmj]:cancelKillPingTargetsAfterWaiting:  cancel... job=${delayedKillJob}" }
+                delayedKillJob?.cancelAndJoin()
+                dlog(ltag) { "[vfppmj]:cancelKillPingTargetsAfterWaiting:  canceled. job=${delayedKillJob}" }
+                delayedKillJob = null
+            }
+        }
     }
 
     private fun pingTarget(host: WolHost, resetState: Boolean): Job {
@@ -250,10 +302,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return targets.fold(0) { z, wh -> if (wh.pingMe) z + 1 else z }
     }
 
-    fun wakeTarget(host: WolHost): Job {
-        return viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                host.mutex.withLock {
+    /**
+     * Runs in [Dispatchers.IO] context with a mutex lock on the host. Sends a WOL bundle to the host.
+     * Observe [targetWakeChangedLiveData] to respond after all the WOL packets have been sent (or
+     * [WolHost.wakeupException] will be non-null.)
+     *
+     * If host responded to a ping inside of [SettingsData.pingResponseWaitMillis], no WOL is sent and the
+     * return is false.
+     *
+     * @return True if WOL bundle was sent and [targetWakeChangedLiveData] was set to the [host.pkey].
+     */
+    suspend fun wakeTarget(host: WolHost): Boolean {
+        val isSendWol = withContext(Dispatchers.IO) {
+            host.mutex.withLock {
+                if (host.lastPingResponseAt.age(host.lastPingSentAt) > settingsData.pingResponseWaitMillis * 2 &&
+                    host.lastPingSentAt.age() < settingsData.pingDelayMillis * 3
+                ) {
                     try {
                         repeat(host.magicPacketBundleCount) {
                             if (it > 1) delay(host.magicPacketBundleSpacing)
@@ -264,10 +328,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     } catch (ex: IOException) {
                         host.wakeupException = ex
                     }
+                    true
+                } else {
+                    false
                 }
             }
+        }
+
+        if (isSendWol) {
             _targetWakeChanged.value = host.pKey
         }
-    }
 
+        return isSendWol
+    }
 }
