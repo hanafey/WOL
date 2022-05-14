@@ -129,7 +129,6 @@ class HostStatusFragment : Fragment(),
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        dlog(ltag) { "onStateChanged[rnyrwo] $event" }
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
                 Unit
@@ -158,7 +157,6 @@ class HostStatusFragment : Fragment(),
 
 
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
-        dlog(ltag) { "onDestinationChanged[rnyrwo] ${destination.displayName}" }
     }
 
     override fun onDestroyView() {

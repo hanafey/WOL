@@ -168,7 +168,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        dlog(ltag) { "[rnyrwo] $event" }
         when (event) {
             Lifecycle.Event.ON_CREATE -> Unit
 
@@ -312,7 +311,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
     // TODO: Not currently used. [onClick] set frozen ui, and the dialog resets the frozen state on dismiss.
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
-        dlog(ltag) { "[rnyrwo] onDestinationChanged: ${destination.displayName}" }
         when (destination.id) {
             else -> {
             }

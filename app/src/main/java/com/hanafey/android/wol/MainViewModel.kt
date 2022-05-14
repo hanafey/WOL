@@ -136,7 +136,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun killPingTargetsAfterWaiting() {
         if (settingsData.pingKillDelaySeconds <= 0) {
-            dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: Delay is <= 0, no killing." }
             return // ======================================== >>>
         }
 
@@ -149,13 +148,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: Before Delay ${settingsData.pingKillDelaySeconds} sec..." }
             delay(settingsData.pingKillDelaySeconds * 1000L)
 
             delayedKillMutex.withLock {
-                dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: After Delay. pingActive=$pingActive" }
                 if (pingActive) {
-                    dlog(ltag) { "[vfppmj]:killPingTargetsAfterWaiting: After Delay. pingActive=true" }
                     pingActive = false
                     joinAll(*pingJobs.toTypedArray())
                     pingJobs = emptyList()
@@ -170,9 +166,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelKillPingTargetsAfterWaiting() {
         viewModelScope.launch {
             delayedKillMutex.withLock {
-                dlog(ltag) { "[vfppmj]:cancelKillPingTargetsAfterWaiting:  cancel... job=${delayedKillJob}" }
                 delayedKillJob?.cancelAndJoin()
-                dlog(ltag) { "[vfppmj]:cancelKillPingTargetsAfterWaiting:  canceled. job=${delayedKillJob}" }
                 delayedKillJob = null
             }
         }
