@@ -4,7 +4,12 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.CompoundButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -22,6 +27,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textview.MaterialTextView
 import com.hanafey.android.wol.databinding.FragmentMainBinding
 import com.hanafey.android.wol.magic.WolHost
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 
@@ -160,6 +166,18 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             R.id.mi_settings -> {
                 mvm.settingsData.hostDataChanged = false
                 findNavController().navigate(R.id.SettingsFragment)
+                true
+            }
+
+            R.id.mi_test_notification -> {
+                mvm.viewModelScope.launch {
+                    delay(5_000L)
+                    val id1 = mvm.hostStateNotification.makeAsleepNotification("Test Asleep", "Will dismiss in 10 sec test asleep")
+                    delay(1_000L)
+                    val id2 = mvm.hostStateNotification.makeAwokeNotification("Test Awoke", "Will not issue dismiss test awoke")
+                    delay(10_000L)
+                    mvm.hostStateNotification.dismiss(id1)
+                }
                 true
             }
 

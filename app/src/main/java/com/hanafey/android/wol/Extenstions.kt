@@ -13,20 +13,37 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.math.roundToInt
 
+/**
+ * [dlog] messages contain a time differential from this value. Initializes to when the class is created, but you can
+ * set it later to show times relative to some interesting reference point.
+ */
 var EXT_EPOCH: Instant = Instant.now()
 
-internal inline fun dlog(tag: String, enabled: Boolean = true, message: () -> String) {
+/**
+ * Logs an ERROR, but is intended only for the debug phase of development. Normally expunge or comment out.
+ * @param tag Normally the simple class name.
+ * @param unique Optional random short string to make the log item easy find or filter based on. Default is empty.
+ * @param enabled If false the logging is not done. Default is true
+ * @param message The message to log
+ */
+internal inline fun dlog(tag: String, unique: String = "", enabled: Boolean = true, message: () -> String) {
     if (BuildConfig.DEBUG) {
         if (enabled) {
             if (Log.isLoggable(tag, Log.ERROR)) {
                 val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
                 val durationString = "[%8.3f]".format(duration)
-                Log.println(Log.ERROR, tag, durationString + message())
+                Log.println(Log.ERROR, tag, durationString + unique + ":" + message())
             }
         }
     }
 }
 
+/**
+ * Logs an ERROR.
+ * @param tag Normally the simple class name.
+ * @param enabled If false the logging is not done. Default is true
+ * @param message The message to log
+ */
 internal inline fun elog(tag: String, enabled: Boolean = true, message: () -> String) {
     if (BuildConfig.DEBUG) {
         if (enabled) {
@@ -37,12 +54,15 @@ internal inline fun elog(tag: String, enabled: Boolean = true, message: () -> St
     }
 }
 
-internal fun tlog(tag: String, enabled: Boolean = true, message: () -> String) {
+/**
+ * Like [dlog] but this just does a "println" instead of a "Log".
+ */
+internal fun tlog(tag: String, unique: String = "", enabled: Boolean = true, message: () -> String) {
     if (BuildConfig.DEBUG) {
         if (enabled) {
             val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
-            val durationString = "%8.3f".format(duration)
-            println("$tag: $durationString: ${message()}")
+            val durationString = "[%8.3f]".format(duration)
+            println("$tag: $durationString$unique: ${message()}")
         }
     }
 }

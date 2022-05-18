@@ -3,30 +3,35 @@ package com.hanafey.android.wol
 import android.app.Application
 import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+class MainViewModel(application: Application) : AndroidViewModel(application), Observer<Pair<WolHost, Int>> {
     private val ltag = "MainViewModel"
 
-    val targets = listOf(
-        WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
-        WolHost(1, "HOST 2", "192.168.1.12", "a2:b2:c2:d2:e2:f2", "192.168.1.255"),
-        WolHost(2, "HOST 3", "192.168.1.13", "a3:b3:c3:d3:e3:f3", "192.168.1.255"),
-        WolHost(3, "HOST 4", "192.168.1.14", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),
-        WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255"),
-    )
+    val targets = defaultHostList()
+
+    val hostStateNotification = HostStateNotification(application)
+    private var isDeadAliveObserversAdded = false
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
@@ -71,11 +76,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     var firstVisit = true
 
+    private fun defaultHostList(): List<WolHost> {
+        return if (BuildConfig.BUILD_TYPE == "debug") {
+            listOf(
+                WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
+                WolHost(1, "Nasa", "192.168.1.250", "00:11:32:f0:0e:c1", "192.168.1.255"),
+                WolHost(2, "SpaceX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
+                WolHost(3, "Phony", "192.168.1.5", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),
+                WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255"),
+            )
+        } else {
+            listOf(
+                WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
+                WolHost(1, "HOST 2", "192.168.1.12", "a2:b2:c2:d2:e2:f2", "192.168.1.255"),
+                WolHost(2, "HOST 3", "192.168.1.13", "a3:b3:c3:d3:e3:f3", "192.168.1.255"),
+                WolHost(3, "HOST 4", "192.168.1.14", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),
+                WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255"),
+            )
+        }
+    }
+
     @MainThread
     fun signalPingTargetChanged(wh: WolHost) {
         _targetPingChanged.value = wh.pKey
     }
 
+    /**
+     * Adds observer of alive / dead transitions which result in notifications, but only if they have not
+     * already been added. This state is cleared when view model is cleared.
+     */
+    fun observeAliveDeadTransitions(lifecycleOwner: LifecycleOwner): Boolean {
+        return if (isDeadAliveObserversAdded) {
+            false
+        } else {
+            isDeadAliveObserversAdded = true
+            targets.forEach() { wh ->
+                wh.deadAliveTransition.aliveDeadTransition.observe(lifecycleOwner, this)
+            }
+            true
+        }
+    }
 
     /**
      * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.pingMe] true.
@@ -188,7 +228,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             while (pingActive) {
                 var pingUsedMillis = 0L
-                if (host.pingMe) {
+                if (host.enabled && host.pingMe) {
                     if (address == null || pingName != host.pingName) {
                         address = withContext(Dispatchers.IO) {
                             try {
@@ -238,6 +278,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
                                         host.wolToWakeHistoryChanged = true
                                     }
+                                    host.deadAliveTransition.addPingResult(1)
                                 }
                             }
 
@@ -252,6 +293,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         host.pingedCountDead++
                                         host.pingException = null
                                     }
+                                    host.deadAliveTransition.addPingResult(-1)
+
                                 }
                             }
 
@@ -260,6 +303,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     host.pingState = WolHost.PingStates.EXCEPTION
                                     host.pingException = exception
                                     host.lastPingResponseAt.update(Instant.EPOCH)
+                                    host.deadAliveTransition.addPingResult(0)
                                 }
                             }
                         }
@@ -334,5 +378,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         return isSendWol
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        isDeadAliveObserversAdded = false
+        targets.forEach { wh ->
+            wh.deadAliveTransition.aliveDeadTransition.removeObserver(this)
+        }
+    }
+
+    override fun onChanged(t: Pair<WolHost, Int>) {
+        val (host, state) = t
+
+        when (state) {
+            0 -> Unit // Do nothing
+            1 -> hostStateNotification.makeAwokeNotification("${host.title} Awoke", "${host.title} transitioned to awake")
+            -1 -> hostStateNotification.makeAsleepNotification("${host.title} Unresponsive", "${host.title} transitioned to unresponsive")
+            else -> Unit // Above should be exhaustive
+        }
     }
 }

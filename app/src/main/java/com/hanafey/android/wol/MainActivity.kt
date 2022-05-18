@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
 
         initializeFromSharedPrefs()
+        initializeNotifications()
+        mvm.observeAliveDeadTransitions(this)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -41,5 +43,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeFromSharedPrefs() {
         mvm.settingsData.initializeModel(mvm)
+    }
+
+    private fun initializeNotifications() {
+        mvm.hostStateNotification.createNotificationChannels()
     }
 }

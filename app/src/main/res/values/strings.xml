@@ -16,4 +16,9 @@
     <string name="host_title">Name: %1$s</string>
     <string name="host_address">"%1$s (%4$s)\nPings: +%2$d / -%3$d"</string>
     <string name="info_no_hosts_enabled">The screen is blank because no hosts are enabled!</string>
+
+    <string name="notification_awoke_name">Host Awoke</string>
+    <string name="notification_awoke_description">The host responded to pings.</string>
+    <string name="notification_asleep_name">Host Asleep</string>
+    <string name="notification_asleep_description">The host did not responded to pings.</string>
 </resources>

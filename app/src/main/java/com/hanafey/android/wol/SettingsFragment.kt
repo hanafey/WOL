@@ -10,7 +10,11 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
-import androidx.preference.*
+import androidx.preference.EditTextPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreference
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.wol.magic.MagicPacket
 
@@ -181,6 +185,10 @@ class SettingsFragment : PreferenceFragmentCompat(),
                 val sectionKey = PrefNames.HOST_SECTION.pref(ix)
                 findPreference<PreferenceCategory>(sectionKey)?.isVisible = isEnabled
                 mvm.targets[ix].enabled = isEnabled
+                if (!isEnabled && mvm.targets[ix].pingMe) {
+                    // Never ping a not enabled host.
+                    mvm.targets[ix].pingMe = false
+                }
                 mvm.settingsData.hostDataChanged = true
                 true
             }

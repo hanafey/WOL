@@ -4,6 +4,11 @@
     tools:context="com.hanafey.android.wol.MainActivity"
     >
     <item
+        android:id="@+id/mi_test_notification"
+        android:title="Test Notification"
+        app:showAsAction="never"
+        />
+    <item
         android:id="@+id/mi_web_site"
         android:icon="@drawable/ic_baseline_help_24"
         android:orderInCategory="100"
