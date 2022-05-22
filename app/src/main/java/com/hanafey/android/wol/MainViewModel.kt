@@ -25,13 +25,14 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-class MainViewModel(application: Application) : AndroidViewModel(application), Observer<Pair<WolHost, Int>> {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val ltag = "MainViewModel"
 
     val targets = defaultHostList()
 
     val hostStateNotification = HostStateNotification(application)
     private var isDeadAliveObserversAdded = false
+    private val observerOfHostState = ObserverOfHostState(hostStateNotification)
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
@@ -111,7 +112,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application), O
         } else {
             isDeadAliveObserversAdded = true
             targets.forEach() { wh ->
-                wh.deadAliveTransition.aliveDeadTransition.observe(lifecycleOwner, this)
+                wh.deadAliveTransition.aliveDeadTransition.observe(lifecycleOwner, observerOfHostState)
             }
             true
         }
@@ -384,18 +385,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application), O
         super.onCleared()
         isDeadAliveObserversAdded = false
         targets.forEach { wh ->
-            wh.deadAliveTransition.aliveDeadTransition.removeObserver(this)
+            wh.deadAliveTransition.aliveDeadTransition.removeObserver(observerOfHostState)
         }
     }
 
-    override fun onChanged(t: Pair<WolHost, Int>) {
-        val (host, state) = t
 
-        when (state) {
-            0 -> Unit // Do nothing
-            1 -> hostStateNotification.makeAwokeNotification("${host.title} Awoke", "${host.title} transitioned to awake")
-            -1 -> hostStateNotification.makeAsleepNotification("${host.title} Unresponsive", "${host.title} transitioned to unresponsive")
-            else -> Unit // Above should be exhaustive
+    class ObserverOfHostState(private val hostStateNotification: HostStateNotification) : Observer<Pair<WolHost, Int>> {
+        override fun onChanged(t: Pair<WolHost, Int>) {
+            val (host, state) = t
+
+            when (state) {
+                0 -> Unit // Do nothing
+                1 -> hostStateNotification.makeAwokeNotification("${host.title} Awoke", "${host.title} transitioned to awake")
+                -1 -> hostStateNotification.makeAsleepNotification("${host.title} Unresponsive", "${host.title} transitioned to unresponsive")
+                999 -> {
+                    if (host.pKey == 0) {
+                        dlog("HostState") { "Observing ${host.title}" }
+                        hostStateNotification.makeAwokeNotification("${host.title} Pinging...", "${host.title} Ping at ${Instant.now()}")
+                    }
+                }
+                else -> Unit // Above should be exhaustive
+            }
         }
     }
 }

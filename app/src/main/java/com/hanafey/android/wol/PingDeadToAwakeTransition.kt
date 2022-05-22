@@ -41,6 +41,8 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     private var previousBufferSignal = 0
     private var currentBufferSignal = 0
     private var lastPingMillies = 0L
+    private var lastPingReportedMillies = 0L
+    private val testingReportPeriod = 30 * 1000L
 
     private val _aliveDeadTransition = MutableLiveData(Pair(host, 0))
 
@@ -52,6 +54,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      * Sets to the state at construction, empty buffer no current or previous signal
      */
     private fun resetBuffer() {
+        lastPingReportedMillies = 0L
         lastPingMillies = 0L
         previousBufferSignal = 0
         currentBufferSignal = 0
@@ -84,7 +87,11 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         dlog(ltag, lunq, lon) { "${host.title} delta=$delta pmz=$pmz ix=$bufferIx buf=${buffer.toList()} $previousBufferSignal -> $currentBufferSignal => $accessedSignal" }
         if (accessedSignal != 0) {
             // Interesting Transition
+            lastPingReportedMillies = now
             _aliveDeadTransition.value = host to accessedSignal
+        } else if (now - lastPingReportedMillies > testingReportPeriod) {
+            lastPingReportedMillies = now
+            _aliveDeadTransition.value = host to 999
         }
         return accessedSignal
     }
