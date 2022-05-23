@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -35,7 +34,7 @@ class HostStatusFragment : Fragment(),
     NavController.OnDestinationChangedListener {
 
     private val ltag = "HostStatusFragment"
-    private val mvm: MainViewModel by activityViewModels()
+    private val mvm: MainViewModel = WolApplication.instance.mvm
 
     private var _binding: FragmentHostStatusBinding? = null
     private val ui: FragmentHostStatusBinding
@@ -139,7 +138,7 @@ class HostStatusFragment : Fragment(),
             }
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
-                mvm.cancelKillPingTargetsAfterWaiting()
+                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope)
             }
             Lifecycle.Event.ON_RESUME -> {
                 Unit

@@ -8,14 +8,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.hanafey.android.wol.databinding.FragmentFirstTimeInformationBinding
 
 
 class FirstTimeInformationFragment : Fragment() {
     private val ltag = "FirstTimeInformationFragment"
-    private val mvm: MainViewModel by activityViewModels()
+    private val mvm: MainViewModel = WolApplication.instance.mvm
 
     private var _binding: FragmentFirstTimeInformationBinding? = null
     private val ui: FragmentFirstTimeInformationBinding

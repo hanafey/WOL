@@ -3,7 +3,6 @@ package com.hanafey.android.wol
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -25,7 +24,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
     LifecycleEventObserver {
 
     private val ltag = "SettingsFragment"
-    private val mvm: MainViewModel by activityViewModels()
+    private val mvm: MainViewModel = WolApplication.instance.mvm
     private val ipNameRegEx = Regex("""(^\d+\.\d+\.\d+\.\d+$)|(^[a-z][a-z\d]*$)""", RegexOption.IGNORE_CASE)
     private val broadcastRegEx = Regex("""^\d+\.\d+\.\d+\.\d+$""")
     private val integerRegEx = Regex("""\d+""")

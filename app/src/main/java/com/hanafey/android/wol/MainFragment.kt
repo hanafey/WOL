@@ -13,7 +13,6 @@ import android.view.ViewGroup
 import android.widget.CompoundButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -38,7 +37,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
     private val ltag = "MainFragment"
 
-    private val mvm: MainViewModel by activityViewModels()
+    private val mvm: MainViewModel = WolApplication.instance.mvm
 
     private var _binding: FragmentMainBinding? = null
     private val ui get() = _binding!!
@@ -194,12 +193,12 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
 
-                mvm.cancelKillPingTargetsAfterWaiting()
+                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope)
 
                 if (mvm.settingsData.hostDataChanged) {
-                    mvm.pingTargetsAgain(false)
+                    mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
                 } else {
-                    mvm.pingTargetsIfNeeded(false)
+                    mvm.pingTargetsIfNeeded(WolApplication.instance.mainScope, false)
                 }
             }
 
@@ -207,7 +206,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
             Lifecycle.Event.ON_STOP -> {
                 findNavController().removeOnDestinationChangedListener(this)
-                mvm.killPingTargetsAfterWaiting()
+                mvm.killPingTargetsAfterWaiting(WolApplication.instance.mainScope)
             }
 
             Lifecycle.Event.ON_DESTROY -> Unit

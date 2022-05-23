@@ -1,16 +1,15 @@
 package com.hanafey.android.wol
 
-import android.app.Application
 import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -25,7 +24,7 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+class MainViewModel(application: WolApplication) : AndroidViewModel(application) {
     private val ltag = "MainViewModel"
 
     val targets = defaultHostList()
@@ -36,7 +35,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
-    private val _targetPingChanged = MutableLiveData(-1)
+    // FIX: _targetPingChanged is not private
+    val _targetPingChanged = MutableLiveData(-1)
     val targetPingChangedLiveData: LiveData<Int>
         get() = _targetPingChanged
 
@@ -122,12 +122,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.pingMe] true.
      * [pingJobsStateLiveData] will register an event only if pinging is not already active.
      */
-    fun pingTargetsIfNeeded(resetState: Boolean) {
+    fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
         if (pingActive) return // ======================================== >>>
 
         pingActive = true
         pingJobs = targets.map { wh ->
-            pingTarget(wh, resetState)
+            pingTarget(scope, wh, resetState)
         }
         _pingJobsState.value = 1
     }
@@ -137,9 +137,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * can be observed to react to the changed states. If pinging is not active only the transition to active will
      * be registered.
      */
-    fun pingTargetsAgain(resetState: Boolean) {
+    fun pingTargetsAgain(scope: CoroutineScope, resetState: Boolean) {
         tlog(ltag) { "pingTargetsAgain: kill" }
-        viewModelScope.launch {
+        scope.launch {
             if (pingJobs.isNotEmpty()) {
                 pingActive = false
                 joinAll(*pingJobs.toTypedArray())
@@ -149,7 +149,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             tlog(ltag) { "pingTargetsAgain: ping" }
 
-            pingTargetsIfNeeded(resetState)
+            pingTargetsIfNeeded(scope, resetState)
         }
     }
 
@@ -159,9 +159,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * We then wait for jobs to end, and then empty [pingJobs] and set [_pingJobsState]
      * to zero,
      */
-    fun killPingTargets() {
+    fun killPingTargets(scope: CoroutineScope) {
         pingActive = false
-        viewModelScope.launch {
+        scope.launch {
             joinAll(*pingJobs.toTypedArray())
             pingJobs = emptyList()
             _pingJobsState.value = 0
@@ -175,18 +175,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         */
     }
 
-    fun killPingTargetsAfterWaiting() {
+    fun killPingTargetsAfterWaiting(scope: CoroutineScope) {
         if (settingsData.pingKillDelaySeconds <= 0) {
             return // ======================================== >>>
         }
 
         val exitingKillJob = delayedKillJob
 
-        delayedKillJob = viewModelScope.launch {
+        delayedKillJob = scope.launch {
             delayedKillMutex.withLock {
-                if (exitingKillJob != null) {
-                    exitingKillJob.cancelAndJoin()
-                }
+                exitingKillJob?.cancelAndJoin()
             }
 
             delay(settingsData.pingKillDelaySeconds * 1000L)
@@ -204,8 +202,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun cancelKillPingTargetsAfterWaiting() {
-        viewModelScope.launch {
+    fun cancelKillPingTargetsAfterWaiting(scope: CoroutineScope) {
+        scope.launch {
             delayedKillMutex.withLock {
                 delayedKillJob?.cancelAndJoin()
                 delayedKillJob = null
@@ -213,9 +211,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun pingTarget(host: WolHost, resetState: Boolean): Job {
+    private fun pingTarget(scope: CoroutineScope, host: WolHost, resetState: Boolean): Job {
 
-        return viewModelScope.launch {
+        return scope.launch {
             if (resetState) {
                 host.mutex.withLock {
                     host.resetPingState()
