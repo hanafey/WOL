@@ -1,8 +1,8 @@
 package com.hanafey.android.wol
 
+import android.util.Log
 import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -24,13 +24,13 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-class MainViewModel(application: WolApplication) : AndroidViewModel(application) {
-    private val ltag = "MainViewModel"
+class MainViewModel(
+    application: WolApplication,
+) : AndroidViewModel(application) {
 
     val targets = defaultHostList()
 
     val hostStateNotification = HostStateNotification(application)
-    private var isDeadAliveObserversAdded = false
     private val observerOfHostState = ObserverOfHostState(hostStateNotification)
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
@@ -56,12 +56,12 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
 
     /**
      * The delayed kill job kills pinging after waiting for a delay when the
-     * [TopFragment] state changes to stopped. This job is killed if the
-     * TopFragmet returns to running before the timeout expires. Other fragments
+     * [MainFragment] state changes to stopped. This job is killed if the
+     * MainFragment returns to running before the timeout expires. Other fragments
      * can also request the pinging continue, for example the [HostStatusFragment]
      * depends on pinging to monitor host status.
      *
-     * We kill pings? No point sending pings if nobody is diplaying the result of
+     * We kill pings? No point sending pings if nobody is displaying the result of
      * the ping.
      */
     private var delayedKillJob: Job? = null
@@ -103,18 +103,11 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
     }
 
     /**
-     * Adds observer of alive / dead transitions which result in notifications, but only if they have not
-     * already been added. This state is cleared when view model is cleared.
+     * Adds a forever observer to each [targets].
      */
-    fun observeAliveDeadTransitions(lifecycleOwner: LifecycleOwner): Boolean {
-        return if (isDeadAliveObserversAdded) {
-            false
-        } else {
-            isDeadAliveObserversAdded = true
-            targets.forEach() { wh ->
-                wh.deadAliveTransition.aliveDeadTransition.observe(lifecycleOwner, observerOfHostState)
-            }
-            true
+    fun observeAliveDeadTransitions() {
+        targets.forEach { wh ->
+            wh.deadAliveTransition.aliveDeadTransition.observeForever(observerOfHostState)
         }
     }
 
@@ -125,6 +118,7 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
     fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
         if (pingActive) return // ======================================== >>>
 
+        dog { "pingTargetsIfNeeded" }
         pingActive = true
         pingJobs = targets.map { wh ->
             pingTarget(scope, wh, resetState)
@@ -138,7 +132,7 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
      * be registered.
      */
     fun pingTargetsAgain(scope: CoroutineScope, resetState: Boolean) {
-        tlog(ltag) { "pingTargetsAgain: kill" }
+        dog { "pingTargetsAgain" }
         scope.launch {
             if (pingJobs.isNotEmpty()) {
                 pingActive = false
@@ -146,37 +140,12 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
                 pingJobs = emptyList()
                 _pingJobsState.value = 0
             }
-
-            tlog(ltag) { "pingTargetsAgain: ping" }
-
             pingTargetsIfNeeded(scope, resetState)
         }
     }
 
-    /**
-     * Stop the ping targets jobs. The jobs end because the loop that drives them
-     * is based on [pingActive], and this is set false as the first step.
-     * We then wait for jobs to end, and then empty [pingJobs] and set [_pingJobsState]
-     * to zero,
-     */
-    fun killPingTargets(scope: CoroutineScope) {
-        pingActive = false
-        scope.launch {
-            joinAll(*pingJobs.toTypedArray())
-            pingJobs = emptyList()
-            _pingJobsState.value = 0
-        }
-
-        /*
-        // Kill the jobs
-        pingJobs.forEach { job ->
-            job.cancel("Cancelled on request.")
-        }
-        */
-    }
-
     fun killPingTargetsAfterWaiting(scope: CoroutineScope) {
-        if (settingsData.pingKillDelaySeconds <= 0) {
+        if (settingsData.pingKillDelayMinutes <= 0) {
             return // ======================================== >>>
         }
 
@@ -187,7 +156,9 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
                 exitingKillJob?.cancelAndJoin()
             }
 
-            delay(settingsData.pingKillDelaySeconds * 1000L)
+            dog { "killPingTargetsAfterWaiting: Will delay ${settingsData.pingKillDelayMinutes} minutes" }
+            delay(mSecFromMinutes(settingsData.pingKillDelayMinutes))
+            dog { "killPingTargetsAfterWaiting: Delay ${settingsData.pingKillDelayMinutes} minutes done. Kill now!" }
 
             delayedKillMutex.withLock {
                 if (pingActive) {
@@ -323,22 +294,6 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
         }
     }
 
-
-    /**
-     * Returns the first host that wants to be pinged. If null, no host wants to be pinged.
-     */
-    fun firstPingMe(): WolHost? {
-        return targets.firstOrNull { it.pingMe }
-    }
-
-
-    /**
-     * Returns the number of hosts that wants to be pinged. Zero means nobody is pinged.
-     */
-    fun countPingMe(): Int {
-        return targets.fold(0) { z, wh -> if (wh.pingMe) z + 1 else z }
-    }
-
     /**
      * Runs in [Dispatchers.IO] context with a mutex lock on the host. Sends a WOL bundle to the host.
      * Observe [targetWakeChangedLiveData] to respond after all the WOL packets have been sent (or
@@ -347,7 +302,7 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
      * If host responded to a ping inside of [SettingsData.pingResponseWaitMillis], no WOL is sent and the
      * return is false.
      *
-     * @return True if WOL bundle was sent and [targetWakeChangedLiveData] was set to the [host.pkey].
+     * @return True if WOL bundle was sent and [targetWakeChangedLiveData] was set to the [WolHost.pKey.
      */
     suspend fun wakeTarget(host: WolHost): Boolean {
         val isSendWol = withContext(Dispatchers.IO) {
@@ -381,28 +336,47 @@ class MainViewModel(application: WolApplication) : AndroidViewModel(application)
 
     override fun onCleared() {
         super.onCleared()
-        isDeadAliveObserversAdded = false
+        // FIX: Should not be needed. We add these at the application level,
         targets.forEach { wh ->
             wh.deadAliveTransition.aliveDeadTransition.removeObserver(observerOfHostState)
         }
     }
 
 
-    class ObserverOfHostState(private val hostStateNotification: HostStateNotification) : Observer<Pair<WolHost, Int>> {
-        override fun onChanged(t: Pair<WolHost, Int>) {
-            val (host, state) = t
+    class ObserverOfHostState(private val hostStateNotification: HostStateNotification) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
+        override fun onChanged(t: PingDeadToAwakeTransition.WolHostSignal) {
+            when (t.signal) {
+                PingDeadToAwakeTransition.WHS.NOTHING -> {}
 
-            when (state) {
-                0 -> Unit // Do nothing
-                1 -> hostStateNotification.makeAwokeNotification("${host.title} Awoke", "${host.title} transitioned to awake")
-                -1 -> hostStateNotification.makeAsleepNotification("${host.title} Unresponsive", "${host.title} transitioned to unresponsive")
-                999 -> {
-                    if (host.pKey == 0) {
-                        dlog("HostState") { "Observing ${host.title}" }
-                        hostStateNotification.makeAwokeNotification("${host.title} Pinging...", "${host.title} Ping at ${Instant.now()}")
+                PingDeadToAwakeTransition.WHS.AWOKE -> {
+                    hostStateNotification.makeAwokeNotification("${t.host.title} Awoke", "${t.host.title} transitioned to awake")
+                }
+
+                PingDeadToAwakeTransition.WHS.DIED -> {
+                    hostStateNotification.makeAsleepNotification("${t.host.title} Unresponsive", "${t.host.title} transitioned to unresponsive")
+                }
+
+                PingDeadToAwakeTransition.WHS.NOISE -> {
+                    hostStateNotification.makeAwokeNotification("${t.host.title} ${t.extra}", "${Instant.now()}")
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val tag = "MainViewModel"
+        private const val debugLoggingEnabled = true
+        private const val uniqueIdentifier = "DOGLOG"
+
+        private fun dog(message: () -> String) {
+            if (debugLoggingEnabled) {
+                if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
+                    if (Log.isLoggable(tag, Log.ERROR)) {
+                        val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
+                        val durationString = "[%8.3f]".format(duration)
+                        Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
                     }
                 }
-                else -> Unit // Above should be exhaustive
             }
         }
     }

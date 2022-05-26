@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -29,13 +30,13 @@ import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
+import java.time.Duration
+import java.time.Instant
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class MainFragment : Fragment(), NavController.OnDestinationChangedListener, LifecycleEventObserver {
-
-    private val ltag = "MainFragment"
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
 
@@ -64,6 +65,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        dog { "onCreateView" }
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         setHasOptionsMenu(true)
 
@@ -71,6 +73,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        dog { "onViewCreated" }
         super.onViewCreated(view, savedInstanceState)
 
         // Put the static names into lists
@@ -145,6 +148,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             findNavController().navigate(R.id.FirstTimeInformationFragment)
             mvm.firstVisit = false
         } else {
+            // FIX: The warning that this can be replaced by mvm.targets.isEmpty() seems to be AS error!
             if (mvm.targets.count { it.enabled } == 0) {
                 Snackbar.make(ui.root, getString(R.string.info_no_hosts_enabled), Snackbar.LENGTH_LONG).show()
             }
@@ -170,11 +174,11 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
             R.id.mi_test_notification -> {
                 mvm.viewModelScope.launch {
-                    delay(5_000L)
+                    delay(mSecFromSeconds(5))
                     val id1 = mvm.hostStateNotification.makeAsleepNotification("Test Asleep", "Will dismiss in 10 sec test asleep")
-                    delay(1_000L)
-                    val id2 = mvm.hostStateNotification.makeAwokeNotification("Test Awoke", "Will not issue dismiss test awoke")
-                    delay(10_000L)
+                    delay(mSecFromSeconds(1))
+                    mvm.hostStateNotification.makeAwokeNotification("Test Awoke", "Will not issue dismiss test awoke")
+                    delay(mSecFromSeconds(10))
                     mvm.hostStateNotification.dismiss(id1)
                 }
                 true
@@ -185,6 +189,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        dog { "onStateChanged $event" }
         when (event) {
             Lifecycle.Event.ON_CREATE -> Unit
 
@@ -192,21 +197,12 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
-
-                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope)
-
-                if (mvm.settingsData.hostDataChanged) {
-                    mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
-                } else {
-                    mvm.pingTargetsIfNeeded(WolApplication.instance.mainScope, false)
-                }
             }
 
             Lifecycle.Event.ON_PAUSE -> Unit
 
             Lifecycle.Event.ON_STOP -> {
                 findNavController().removeOnDestinationChangedListener(this)
-                mvm.killPingTargetsAfterWaiting(WolApplication.instance.mainScope)
             }
 
             Lifecycle.Event.ON_DESTROY -> Unit
@@ -327,12 +323,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
 
     // TODO: Not currently used. [onClick] set frozen ui, and the dialog resets the frozen state on dismiss.
-    override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
-        when (destination.id) {
-            else -> {
-            }
-        }
-    }
+    override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {}
 
     inner class PingStateClickListener(private val wh: WolHost, private val showWol: Boolean) : View.OnClickListener {
         override fun onClick(v: View?) {
@@ -381,4 +372,23 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             }
         }
     }
+
+    companion object {
+        private const val tag = "MainFragment"
+        private const val debugLoggingEnabled = true
+        private const val uniqueIdentifier = "DOGLOG"
+
+        private fun dog(message: () -> String) {
+            if (debugLoggingEnabled) {
+                if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
+                    if (Log.isLoggable(tag, Log.ERROR)) {
+                        val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
+                        val durationString = "[%8.3f]".format(duration)
+                        Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
+                    }
+                }
+            }
+        }
+    }
+
 }

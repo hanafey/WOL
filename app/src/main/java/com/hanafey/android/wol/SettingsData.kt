@@ -6,24 +6,23 @@ import com.hanafey.android.wol.magic.WolHost
 class SettingsData(val spm: SharedPreferences) {
 
     companion object {
+        /**
+         * A short history is biased too much with recent history, but a long history is slow to change if host wake
+         * time evolves.
+         */
         private const val MAX_WOL_HISTORY = 25
     }
 
     /**
      * Before navigating to [SettingsFragment] set to false. If any host data is changed [SettingsFragment] will set
-     * it to true. When [MainFragment] is created if this is false then pinging must be stopped and restarted.
+     * it to true. When navigating back to MainFragment, if this is true then the hosts are re-pinged based on the current
+     * (and changed) settings.
      */
     var hostDataChanged = false
 
-    /**
-     * Normally a pingable host is running thus a WOL packet is meaningless, but is is also
-     * harmless. Good for testing so the WOL packet can be observed on the network.
-     */
-    val wakePingableHosts: Boolean = true
-
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
-    var pingKillDelaySeconds = 60
+    var pingKillDelayMinutes = 5
     var versionAcknowledged = 0
 
     fun initializeModel(mvm: MainViewModel) {
@@ -47,7 +46,7 @@ class SettingsData(val spm: SharedPreferences) {
         pingResponseWaitMillis = spm.getString(prefName, pingResponseWaitMillis.toString())?.toInt() ?: pingResponseWaitMillis
 
         prefName = PrefNames.PING_SUSPEND_DELAY.pref()
-        pingKillDelaySeconds = spm.getString(prefName, pingKillDelaySeconds.toString())?.toInt() ?: pingKillDelaySeconds
+        pingKillDelayMinutes = spm.getString(prefName, pingKillDelayMinutes.toString())?.toInt() ?: pingKillDelayMinutes
 
         prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()
         versionAcknowledged = spm.getInt(prefName, versionAcknowledged)
@@ -96,12 +95,6 @@ class SettingsData(val spm: SharedPreferences) {
             }.filter { it > 0 }
 
             wh.wolToWakeHistory = ints
-        }
-    }
-
-    fun writeTimeToWakeHistory(mvm: MainViewModel) {
-        for (wh in mvm.targets) {
-            writeTimeToWakeHistory(wh)
         }
     }
 

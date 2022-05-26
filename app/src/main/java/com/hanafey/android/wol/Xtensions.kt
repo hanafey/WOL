@@ -4,68 +4,21 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import java.time.Duration
-import java.time.Instant
 import kotlin.math.roundToInt
 
-/**
- * [dlog] messages contain a time differential from this value. Initializes to when the class is created, but you can
- * set it later to show times relative to some interesting reference point.
- */
-var EXT_EPOCH: Instant = Instant.now()
+internal fun mSecFromSeconds(seconds: Int) = 1000L * seconds
+internal fun mSecToSeconds(mSec: Long) = "%1.1f sec".format(mSec / 1000.0)
 
-/**
- * Logs an ERROR, but is intended only for the debug phase of development. Normally expunge or comment out.
- * @param tag Normally the simple class name.
- * @param unique Optional random short string to make the log item easy find or filter based on. Default is empty.
- * @param enabled If false the logging is not done. Default is true
- * @param message The message to log
- */
-internal inline fun dlog(tag: String, unique: String = "", enabled: Boolean = true, message: () -> String) {
-    if (BuildConfig.DEBUG) {
-        if (enabled) {
-            if (Log.isLoggable(tag, Log.ERROR)) {
-                val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
-                val durationString = "[%8.3f]".format(duration)
-                Log.println(Log.ERROR, tag, durationString + unique + ":" + message())
-            }
-        }
-    }
-}
+internal fun mSecFromMinutes(minutes: Int, seconds: Int = 0) = 1000L * (minutes * 60 + seconds)
+internal fun mSecToMinutes(mSec: Long) = "%1.1f min".format(mSec / (60.0 * 1000.0))
 
-/**
- * Logs an ERROR.
- * @param tag Normally the simple class name.
- * @param enabled If false the logging is not done. Default is true
- * @param message The message to log
- */
-internal inline fun elog(tag: String, enabled: Boolean = true, message: () -> String) {
-    if (BuildConfig.DEBUG) {
-        if (enabled) {
-            if (Log.isLoggable(tag, Log.ERROR)) {
-                Log.println(Log.ERROR, tag, message())
-            }
-        }
-    }
-}
+internal fun mSecFromHours(hours: Int, minutes: Int, seconds: Int = 0) = 1000L * ((hours * 60 + minutes) * 60 + seconds)
+internal fun mSecToHours(mSec: Long) = "%1.1f hour".format(mSec / (60.0 * 60.0 * 1000.0))
 
-/**
- * Like [dlog] but this just does a "println" instead of a "Log".
- */
-internal fun tlog(tag: String, unique: String = "", enabled: Boolean = true, message: () -> String) {
-    if (BuildConfig.DEBUG) {
-        if (enabled) {
-            val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
-            val durationString = "[%8.3f]".format(duration)
-            println("$tag: $durationString$unique: ${message()}")
-        }
-    }
-}
 
 fun Fragment.requireAppCompatActivity(): AppCompatActivity {
     return (this.requireActivity() as AppCompatActivity)

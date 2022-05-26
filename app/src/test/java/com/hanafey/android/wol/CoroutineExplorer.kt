@@ -1,10 +1,16 @@
 package com.hanafey.android.wol
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.time.Duration
 import java.time.Instant
 
 object CoroutineExplorer {
-    const val ltag = "CRE"
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -18,38 +24,38 @@ object CoroutineExplorer {
     fun one() {
         println("\n\n========== One expect 1400 msec to end==========")
         EXT_EPOCH = Instant.now()
-        tlog(ltag) { "A" }
+        dog { "A" }
         runBlocking {
             withContext(Dispatchers.Default) {
-                tlog(ltag) { "runBlocking1/withContext1 A" }
+                dog { "runBlocking1/withContext1 A" }
                 delay(400L)
-                tlog(ltag) { "runBlocking1/withContext1 B" }
+                dog { "runBlocking1/withContext1 B" }
             }
             withContext(Dispatchers.Default) {
-                tlog(ltag) { "runBlocking1/withContext2 A" }
+                dog { "runBlocking1/withContext2 A" }
                 delay(200L)
-                tlog(ltag) { "runBlocking1/withContext2 B" }
+                dog { "runBlocking1/withContext2 B" }
             }
-            tlog(ltag) { "runBlocking1 A" }
+            dog { "runBlocking1 A" }
             delay(100L)
-            tlog(ltag) { "runBlocking1 B" }
+            dog { "runBlocking1 B" }
         }
         runBlocking {
             withContext(Dispatchers.Default) {
-                tlog(ltag) { "runBlocking2/withContext1 A" }
+                dog { "runBlocking2/withContext1 A" }
                 delay(400L)
-                tlog(ltag) { "runBlocking2/withContext1 B" }
+                dog { "runBlocking2/withContext1 B" }
             }
             withContext(Dispatchers.Default) {
-                tlog(ltag) { "runBlocking2/withContext2 A" }
+                dog { "runBlocking2/withContext2 A" }
                 delay(200L)
-                tlog(ltag) { "runBlocking2/withContext2 B" }
+                dog { "runBlocking2/withContext2 B" }
             }
-            tlog(ltag) { "runBlocking2 A" }
+            dog { "runBlocking2 A" }
             delay(100L)
-            tlog(ltag) { "runBlocking2 B" }
+            dog { "runBlocking2 B" }
         }
-        tlog(ltag) { "C" }
+        dog { "C" }
 
     }
 
@@ -57,168 +63,185 @@ object CoroutineExplorer {
     fun two() {
         println("\n\n========== Two expect 1400 msec to end==========")
         EXT_EPOCH = Instant.now()
-        tlog(ltag) { "A" }
+        dog { "A" }
         runBlocking {
             coroutineScope {
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/crs1/withContext1 A" }
+                    dog { "runBlocking/crs1/withContext1 A" }
                     delay(400L)
-                    tlog(ltag) { "runBlocking/crs1/withContext1 B" }
+                    dog { "runBlocking/crs1/withContext1 B" }
                 }
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/crs1/withContext2 A" }
+                    dog { "runBlocking/crs1/withContext2 A" }
                     delay(200L)
-                    tlog(ltag) { "runBlocking/crs1/withContext2 B" }
+                    dog { "runBlocking/crs1/withContext2 B" }
                 }
-                tlog(ltag) { "runBlocking/crs1 A" }
+                dog { "runBlocking/crs1 A" }
                 delay(100L)
-                tlog(ltag) { "runBlocking/crs1 B" }
+                dog { "runBlocking/crs1 B" }
             }
             coroutineScope {
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/crs2/withContext1 A" }
+                    dog { "runBlocking/crs2/withContext1 A" }
                     delay(400L)
-                    tlog(ltag) { "runBlocking/crs2/withContext1 B" }
+                    dog { "runBlocking/crs2/withContext1 B" }
                 }
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/crs2/withContext2 A" }
+                    dog { "runBlocking/crs2/withContext2 A" }
                     delay(200L)
-                    tlog(ltag) { "runBlocking/crs2/withContext2 B" }
+                    dog { "runBlocking/crs2/withContext2 B" }
                 }
-                tlog(ltag) { "runBlocking/crs2 A" }
+                dog { "runBlocking/crs2 A" }
                 delay(100L)
-                tlog(ltag) { "runBlocking/crs2 B" }
+                dog { "runBlocking/crs2 B" }
             }
         }
-        tlog(ltag) { "C" }
+        dog { "C" }
 
     }
 
     fun three() {
         println("\n\n========== Three expext 1000 msec to end ==========")
         EXT_EPOCH = Instant.now()
-        tlog(ltag) { "A" }
+        dog { "A" }
         runBlocking {
-            tlog(ltag) { "  runBlocking A" }
+            dog { "  runBlocking A" }
 
             async(Dispatchers.IO) {
-                tlog(ltag) { "    runBlocking/async1 A" }
+                dog { "    runBlocking/async1 A" }
                 delay(800L)
                 delay(200L)
-                tlog(ltag) { "    runBlocking/async1 B" }
+                dog { "    runBlocking/async1 B" }
             }
 
-            tlog(ltag) { "  runBlocking B" }
+            dog { "  runBlocking B" }
 
             async(Dispatchers.IO) {
-                tlog(ltag) { "    runBlocking/async2 A" }
+                dog { "    runBlocking/async2 A" }
                 delay(200L)
-                tlog(ltag) { "    runBlocking/async2 B" }
+                dog { "    runBlocking/async2 B" }
             }
 
-            tlog(ltag) { "  runBlocking C" }
+            dog { "  runBlocking C" }
             delay(500L)
-            tlog(ltag) { "  runBlocking D" }
+            dog { "  runBlocking D" }
 
             async(Dispatchers.IO) {
-                tlog(ltag) { "    runBlocking/async3 A" }
+                dog { "    runBlocking/async3 A" }
                 delay(400L)
-                tlog(ltag) { "    runBlocking/async3 B" }
+                dog { "    runBlocking/async3 B" }
             }
 
-            tlog(ltag) { "  runBlocking E" }
+            dog { "  runBlocking E" }
 
             async(Dispatchers.IO) {
-                tlog(ltag) { "    runBlocking/async4 A" }
+                dog { "    runBlocking/async4 A" }
                 delay(200L)
-                tlog(ltag) { "    runBlocking/async4 B" }
+                dog { "    runBlocking/async4 B" }
             }
 
-            tlog(ltag) { "  runBlocking F" }
+            dog { "  runBlocking F" }
             delay(100L)
-            tlog(ltag) { "  runBlocking G" }
+            dog { "  runBlocking G" }
         }
-        tlog(ltag) { "B" }
+        dog { "B" }
     }
 
     fun four() {
         println("\n\n========== Four expect 900 msec to end==========")
         EXT_EPOCH = Instant.now()
-        tlog(ltag) { "A 0" }
+        dog { "A 0" }
         runBlocking {
             launch {
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/launch1/withContext1 A 0" }
+                    dog { "runBlocking/launch1/withContext1 A 0" }
                     delay(400L)
-                    tlog(ltag) { "runBlocking/launch1/withContext1 B 400" }
+                    dog { "runBlocking/launch1/withContext1 B 400" }
                 }
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/launch1/withContext2 A 400" }
+                    dog { "runBlocking/launch1/withContext2 A 400" }
                     delay(200L)
-                    tlog(ltag) { "runBlocking/launch1/withContext2 B 600" }
+                    dog { "runBlocking/launch1/withContext2 B 600" }
                 }
             }
 
-            tlog(ltag) { "runBlocking A 0" }
+            dog { "runBlocking A 0" }
             delay(500L)
-            tlog(ltag) { "runBlocking B 500" }
+            dog { "runBlocking B 500" }
 
             launch {
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/launch2/withContext1 A 500" }
+                    dog { "runBlocking/launch2/withContext1 A 500" }
                     delay(400L)
-                    tlog(ltag) { "runBlocking/launch2/withContext1 B 900" }
+                    dog { "runBlocking/launch2/withContext1 B 900" }
                 }
                 withContext(Dispatchers.IO) {
-                    tlog(ltag) { "runBlocking/launch2/withContext2 A 900" }
+                    dog { "runBlocking/launch2/withContext2 A 900" }
                     delay(200L)
-                    tlog(ltag) { "runBlocking/launch2/withContext2 B 1100" }
+                    dog { "runBlocking/launch2/withContext2 B 1100" }
                 }
             }
 
-            tlog(ltag) { "runBlocking C 500" }
+            dog { "runBlocking C 500" }
             delay(300L)
-            tlog(ltag) { "runBlocking D 800" }
+            dog { "runBlocking D 800" }
         }
-        tlog(ltag) { "C 1100" }
+        dog { "C 1100" }
 
     }
 
     fun five() {
         println("\n\n========== Five expect 900 msec to end==========")
         EXT_EPOCH = Instant.now()
-        tlog(ltag) { "A 0" }
+        dog { "A 0" }
         runBlocking {
             launch {
-                tlog(ltag) { "runBlocking/launch1/withContext1 A 0" }
+                dog { "runBlocking/launch1/withContext1 A 0" }
                 delay(400L)
-                tlog(ltag) { "runBlocking/launch1/withContext1 B 400" }
+                dog { "runBlocking/launch1/withContext1 B 400" }
                 coroutineScope {
-                    tlog(ltag) { "runBlocking/launch1/withContext2 A 400" }
+                    dog { "runBlocking/launch1/withContext2 A 400" }
                     delay(200L)
-                    tlog(ltag) { "runBlocking/launch1/withContext2 B 600" }
+                    dog { "runBlocking/launch1/withContext2 B 600" }
                 }
             }
 
-            tlog(ltag) { "runBlocking A 0" }
+            dog { "runBlocking A 0" }
             delay(500L)
-            tlog(ltag) { "runBlocking B 500" }
+            dog { "runBlocking B 500" }
 
             launch {
-                tlog(ltag) { "runBlocking/launch2/withContext1 A 500" }
+                dog { "runBlocking/launch2/withContext1 A 500" }
                 delay(400L)
-                tlog(ltag) { "runBlocking/launch2/withContext1 B 900" }
-                tlog(ltag) { "runBlocking/launch2/withContext2 A 900" }
+                dog { "runBlocking/launch2/withContext1 B 900" }
+                dog { "runBlocking/launch2/withContext2 A 900" }
                 delay(200L)
-                tlog(ltag) { "runBlocking/launch2/withContext2 B 1100" }
+                dog { "runBlocking/launch2/withContext2 B 1100" }
             }
 
-            tlog(ltag) { "runBlocking C 500" }
+            dog { "runBlocking C 500" }
             delay(300L)
-            tlog(ltag) { "runBlocking D 800" }
+            dog { "runBlocking D 800" }
         }
-        tlog(ltag) { "C 1100" }
+        dog { "C 1100" }
 
     }
+
+    // --------------------------------------------------------------------------------
+    // Logging
+    // --------------------------------------------------------------------------------
+
+    private const val tag = "COE"
+    private const val debugLoggingEnabled = true
+    var EXT_EPOCH: Instant = Instant.now()
+
+    private fun dog(message: () -> String) {
+        if (debugLoggingEnabled) {
+            val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
+            val prefix = "%s [%8.3f]: ".format(tag, duration)
+            println(prefix + message())
+        }
+    }
+
 
 }

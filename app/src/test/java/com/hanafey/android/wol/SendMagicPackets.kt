@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 import java.time.Instant
 import kotlin.system.exitProcess
 
@@ -13,7 +14,6 @@ object SendMagicPackets {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val ltag = "MagicPacketTest"
 
         if (args.size < 2 || args.size > 3) {
             println("Usage: java MagicPacket <broadcast-ip> <mac-address> [<ping-ip>]")
@@ -27,7 +27,7 @@ object SendMagicPackets {
 
         runBlocking {
             EXT_EPOCH = Instant.now()
-            tlog(ltag) { "Launch second ping and wol." }
+            dog { "Launch second ping and wol." }
             launch(Dispatchers.IO) {
                 if (pingStr.isNotEmpty()) doPingTest("PING", pingStr)
                 if (macStr.length >= 12) doWolTest("WOL", ipStr, macStr)
@@ -38,12 +38,12 @@ object SendMagicPackets {
     private suspend fun doPingTest(name: String, pingStr: String) {
         for (i in 1..5) {
             try {
-                tlog(ltag) { "$name::  send $pingStr" }
+                dog { "$name::  send $pingStr" }
                 @Suppress("BlockingMethodInNonBlockingContext")
                 val pingable = MagicPacket.ping(pingStr)
-                tlog(ltag) { "$name::  result $pingable $pingStr" }
+                dog { "$name::  result $pingable $pingStr" }
             } catch (e: Throwable) {
-                tlog(ltag) { "$name:: FAILED: $e" }
+                dog { "$name:: FAILED: $e" }
             }
             delay(500L)
         }
@@ -52,15 +52,30 @@ object SendMagicPackets {
     private suspend fun doWolTest(name: String, ipStr: String, macStr: String) {
         try {
             for (i in 1..5) {
-                tlog(ltag) { "$name::  start $ipStr, $macStr" }
+                dog { "$name::  start $ipStr, $macStr" }
                 @Suppress("BlockingMethodInNonBlockingContext")
                 MagicPacket.sendWol(macStr, ipStr, MagicPacket.PORT)
-                tlog(ltag) { "$name::  end $ipStr, $macStr" }
+                dog { "$name::  end $ipStr, $macStr" }
                 delay(1000L)
             }
         } catch (e: Throwable) {
-            tlog(ltag) { "$name:: FAILED: $e" }
+            dog { "$name:: FAILED: $e" }
         }
     }
 
+    // --------------------------------------------------------------------------------
+    // Logging
+    // --------------------------------------------------------------------------------
+
+    private const val tag = "SMP"
+    private const val debugLoggingEnabled = true
+    var EXT_EPOCH: Instant = Instant.now()
+
+    private fun dog(message: () -> String) {
+        if (debugLoggingEnabled) {
+            val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
+            val prefix = "%s [%8.3f]: ".format(tag, duration)
+            println(prefix + message())
+        }
+    }
 }

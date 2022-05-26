@@ -3,6 +3,7 @@ package com.hanafey.android.wol
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -16,6 +17,8 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.wol.magic.MagicPacket
+import java.time.Duration
+import java.time.Instant
 
 class SettingsFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
@@ -23,7 +26,6 @@ class SettingsFragment : PreferenceFragmentCompat(),
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
 
-    private val ltag = "SettingsFragment"
     private val mvm: MainViewModel = WolApplication.instance.mvm
     private val ipNameRegEx = Regex("""(^\d+\.\d+\.\d+\.\d+$)|(^[a-z][a-z\d]*$)""", RegexOption.IGNORE_CASE)
     private val broadcastRegEx = Regex("""^\d+\.\d+\.\d+\.\d+$""")
@@ -62,8 +64,8 @@ class SettingsFragment : PreferenceFragmentCompat(),
         screen.addPreference(
             EditTextPreference(context).apply {
                 key = PrefNames.PING_SUSPEND_DELAY.pref()
-                title = "Suspend ping when in background after this many seconds (zero means never)"
-                setDefaultValue(mvm.settingsData.pingKillDelaySeconds.toString())
+                title = "Suspend ping when in background after this many minutes (zero means never)"
+                setDefaultValue(mvm.settingsData.pingKillDelayMinutes.toString())
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                 onPreferenceChangeListener = this@SettingsFragment
                 setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
@@ -287,6 +289,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
                                 false
                             } else {
                                 mvm.settingsData.pingDelayMillis = intValue.toLong()
+                                mvm.settingsData.hostDataChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -314,6 +317,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
                                 false
                             } else {
                                 mvm.settingsData.pingResponseWaitMillis = intValue
+                                mvm.settingsData.hostDataChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -338,16 +342,17 @@ class SettingsFragment : PreferenceFragmentCompat(),
                             val intValue = value.toInt()
                             if (intValue < 0) {
                                 Snackbar.make(
-                                    requireView(), "Ping suspend must be at least 1 sec, or zero for never", Snackbar.LENGTH_LONG
+                                    requireView(), "Ping suspend must be at least 1 minute, or zero for never", Snackbar.LENGTH_LONG
                                 ).show()
                                 false
-                            } else if (intValue > 60 * 60) {
+                            } else if (intValue > 60) {
                                 Snackbar.make(
-                                    requireView(), "Ping suspend must be an hour or less (3600 sec)", Snackbar.LENGTH_LONG
+                                    requireView(), "Ping suspend must be an hour or less (60 minutes)", Snackbar.LENGTH_LONG
                                 ).show()
                                 false
                             } else {
-                                mvm.settingsData.pingKillDelaySeconds = intValue
+                                mvm.settingsData.pingKillDelayMinutes = intValue
+                                mvm.settingsData.hostDataChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -378,7 +383,8 @@ class SettingsFragment : PreferenceFragmentCompat(),
                                 Snackbar.make(requireView(), "Number of WOL packets cannot be more than 25.", Snackbar.LENGTH_LONG).show()
                                 false
                             } else {
-                                mvm.targets[ix].magicPacketBundleCount = intValue.toInt()
+                                mvm.targets[ix].magicPacketBundleCount = intValue
+                                mvm.settingsData.hostDataChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -407,6 +413,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
                                 false
                             } else if (intValue > 1000) {
                                 Snackbar.make(requireView(), "Delay between WOL packets must be less than 1000 msec.", Snackbar.LENGTH_LONG).show()
+                                mvm.settingsData.hostDataChanged = true
                                 false
                             } else {
                                 mvm.targets[ix].magicPacketBundleSpacing = intValue.toLong()
@@ -451,31 +458,51 @@ class SettingsFragment : PreferenceFragmentCompat(),
     }
 
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
+        when (destination.id) {
+            R.id.MainFragment -> {
+                if (mvm.settingsData.hostDataChanged) {
+                    mvm.settingsData.hostDataChanged = false
+                    mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
+                    dog { "onDestinationChanged: RE-PING $destination" }
+                } else {
+                    dog { "onDestinationChanged: NO RE-PING $destination" }
+                }
+            }
+        }
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-                Unit
-            }
+            Lifecycle.Event.ON_CREATE -> {}
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
             }
-            Lifecycle.Event.ON_RESUME -> {
-                Unit
-            }
-            Lifecycle.Event.ON_PAUSE -> {
-                Unit
-            }
+            Lifecycle.Event.ON_RESUME -> {}
+            Lifecycle.Event.ON_PAUSE -> {}
             Lifecycle.Event.ON_STOP -> {
                 findNavController().removeOnDestinationChangedListener(this)
             }
-            Lifecycle.Event.ON_DESTROY -> {
-                Unit
-            }
-            Lifecycle.Event.ON_ANY -> {
-                Unit
+            Lifecycle.Event.ON_DESTROY -> {}
+            Lifecycle.Event.ON_ANY -> {}
+        }
+    }
+
+    companion object {
+        private const val tag = "SettingsFragment"
+        private const val debugLoggingEnabled = true
+        private const val uniqueIdentifier = "DOGLOG"
+
+        private fun dog(message: () -> String) {
+            if (debugLoggingEnabled) {
+                if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
+                    if (Log.isLoggable(tag, Log.ERROR)) {
+                        val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
+                        val durationString = "[%8.3f]".format(duration)
+                        Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
+                    }
+                }
             }
         }
     }
+
 }
