@@ -222,7 +222,7 @@ class MainViewModel(
                             try {
                                 val pingResult = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
                                 if (pingResult) 1 else 0
-                            } catch (e: IOException) {
+                            } catch (e: Exception) {
                                 exception = e
                                 -1
                             }
@@ -345,6 +345,7 @@ class MainViewModel(
 
     class ObserverOfHostState(private val hostStateNotification: HostStateNotification) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
         override fun onChanged(t: PingDeadToAwakeTransition.WolHostSignal) {
+            dog { "ObserverOfHostState: $t" }
             when (t.signal) {
                 PingDeadToAwakeTransition.WHS.NOTHING -> {}
 

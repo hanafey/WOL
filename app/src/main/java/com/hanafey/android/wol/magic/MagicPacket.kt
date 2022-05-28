@@ -50,7 +50,7 @@ object MagicPacket {
      */
     @Throws(java.io.IOException::class)
     fun ping(hostAddress: InetAddress, waitForResponseMilli: Int = 250): Boolean {
-        return hostAddress.isReachable(waitForResponseMilli)
+        return hostAddress.isReachable(waitForResponseMilli.coerceAtLeast(20))
     }
 
 

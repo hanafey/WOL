@@ -13,7 +13,8 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      */
     enum class WHS {
         /**
-         * A non-signal. This should be ignored by any observers.
+         * A non-signal. This should be ignored by any observers. It means there is not
+         * enough data to have an opinion.
          */
         NOTHING,
 
@@ -41,23 +42,24 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      */
     data class WolHostSignal(val host: WolHost, val signal: WHS, val extra: String = "")
 
+    /**
+     * Observe this to be able to response to host alive/dead changes.
+     */
     val aliveDeadTransition: LiveData<WolHostSignal>
         get() = _aliveDeadTransition
 
     /**
      * Must be odd number, no ties allowed. This number of pings must be in the buffer to render an awake / asleep signal.
      */
-    val bufferSize = 5
+    private val bufferSize = 15
+    private val minSignalGoingUp = bufferSize - 3
+    private val minSignalGoingDown = minSignalGoingUp - 4
+    private var transitionCount = 0
 
     /**
      * If the next ping is more than this time away from the previous ping the buffer is reset to having just one entry.
      */
-    val maxDelayOrResetMillies = 60L * 1000L
-
-    /**
-     * The minimum signal size. This is the smallest majority of the odd numbered sized buffer.
-     */
-    private val minSignal = bufferSize / 2 + 1
+    private val maxDelayOrResetMillies = mSecFromMinutes(1)
 
     /**
      * The buffer is maintained in circular order.
@@ -74,6 +76,10 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     private var currentBufferSignal = WHS.NOTHING
     private var lastPingMillies = 0L
     private var lastPingReportedMillies = 0L
+
+    /**
+     * Special value zero means no test reporting. This must be zero for any released version.
+     */
     private val testingReportPeriod = mSecFromMinutes(0)
 
     private val _aliveDeadTransition = MutableLiveData(WolHostSignal(host, WHS.NOTHING))
@@ -86,10 +92,12 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      * Sets to the state at construction, empty buffer no current or previous signal
      */
     private fun resetBuffer() {
+        dog { "resetBuffer" }
         lastPingReportedMillies = 0L
         lastPingMillies = 0L
         previousBufferSignal = WHS.NOTHING
         currentBufferSignal = WHS.NOTHING
+        transitionCount = 0
         bufferIx = -1
         for (ix in buffer.indices) {
             buffer[ix] = Int.MIN_VALUE
@@ -99,11 +107,10 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     /**
      * Record ping assessment of wakefulness by sending a 1 for responded, -1 for no response, and 0 for problem sending ping.
      *
-     * @param pmz Plus, Minus, or Zero for ping response, no ping response, unable to access ping response.
+     * @param pmz Plus, Minus, or Zero for ping response, no ping response, exception trying to ping host.
      * @return the New signal. Normally this is observer via [aliveDeadTransition] live data.
      */
     fun addPingResult(pmz: Int): WHS {
-        dog { "addPingResult" }
         val now = System.currentTimeMillis()
         val delta = now - lastPingMillies
         if (delta > maxDelayOrResetMillies) resetBuffer()
@@ -114,24 +121,33 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         buffer[bufferIx] = pmz
 
         previousBufferSignal = currentBufferSignal
-        currentBufferSignal = assessBuffer()
-        val accessedSignal = accessBufferSignal()
-        dog { "${host.title} delta=$delta pmz=$pmz ix=$bufferIx buf=${buffer.toList()} $previousBufferSignal -> $currentBufferSignal => $accessedSignal" }
-        if (accessedSignal != WHS.NOTHING) {
+        currentBufferSignal = assessBuffer(previousBufferSignal)
+        dog { "${host.title}  transitions = $transitionCount $previousBufferSignal -> $currentBufferSignal" }
+        if (currentBufferSignal != WHS.NOTHING) {
             // Interesting Transition
-            lastPingReportedMillies = now
-            _aliveDeadTransition.value = WolHostSignal(host, accessedSignal)
+            transitionCount++
+            if (transitionCount > 1 && currentBufferSignal != previousBufferSignal && previousBufferSignal != WHS.NOTHING) {
+                // Do not report the first transition because is is from unknown to something.
+                lastPingReportedMillies = now
+                _aliveDeadTransition.value = WolHostSignal(host, currentBufferSignal)
+                dog { "signal!" }
+            }
         } else if (testingReportPeriod > 0 && now - lastPingReportedMillies > testingReportPeriod) {
             lastPingReportedMillies = now
             _aliveDeadTransition.value = WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})")
+            dog { "noise!" }
         }
-        return accessedSignal
+        return currentBufferSignal
     }
 
     /**
      * Returns 0 if last sample is ambiguous, 1 if it signals alive, or -1 if it signals dead.
+     *
+     * A positive signal is stronger than a negative signal because the latter can result from failures other than
+     * in the host. A ping can be lost coming or going. A response can be delayed. In contrast a response means the
+     * host did respond.
      */
-    private fun assessBuffer(): WHS {
+    private fun assessBuffer(currentState: WHS): WHS {
         var pc = 0
         var nc = 0
         var zc = 0
@@ -144,30 +160,27 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         }
         val tc = nc + pc + zc
 
-        return if (tc < bufferSize) {
+        return if (tc < bufferSize || zc > 0) {
             WHS.NOTHING
-        } else if (pc >= minSignal) {
-            WHS.AWOKE
-        } else if (nc >= minSignal) {
-            WHS.DIED
         } else {
-            WHS.NOTHING
-        }
-    }
-
-    /**
-     * Returns 0 for no definite signal, or 1 for dead to alive, or -1 for alive to dead.
-     */
-    private fun accessBufferSignal(): WHS {
-        return when {
-            previousBufferSignal == WHS.NOTHING || currentBufferSignal == WHS.NOTHING -> WHS.NOTHING
-            previousBufferSignal == currentBufferSignal -> WHS.NOTHING
-            else -> currentBufferSignal
+            if (currentState != WHS.AWOKE) {
+                if (pc > minSignalGoingUp) {
+                    WHS.AWOKE
+                } else {
+                    currentState
+                }
+            } else {
+                if (pc <= minSignalGoingDown) {
+                    WHS.DIED
+                } else {
+                    currentState
+                }
+            }
         }
     }
 
     companion object {
-        private const val tag = "PingDeadToAwakeTransition"
+        private const val tag = "PingDeadToAwake.."
         private const val debugLoggingEnabled = true
         private const val uniqueIdentifier = "DOGLOG"
 
@@ -183,5 +196,4 @@ class PingDeadToAwakeTransition(val host: WolHost) {
             }
         }
     }
-
 }
