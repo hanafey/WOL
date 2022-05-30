@@ -9,6 +9,12 @@
         app:showAsAction="never"
         />
     <item
+        android:id="@+id/mi_version"
+        android:title=""
+        app:showAsAction="never"
+        tools:title="Version 1.2.3(15)"
+        />
+    <item
         android:id="@+id/mi_web_site"
         android:icon="@drawable/ic_baseline_help_24"
         android:orderInCategory="100"

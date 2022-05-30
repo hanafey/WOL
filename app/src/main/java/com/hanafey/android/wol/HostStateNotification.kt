@@ -2,13 +2,20 @@ package com.hanafey.android.wol
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.hanafey.android.wol.magic.WolHost
 
+/**
+ * Defines two notification channels, [channelIdAwoke] and [channelIdAsleep]
+ */
 class HostStateNotification(val context: Context) {
+    private val REQUEST_CODE_BASE = 10000
     private var notificationId = 0
 
     val channelIdAwoke = "HOST_AWOKE"
@@ -19,13 +26,27 @@ class HostStateNotification(val context: Context) {
     val channelNameAsleep = context.getString(R.string.notification_asleep_name)
     private val channelDescriptionAsleep = context.getString(R.string.notification_asleep_description)
 
-    private fun make(channelId: String, @DrawableRes icon: Int, contentTitle: String, contentText: String): Int {
+    private fun make(host: WolHost, channelId: String, @DrawableRes icon: Int, contentTitle: String, contentText: String): Int {
+        val notificationIntent = Intent(context, MainActivity::class.java).apply {
+            // CLEAR_TASK needed or else the UP button will navigate back to old tasks
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("HOST_IX", host.pKey)
+        }
+        // Because the intent is different for different hosts we need a different pending intent for each host.
+        // This was observed experimentally. With the same request code the last host to notify affects all notifications.
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            host.pKey + REQUEST_CODE_BASE,
+            notificationIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val builder = NotificationCompat.Builder(context, channelId).apply {
             setSmallIcon(icon)
             setContentTitle(contentTitle)
             setContentText(contentText)
             priority = NotificationCompat.PRIORITY_HIGH
             // setSound(alarmSound)
+            setContentIntent(pendingIntent)
             setAutoCancel(true)
         }
 
@@ -39,16 +60,16 @@ class HostStateNotification(val context: Context) {
      * Send a notification of host changed to awake.
      * @return the notification id for [dismiss]
      */
-    fun makeAwokeNotification(title: String, content: String): Int {
-        return make(channelIdAwoke, R.drawable.ic_host_awoke, title, content)
+    fun makeAwokeNotification(host: WolHost, title: String, content: String): Int {
+        return make(host, channelIdAwoke, R.drawable.ic_host_awoke, title, content)
     }
 
     /**
      * Send a notification of host changed to asleep.
      * @return the notification id for [dismiss]
      */
-    fun makeAsleepNotification(title: String, content: String): Int {
-        return make(channelIdAsleep, R.drawable.ic_host_asleep, title, content)
+    fun makeAsleepNotification(host: WolHost, title: String, content: String): Int {
+        return make(host, channelIdAsleep, R.drawable.ic_host_asleep, title, content)
     }
 
     /**

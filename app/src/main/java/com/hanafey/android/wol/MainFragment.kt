@@ -144,19 +144,39 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
         observePingLiveData()
 
-        if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
-            findNavController().navigate(R.id.FirstTimeInformationFragment)
-            mvm.firstVisit = false
+        // The intent that is set by start by notification has bundle data that
+        // determines which host status to show.
+        val intentSayShowHostIx = requireActivity().intent.extras?.let {
+            val hostIx = it.getInt("HOST_IX", -1)
+            if (hostIx > -1 && hostIx < uiHosts.size) {
+                hostIx
+            } else {
+                -1
+            }
+        } ?: -2
+
+        if (intentSayShowHostIx >= 0) {
+            // Clear the intent set by the notification or else we navigate the next time the activity starts, e.g
+            // because the up button was pushed.
+            requireActivity().intent = Intent()
+            uiWake[intentSayShowHostIx].callOnClick()
         } else {
-            // FIX: The warning that this can be replaced by mvm.targets.isEmpty() seems to be AS error!
-            if (mvm.targets.count { it.enabled } == 0) {
-                Snackbar.make(ui.root, getString(R.string.info_no_hosts_enabled), Snackbar.LENGTH_LONG).show()
+            if (mvm.firstVisit && mvm.settingsData.versionAcknowledged < BuildConfig.VERSION_CODE) {
+                findNavController().navigate(R.id.FirstTimeInformationFragment)
+                mvm.firstVisit = false
+            } else {
+                // FIX: The warning that this can be replaced by mvm.targets.isEmpty() seems to be AS error!
+                if (mvm.targets.count { it.enabled } == 0) {
+                    Snackbar.make(ui.root, getString(R.string.info_no_hosts_enabled), Snackbar.LENGTH_LONG).show()
+                }
             }
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_main, menu)
+        val versionMi = menu.findItem(R.id.mi_version)
+        versionMi.title = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -174,12 +194,13 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
             R.id.mi_test_notification -> {
                 mvm.viewModelScope.launch {
-                    delay(mSecFromSeconds(5))
-                    val id1 = mvm.hostStateNotification.makeAsleepNotification("Test Asleep", "Will dismiss in 10 sec test asleep")
-                    delay(mSecFromSeconds(1))
-                    mvm.hostStateNotification.makeAwokeNotification("Test Awoke", "Will not issue dismiss test awoke")
-                    delay(mSecFromSeconds(10))
-                    mvm.hostStateNotification.dismiss(id1)
+                    val h1 = mvm.targets[0]
+                    val h2 = mvm.targets[1]
+
+                    delay(mSecFromSeconds(2))
+                    val id1 = mvm.hostStateNotification.makeAsleepNotification(h1, "${h1.title} Asleep", "Test of host went to sleep.")
+                    delay(mSecFromSeconds(2))
+                    mvm.hostStateNotification.makeAwokeNotification(h2, "${h2.title}  Awoke", "Test of host woke up.")
                 }
                 true
             }
