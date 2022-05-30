@@ -23,6 +23,11 @@ class SettingsData(val spm: SharedPreferences) {
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
     var pingKillDelayMinutes = 5
+
+    var datBufferSize = 17
+    var datBufferAliveAt = 14
+    var dataBufferDeadAt = 5
+
     var versionAcknowledged = 0
 
     fun initializeModel(mvm: MainViewModel) {
@@ -47,6 +52,16 @@ class SettingsData(val spm: SharedPreferences) {
 
         prefName = PrefNames.PING_SUSPEND_DELAY.pref()
         pingKillDelayMinutes = spm.getString(prefName, pingKillDelayMinutes.toString())?.toInt() ?: pingKillDelayMinutes
+
+        prefName = PrefNames.DAT_BUFFER_SIZE.pref()
+        datBufferSize = spm.getString(prefName, datBufferSize.toString())?.toInt() ?: datBufferSize
+
+        prefName = PrefNames.DAT_BUFFER_ALIVE_AT.pref()
+        datBufferAliveAt = spm.getString(prefName, datBufferAliveAt.toString())?.toInt() ?: datBufferAliveAt
+
+        prefName = PrefNames.DAT_BUFFER_DEAD_AT.pref()
+        dataBufferDeadAt = spm.getString(prefName, dataBufferDeadAt.toString())?.toInt() ?: dataBufferDeadAt
+
 
         prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()
         versionAcknowledged = spm.getInt(prefName, versionAcknowledged)

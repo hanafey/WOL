@@ -72,6 +72,45 @@ class SettingsFragment : PreferenceFragmentCompat(),
             }
         )
 
+        screen.addPreference(
+            PreferenceCategory(context).apply {
+                title = "Host Up / Down Detection"
+            }
+        )
+
+        screen.addPreference(
+            EditTextPreference(context).apply {
+                key = PrefNames.DAT_BUFFER_SIZE.pref()
+                title = "Size of ping response buffer"
+                setDefaultValue(mvm.settingsData.datBufferSize.toString())
+                summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                onPreferenceChangeListener = this@SettingsFragment
+                setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
+            }
+        )
+
+        screen.addPreference(
+            EditTextPreference(context).apply {
+                key = PrefNames.DAT_BUFFER_ALIVE_AT.pref()
+                title = "Top threshold (must be < size-1)"
+                setDefaultValue(mvm.settingsData.datBufferAliveAt.toString())
+                summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                onPreferenceChangeListener = this@SettingsFragment
+                setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
+            }
+        )
+
+        screen.addPreference(
+            EditTextPreference(context).apply {
+                key = PrefNames.DAT_BUFFER_DEAD_AT.pref()
+                title = "Bottom threshold (must be >= 0)"
+                setDefaultValue(mvm.settingsData.dataBufferDeadAt.toString())
+                summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                onPreferenceChangeListener = this@SettingsFragment
+                setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
+            }
+        )
+
         screen.let { ps ->
             PreferenceCategory(context).let { pc ->
                 pc.title = "Included Hosts"
@@ -357,6 +396,111 @@ class SettingsFragment : PreferenceFragmentCompat(),
                             }
                         } catch (ex: Exception) {
                             Snackbar.make(requireView(), "Ping suspend delay must be an integer", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
+            PrefNames.DAT_BUFFER_SIZE -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Buffer size must be an integer", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+                            if (intValue < 5) {
+                                Snackbar.make(
+                                    requireView(), "Buffer size must be at least 5", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else if (intValue > 60) {
+                                Snackbar.make(
+                                    requireView(), "Buffer size must be at most 60", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else {
+                                mvm.settingsData.datBufferSize = intValue
+                                mvm.settingsData.hostDataChanged = true
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Buffer size  must be an integer", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
+            PrefNames.DAT_BUFFER_ALIVE_AT -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Threshold  must be an integer", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+                            if (intValue < mvm.settingsData.datBufferSize / 2 + 1) {
+                                Snackbar.make(
+                                    requireView(), "Too small relative to buffer size", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else if (intValue > mvm.settingsData.datBufferSize - 1) {
+                                Snackbar.make(
+                                    requireView(), "Too big relative to buffer size", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else {
+                                mvm.settingsData.datBufferAliveAt = intValue
+                                mvm.settingsData.hostDataChanged = true
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Threshold must be an integer", Snackbar.LENGTH_LONG).show()
+                            false
+                        }
+                    }
+                }
+            }
+
+            PrefNames.DAT_BUFFER_DEAD_AT -> {
+                val value = (newValue as String).trim()
+
+                when {
+                    !integerRegEx.matches(value) -> {
+                        Snackbar.make(requireView(), "Threshold  must be an integer", Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+
+                    else -> {
+                        try {
+                            val intValue = value.toInt()
+                            if (intValue > mvm.settingsData.datBufferSize / 2) {
+                                Snackbar.make(
+                                    requireView(), "Too big relative to buffer size", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else if (intValue < 1) {
+                                Snackbar.make(
+                                    requireView(), "Too small relative to buffer size", Snackbar.LENGTH_LONG
+                                ).show()
+                                false
+                            } else {
+                                mvm.settingsData.dataBufferDeadAt = intValue
+                                mvm.settingsData.hostDataChanged = true
+                                true
+                            }
+                        } catch (ex: Exception) {
+                            Snackbar.make(requireView(), "Threshold must be an integer", Snackbar.LENGTH_LONG).show()
                             false
                         }
                     }
