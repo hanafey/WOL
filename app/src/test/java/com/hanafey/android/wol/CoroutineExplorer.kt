@@ -232,7 +232,7 @@ object CoroutineExplorer {
     // --------------------------------------------------------------------------------
 
     private const val tag = "COE"
-    private const val debugLoggingEnabled = true
+    private const val debugLoggingEnabled = false
     var EXT_EPOCH: Instant = Instant.now()
 
     private fun dog(message: () -> String) {

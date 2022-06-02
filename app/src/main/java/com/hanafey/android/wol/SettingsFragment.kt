@@ -104,7 +104,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
             EditTextPreference(context).apply {
                 key = PrefNames.DAT_BUFFER_DEAD_AT.pref()
                 title = "Bottom threshold (must be >= 0)"
-                setDefaultValue(mvm.settingsData.dataBufferDeadAt.toString())
+                setDefaultValue(mvm.settingsData.datBufferDeadAt.toString())
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                 onPreferenceChangeListener = this@SettingsFragment
                 setOnBindEditTextListener { editText -> editText.inputType = InputType.TYPE_CLASS_NUMBER }
@@ -414,19 +414,18 @@ class SettingsFragment : PreferenceFragmentCompat(),
                     else -> {
                         try {
                             val intValue = value.toInt()
-                            if (intValue < 5) {
-                                Snackbar.make(
-                                    requireView(), "Buffer size must be at least 5", Snackbar.LENGTH_LONG
-                                ).show()
-                                false
-                            } else if (intValue > 60) {
-                                Snackbar.make(
-                                    requireView(), "Buffer size must be at most 60", Snackbar.LENGTH_LONG
-                                ).show()
+                            val problem = PingDeadToAwakeTransition.validateBufferSettings(
+                                intValue,
+                                mvm.settingsData.datBufferDeadAt,
+                                mvm.settingsData.datBufferAliveAt
+                            )
+                            if (problem.isNotEmpty()) {
+                                Snackbar.make(requireView(), problem, Snackbar.LENGTH_LONG).show()
                                 false
                             } else {
                                 mvm.settingsData.datBufferSize = intValue
                                 mvm.settingsData.hostDataChanged = true
+                                mvm.settingsData.datBufferChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -449,19 +448,18 @@ class SettingsFragment : PreferenceFragmentCompat(),
                     else -> {
                         try {
                             val intValue = value.toInt()
-                            if (intValue < mvm.settingsData.datBufferSize / 2 + 1) {
-                                Snackbar.make(
-                                    requireView(), "Too small relative to buffer size", Snackbar.LENGTH_LONG
-                                ).show()
-                                false
-                            } else if (intValue > mvm.settingsData.datBufferSize - 1) {
-                                Snackbar.make(
-                                    requireView(), "Too big relative to buffer size", Snackbar.LENGTH_LONG
-                                ).show()
+                            val problem = PingDeadToAwakeTransition.validateBufferSettings(
+                                mvm.settingsData.datBufferSize,
+                                mvm.settingsData.datBufferDeadAt,
+                                intValue
+                            )
+                            if (problem.isNotEmpty()) {
+                                Snackbar.make(requireView(), problem, Snackbar.LENGTH_LONG).show()
                                 false
                             } else {
                                 mvm.settingsData.datBufferAliveAt = intValue
                                 mvm.settingsData.hostDataChanged = true
+                                mvm.settingsData.datBufferChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -484,19 +482,18 @@ class SettingsFragment : PreferenceFragmentCompat(),
                     else -> {
                         try {
                             val intValue = value.toInt()
-                            if (intValue > mvm.settingsData.datBufferSize / 2) {
-                                Snackbar.make(
-                                    requireView(), "Too big relative to buffer size", Snackbar.LENGTH_LONG
-                                ).show()
-                                false
-                            } else if (intValue < 1) {
-                                Snackbar.make(
-                                    requireView(), "Too small relative to buffer size", Snackbar.LENGTH_LONG
-                                ).show()
+                            val problem = PingDeadToAwakeTransition.validateBufferSettings(
+                                mvm.settingsData.datBufferSize,
+                                intValue,
+                                mvm.settingsData.datBufferAliveAt
+                            )
+                            if (problem.isNotEmpty()) {
+                                Snackbar.make(requireView(), problem, Snackbar.LENGTH_LONG).show()
                                 false
                             } else {
-                                mvm.settingsData.dataBufferDeadAt = intValue
+                                mvm.settingsData.datBufferDeadAt = intValue
                                 mvm.settingsData.hostDataChanged = true
+                                mvm.settingsData.datBufferChanged = true
                                 true
                             }
                         } catch (ex: Exception) {
@@ -604,8 +601,21 @@ class SettingsFragment : PreferenceFragmentCompat(),
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
         when (destination.id) {
             R.id.MainFragment -> {
-                if (mvm.settingsData.hostDataChanged) {
-                    mvm.settingsData.hostDataChanged = false
+                val sd = mvm.settingsData
+
+                if (sd.datBufferChanged) {
+                    sd.hostDataChanged = true
+                    mvm.targets.forEach { wh ->
+                        wh.deadAliveTransition.setBufferParameters(
+                            sd.datBufferSize,
+                            sd.datBufferAliveAt,
+                            sd.datBufferDeadAt
+                        )
+                    }
+                }
+
+                if (sd.hostDataChanged) {
+                    sd.hostDataChanged = false
                     mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
                     dog { "onDestinationChanged: RE-PING $destination" }
                 } else {
@@ -633,7 +643,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
 
     companion object {
         private const val tag = "SettingsFragment"
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {
@@ -648,5 +658,4 @@ class SettingsFragment : PreferenceFragmentCompat(),
             }
         }
     }
-
 }

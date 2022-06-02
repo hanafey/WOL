@@ -20,13 +20,20 @@ class SettingsData(val spm: SharedPreferences) {
      */
     var hostDataChanged = false
 
+    /**
+     * Before navigating to [SettingsFragment] set to false. If any DAT buffer setting  is changed [SettingsFragment] will set
+     * it to true. When navigating back to MainFragment, if this is true then the hosts [PingDeadToAwakeTransition] setting
+     * must be updated before re-pinging hosts. When this is set true, [hostDataChanged] must also be set true
+     */
+    var datBufferChanged = false
+
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
     var pingKillDelayMinutes = 5
 
     var datBufferSize = 17
     var datBufferAliveAt = 14
-    var dataBufferDeadAt = 5
+    var datBufferDeadAt = 5
 
     var versionAcknowledged = 0
 
@@ -60,7 +67,7 @@ class SettingsData(val spm: SharedPreferences) {
         datBufferAliveAt = spm.getString(prefName, datBufferAliveAt.toString())?.toInt() ?: datBufferAliveAt
 
         prefName = PrefNames.DAT_BUFFER_DEAD_AT.pref()
-        dataBufferDeadAt = spm.getString(prefName, dataBufferDeadAt.toString())?.toInt() ?: dataBufferDeadAt
+        datBufferDeadAt = spm.getString(prefName, datBufferDeadAt.toString())?.toInt() ?: datBufferDeadAt
 
 
         prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()

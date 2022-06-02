@@ -50,7 +50,11 @@ object MagicPacket {
      */
     @Throws(java.io.IOException::class)
     fun ping(hostAddress: InetAddress, waitForResponseMilli: Int = 250): Boolean {
-        return hostAddress.isReachable(waitForResponseMilli.coerceAtLeast(20))
+        // This method is hard to understand from the doc. With ttl = 0 it seems we wait for two timeout
+        // intervals, but this does not happen if ttl is > 0
+        // Source link:https://android.googlesource.com/platform/libcore/+/master/ojluni/src/main/java/java/net/Inet6AddressImpl.java
+        // return hostAddress.isReachable(waitForResponseMilli.coerceAtLeast(20))
+        return hostAddress.isReachable(null, 0, waitForResponseMilli.coerceAtLeast(20))
     }
 
 

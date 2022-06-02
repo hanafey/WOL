@@ -188,6 +188,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
             R.id.mi_settings -> {
                 mvm.settingsData.hostDataChanged = false
+                mvm.settingsData.datBufferChanged = false
                 findNavController().navigate(R.id.SettingsFragment)
                 true
             }
@@ -381,6 +382,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                     if (!target.pingMe) {
                         // Ping is disabled for this host
                         target.resetState()
+                        target.deadAliveTransition.resetBuffer()
                         uiPingState[ix].backgroundTintList = pingOffTint
                         uiPingState[ix].icon = ContextCompat.getDrawable(
                             requireActivity(),
@@ -396,7 +398,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
     companion object {
         private const val tag = "MainFragment"
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {
@@ -411,5 +413,4 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             }
         }
     }
-
 }

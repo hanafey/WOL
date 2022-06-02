@@ -68,7 +68,7 @@ object SendMagicPackets {
     // --------------------------------------------------------------------------------
 
     private const val tag = "SMP"
-    private const val debugLoggingEnabled = true
+    private const val debugLoggingEnabled = false
     var EXT_EPOCH: Instant = Instant.now()
 
     private fun dog(message: () -> String) {

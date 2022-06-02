@@ -31,15 +31,17 @@ class WolApplication : Application() {
         super.onCreate()
 
         _mainScope = MainScope()
-        _mvm = MainViewModel(this)
 
+        _mvm = MainViewModel(this)
         initializeFromSharedPrefs()
+
         initializeNotifications()
         mvm.observeAliveDeadTransitions()
     }
 
     private fun initializeFromSharedPrefs() {
         mvm.settingsData.initializeModel(mvm)
+        mvm.initializeFromSettings()
     }
 
     private fun initializeNotifications() {
@@ -48,7 +50,7 @@ class WolApplication : Application() {
 
     companion object {
         private const val tag = "WolApplication"
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {

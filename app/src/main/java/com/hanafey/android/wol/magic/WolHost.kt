@@ -5,6 +5,7 @@ import kotlinx.coroutines.sync.Mutex
 import java.time.Instant
 
 /**
+ * You must call [PingDeadToAwakeTransition.setBufferParameters] on [deadAliveTransition] after instantiating this class.
  * @param pKey A unique key for each host that also orders a set of hosts. Currently this
  * is used in conjunction with a list, and [pKey] must be array index position.
  * @param title User understandable name for the WOL target.

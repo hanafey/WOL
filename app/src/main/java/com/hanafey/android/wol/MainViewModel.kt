@@ -97,6 +97,21 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Must be called after settings are read from the preference store to initialize parts of the model that depend
+     * on settings. This is complicated but the fact that part of the main model drives what settings are read -- in
+     * particular the list of available host slots.
+     *
+     * Currently this requires only that the [targets] part of the model is available.
+     */
+    fun initializeFromSettings() {
+        targets.forEach { wh ->
+            wh.deadAliveTransition.setBufferParameters(
+                settingsData.datBufferSize, settingsData.datBufferAliveAt, settingsData.datBufferDeadAt
+            )
+        }
+    }
+
     @MainThread
     fun signalPingTargetChanged(wh: WolHost) {
         _targetPingChanged.value = wh.pKey
@@ -197,7 +212,7 @@ class MainViewModel(
             var exception: Throwable? = null
 
             while (pingActive) {
-                var pingUsedMillis = 0L
+                var pingUsedMillisOrigin = System.currentTimeMillis()
                 if (host.enabled && host.pingMe) {
                     if (address == null || pingName != host.pingName) {
                         address = withContext(Dispatchers.IO) {
@@ -220,7 +235,10 @@ class MainViewModel(
                         host.lastPingSentAt.update(Instant.now())
                         val pingResult = withContext(Dispatchers.IO) {
                             try {
+                                val doggerA = System.currentTimeMillis()
                                 val pingResult = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
+                                val doggerB = System.currentTimeMillis()
+                                dog(true) { "Ping ${host.title} took ${doggerB - doggerA} msec, result=$pingResult" }
                                 if (pingResult) 1 else 0
                             } catch (e: Exception) {
                                 exception = e
@@ -230,7 +248,6 @@ class MainViewModel(
 
                         when (pingResult) {
                             1 -> {
-                                pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
                                 host.mutex.withLock {
                                     if (host.pingMe) {
                                         // Ping can take time, and host may have been turned off while waiting result
@@ -253,7 +270,6 @@ class MainViewModel(
                             }
 
                             0 -> {
-                                pingUsedMillis = Duration.between(host.lastPingSentAt.state().first, Instant.now()).toMillis()
                                 // TODO: ping non response is delayed. Do we need to worry about pingMe state changing?
                                 host.mutex.withLock {
                                     host.lastPingResponseAt.update(Instant.EPOCH)
@@ -281,8 +297,8 @@ class MainViewModel(
                     _targetPingChanged.value = host.pKey
                 }
 
-                val neededDelay = settingsData.pingDelayMillis - pingUsedMillis
-                if (neededDelay > 10) delay(neededDelay)
+                val neededDelay = settingsData.pingDelayMillis - (System.currentTimeMillis() - pingUsedMillisOrigin)
+                delay(neededDelay.coerceAtLeast(100L))
             }
 
             if (resetState) {
@@ -366,11 +382,11 @@ class MainViewModel(
 
     companion object {
         private const val tag = "MainViewModel"
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
-        private fun dog(message: () -> String) {
-            if (debugLoggingEnabled) {
+        private fun dog(forceOn: Boolean = false, message: () -> String) {
+            if (forceOn || debugLoggingEnabled) {
                 if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
                     if (Log.isLoggable(tag, Log.ERROR)) {
                         val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0

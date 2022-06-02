@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
 
     companion object {
         private const val tag = "MainActivity"
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {

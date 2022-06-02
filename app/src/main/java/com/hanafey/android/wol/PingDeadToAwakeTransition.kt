@@ -7,6 +7,10 @@ import com.hanafey.android.wol.magic.WolHost
 import java.time.Duration
 import java.time.Instant
 
+/**
+ * You must call [setBufferParameters] after creating an instance of this class. This is delayed because [SettingsData] is
+ * needed to supply the DAT buffer information.
+ */
 class PingDeadToAwakeTransition(val host: WolHost) {
     /**
      * Signals that hosts can emit.
@@ -47,13 +51,15 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      */
     val aliveDeadTransition: LiveData<WolHostSignal>
         get() = _aliveDeadTransition
+    private val _aliveDeadTransition = MutableLiveData(WolHostSignal(host, WHS.NOTHING))
 
     /**
      * Must be odd number, no ties allowed. This number of pings must be in the buffer to render an awake / asleep signal.
+     * These are properly initialized by [setBufferParameters] which must be called after class construction.
      */
-    private val bufferSize = 15
-    private val minSignalGoingUp = bufferSize - 3
-    private val minSignalGoingDown = minSignalGoingUp - 4
+    private var bufferSize = 0
+    private var minSignalGoingUp = 0
+    private var minSignalGoingDown = 0
     private var transitionCount = 0
 
     /**
@@ -64,7 +70,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     /**
      * The buffer is maintained in circular order.
      */
-    private val buffer = IntArray(bufferSize)
+    private var buffer = IntArray(bufferSize)
 
     /**
      * The index is the last position stored in, or -1 for empty. The next value stored goes in [bufferIx]+1 with wrap
@@ -82,16 +88,10 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      */
     private val testingReportPeriod = mSecFromMinutes(0)
 
-    private val _aliveDeadTransition = MutableLiveData(WolHostSignal(host, WHS.NOTHING))
-
-    init {
-        resetBuffer()
-    }
-
     /**
      * Sets to the state at construction, empty buffer no current or previous signal
      */
-    private fun resetBuffer() {
+    fun resetBuffer() {
         dog { "resetBuffer" }
         lastPingReportedMillies = 0L
         lastPingMillies = 0L
@@ -102,6 +102,31 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         for (ix in buffer.indices) {
             buffer[ix] = Int.MIN_VALUE
         }
+    }
+
+    /**
+     * Set the buffer parameters, and reset the buffer. This means the buffer history reverts to empty, and the
+     * parameters that control alive / dead transitions are set.
+     * @throws [IllegalArgumentException] if the parmeters do not specify a valid history buffer with appropriate
+     * hysteresis.
+     */
+    fun setBufferParameters(
+        size: Int,
+        upperThreshold: Int,
+        lowerThreshold: Int
+    ) {
+        val problem = validateBufferSettings(size, lowerThreshold, upperThreshold)
+        if (problem.isNotEmpty()) {
+            throw IllegalArgumentException(problem)
+        }
+
+        if (size != bufferSize) {
+            buffer = IntArray(size)
+        }
+        bufferSize = size
+        minSignalGoingUp = upperThreshold
+        minSignalGoingDown = lowerThreshold
+        resetBuffer()
     }
 
     /**
@@ -119,7 +144,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         bufferIx++
         if (bufferIx >= bufferSize) bufferIx = 0
         buffer[bufferIx] = pmz
-
+        dog { "DAT=${datBufferToString(buffer, bufferIx)}" }
         previousBufferSignal = currentBufferSignal
         currentBufferSignal = assessBuffer(previousBufferSignal)
         dog { "${host.title}  transitions = $transitionCount $previousBufferSignal -> $currentBufferSignal" }
@@ -180,6 +205,24 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     }
 
     companion object {
+        /**
+         * Tests the validity of ping history transition buffer and returns empty string if values are valid, or a
+         * string describing the error.
+         */
+        fun validateBufferSettings(size: Int, lowerThreshold: Int, upperThreshold: Int): String {
+            return when {
+                size < 3 -> "Ping sample size too small (must be >= 3)"
+                size > 120 -> "Ping sample size too big ( must be <= 120"
+                lowerThreshold < 0 -> "Lower threshold must be >= 0"
+                upperThreshold >= size -> "Upper threshold must be < sample size"
+                lowerThreshold > upperThreshold -> "The upper threshold must be the same or bigger than lower threshold"
+                else -> ""
+            }
+        }
+
+        // --------------------------------------------------------------------------------
+        // Logging
+        // --------------------------------------------------------------------------------
         private const val tag = "PingDeadToAwake.."
         private const val debugLoggingEnabled = true
         private const val uniqueIdentifier = "DOGLOG"
@@ -194,6 +237,28 @@ class PingDeadToAwakeTransition(val host: WolHost) {
                     }
                 }
             }
+        }
+
+        private fun datBufferToString(buffer: IntArray, cix: Int): String {
+            val z = buffer.size
+            val sa = StringBuilder(z)
+            var bix: Int
+            for (i in buffer.indices) {
+                bix = cix - i
+                if (bix < 0) {
+                    bix = z - 1
+                }
+                val b = buffer[bix]
+                sa.append(
+                    when (b) {
+                        1 -> 'A'
+                        -1 -> 'd'
+                        0 -> '.'
+                        else -> '-'
+                    }
+                )
+            }
+            return sa.toString()
         }
     }
 }
