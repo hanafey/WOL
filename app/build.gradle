@@ -42,7 +42,7 @@ android {
         versionCode 10
         versionName "2.0.0"
         // Set this false to disable debug logging.
-        buildConfigField "boolean", "DOG_ON", "true"
+        buildConfigField "boolean", "DOG_ON", "false"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config
@@ -55,6 +55,7 @@ android {
             signingConfig signingConfigs.release_signing_config
         }
         debug {
+            minifyEnabled false
             signingConfig signingConfigs.debug
         }
     }
@@ -76,13 +77,13 @@ android {
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'com.google.android.material:material:1.6.0'
+    implementation 'androidx.core:core-ktx:1.8.0'
+    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.4.2'
     implementation 'androidx.navigation:navigation-ui-ktx:2.4.2'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1-native-mt'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.2'
     implementation 'androidx.preference:preference-ktx:1.2.0'
     implementation 'androidx.webkit:webkit:1.4.0'
     testImplementation 'junit:junit:4.13.2'

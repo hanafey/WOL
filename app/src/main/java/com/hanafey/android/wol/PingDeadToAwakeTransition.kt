@@ -144,7 +144,6 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         bufferIx++
         if (bufferIx >= bufferSize) bufferIx = 0
         buffer[bufferIx] = pmz
-        dog { "DAT=${datBufferToString(buffer, bufferIx)}" }
         previousBufferSignal = currentBufferSignal
         currentBufferSignal = assessBuffer(previousBufferSignal)
         dog { "${host.title}  transitions = $transitionCount $previousBufferSignal -> $currentBufferSignal" }
@@ -154,12 +153,12 @@ class PingDeadToAwakeTransition(val host: WolHost) {
             if (transitionCount > 1 && currentBufferSignal != previousBufferSignal && previousBufferSignal != WHS.NOTHING) {
                 // Do not report the first transition because is is from unknown to something.
                 lastPingReportedMillies = now
-                _aliveDeadTransition.value = WolHostSignal(host, currentBufferSignal)
+                _aliveDeadTransition.postValue(WolHostSignal(host, currentBufferSignal))
                 dog { "signal!" }
             }
         } else if (testingReportPeriod > 0 && now - lastPingReportedMillies > testingReportPeriod) {
             lastPingReportedMillies = now
-            _aliveDeadTransition.value = WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})")
+            _aliveDeadTransition.postValue(WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})"))
             dog { "noise!" }
         }
         return currentBufferSignal
@@ -176,6 +175,8 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         var pc = 0
         var nc = 0
         var zc = 0
+        val bs = buffer.size
+
         buffer.forEach { pmz ->
             when (pmz) {
                 -1 -> nc++
@@ -183,22 +184,37 @@ class PingDeadToAwakeTransition(val host: WolHost) {
                 0 -> zc++
             }
         }
+
         val tc = nc + pc + zc
 
-        return if (tc < bufferSize || zc > 0) {
+        return if (tc < bs || zc > 0) {
             WHS.NOTHING
         } else {
-            if (currentState != WHS.AWOKE) {
-                if (pc > minSignalGoingUp) {
-                    WHS.AWOKE
-                } else {
-                    currentState
+            when (currentState) {
+                WHS.NOTHING -> {
+                    if (pc > minSignalGoingUp) {
+                        WHS.AWOKE
+                    } else {
+                        WHS.DIED
+                    }
                 }
-            } else {
-                if (pc <= minSignalGoingDown) {
-                    WHS.DIED
-                } else {
-                    currentState
+                WHS.DIED -> {
+                    if (pc > minSignalGoingUp) {
+                        WHS.AWOKE
+                    } else {
+                        WHS.DIED
+                    }
+                }
+                WHS.AWOKE -> {
+                    if (pc <= minSignalGoingDown) {
+                        WHS.DIED
+                    } else {
+                        WHS.AWOKE
+                    }
+                }
+                WHS.NOISE -> {
+                    // Should never happen
+                    WHS.NOTHING
                 }
             }
         }
@@ -224,7 +240,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         // Logging
         // --------------------------------------------------------------------------------
         private const val tag = "PingDeadToAwake.."
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {

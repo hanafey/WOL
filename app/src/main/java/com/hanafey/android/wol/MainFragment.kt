@@ -165,7 +165,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                 findNavController().navigate(R.id.FirstTimeInformationFragment)
                 mvm.firstVisit = false
             } else {
-                // FIX: The warning that this can be replaced by mvm.targets.isEmpty() seems to be AS error!
+                // The warning that this can be replaced by mvm.targets.isEmpty() is bullshit!
                 if (mvm.targets.count { it.enabled } == 0) {
                     Snackbar.make(ui.root, getString(R.string.info_no_hosts_enabled), Snackbar.LENGTH_LONG).show()
                 }
@@ -344,7 +344,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     }
 
 
-    // TODO: Not currently used. [onClick] set frozen ui, and the dialog resets the frozen state on dismiss.
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {}
 
     inner class PingStateClickListener(private val wh: WolHost, private val showWol: Boolean) : View.OnClickListener {

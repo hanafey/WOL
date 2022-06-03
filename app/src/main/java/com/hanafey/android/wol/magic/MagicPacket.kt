@@ -51,10 +51,13 @@ object MagicPacket {
     @Throws(java.io.IOException::class)
     fun ping(hostAddress: InetAddress, waitForResponseMilli: Int = 250): Boolean {
         // This method is hard to understand from the doc. With ttl = 0 it seems we wait for two timeout
-        // intervals, but this does not happen if ttl is > 0
+        // intervals, but this does not happen if ttl is > 0. Not sure if this is related to icmp vs tcp ping test
+        // which this code uses. If icmp is not supported tcp method is tried, but caller has not idea which.
         // Source link:https://android.googlesource.com/platform/libcore/+/master/ojluni/src/main/java/java/net/Inet6AddressImpl.java
-        // return hostAddress.isReachable(waitForResponseMilli.coerceAtLeast(20))
-        return hostAddress.isReachable(null, 0, waitForResponseMilli.coerceAtLeast(20))
+
+        // Adjust for ttl=0 (the default) which empirically doubles the wait.
+        val adjustedWaitMilli = waitForResponseMilli / 2
+        return hostAddress.isReachable(null, 0, adjustedWaitMilli.coerceAtLeast(50))
     }
 
 

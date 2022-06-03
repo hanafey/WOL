@@ -35,8 +35,7 @@ class MainViewModel(
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
-    // FIX: _targetPingChanged is not private
-    val _targetPingChanged = MutableLiveData(-1)
+    private val _targetPingChanged = MutableLiveData(-1)
     val targetPingChangedLiveData: LiveData<Int>
         get() = _targetPingChanged
 
@@ -200,23 +199,23 @@ class MainViewModel(
     private fun pingTarget(scope: CoroutineScope, host: WolHost, resetState: Boolean): Job {
 
         return scope.launch {
-            if (resetState) {
-                host.mutex.withLock {
-                    host.resetPingState()
+            withContext(Dispatchers.IO) {
+                if (resetState) {
+                    host.mutex.withLock {
+                        host.resetPingState()
+                    }
+                    _targetPingChanged.postValue(host.pKey)
                 }
-                _targetPingChanged.value = host.pKey
-            }
 
-            var address: InetAddress? = null
-            var pingName: String = host.pingName // host.pingName may be changed in a settings and the address must be looked up.
-            var exception: Throwable? = null
+                var address: InetAddress? = null
+                var pingName: String = host.pingName // host.pingName may be changed in a settings and the address must be looked up.
+                var exception: Throwable? = null
 
-            while (pingActive) {
-                var pingUsedMillisOrigin = System.currentTimeMillis()
-                if (host.enabled && host.pingMe) {
-                    if (address == null || pingName != host.pingName) {
-                        address = withContext(Dispatchers.IO) {
-                            try {
+                while (pingActive) {
+                    var pingUsedMillisOrigin = System.currentTimeMillis()
+                    if (host.enabled && host.pingMe) {
+                        if (address == null || pingName != host.pingName) {
+                            address = try {
                                 val inetAddress = InetAddress.getByName(host.pingName)
                                 pingName = host.pingName
                                 inetAddress
@@ -229,84 +228,77 @@ class MainViewModel(
                                 null
                             }
                         }
-                    }
 
-                    if (address != null) {
-                        host.lastPingSentAt.update(Instant.now())
-                        val pingResult = withContext(Dispatchers.IO) {
-                            try {
-                                val doggerA = System.currentTimeMillis()
-                                val pingResult = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
-                                val doggerB = System.currentTimeMillis()
-                                dog(true) { "Ping ${host.title} took ${doggerB - doggerA} msec, result=$pingResult" }
-                                if (pingResult) 1 else 0
+                        if (address != null) {
+                            host.lastPingSentAt.update(Instant.now())
+                            val pingResult = try {
+                                val x = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
+                                if (x) 1 else 0
                             } catch (e: Exception) {
                                 exception = e
                                 -1
                             }
-                        }
 
-                        when (pingResult) {
-                            1 -> {
-                                host.mutex.withLock {
-                                    if (host.pingMe) {
-                                        // Ping can take time, and host may have been turned off while waiting result
-                                        host.pingState = WolHost.PingStates.ALIVE
-                                        host.pingedCountAlive++
-                                        host.pingException = null
+                            when (pingResult) {
+                                1 -> {
+                                    host.mutex.withLock {
+                                        if (host.pingMe) {
+                                            // Ping can take time, and host may have been turned off while waiting result
+                                            host.pingState = WolHost.PingStates.ALIVE
+                                            host.pingedCountAlive++
+                                            host.pingException = null
+                                        }
+                                        host.lastPingSentAt.consume()
+                                        host.lastPingResponseAt.update(Instant.now())
+                                        val (then, ack) = host.lastWolSentAt.consume()
+                                        if (!ack) {
+                                            val now = Instant.now()
+                                            host.lastWolWakeAt.update(now)
+                                            val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
+                                            host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
+                                            host.wolToWakeHistoryChanged = true
+                                        }
+                                        host.deadAliveTransition.addPingResult(1)
                                     }
-                                    host.lastPingSentAt.consume()
-                                    host.lastPingResponseAt.update(Instant.now())
-                                    val (then, ack) = host.lastWolSentAt.consume()
-                                    if (!ack) {
-                                        val now = Instant.now()
-                                        host.lastWolWakeAt.update(now)
-                                        val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
-                                        host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
-                                        host.wolToWakeHistoryChanged = true
-                                    }
-                                    host.deadAliveTransition.addPingResult(1)
                                 }
-                            }
 
-                            0 -> {
-                                // TODO: ping non response is delayed. Do we need to worry about pingMe state changing?
-                                host.mutex.withLock {
-                                    host.lastPingResponseAt.update(Instant.EPOCH)
-                                    if (host.pingMe) {
-                                        // Ping can take time, and host may have been turned off while waiting result
-                                        host.pingState = WolHost.PingStates.DEAD
-                                        host.pingedCountDead++
-                                        host.pingException = null
+                                0 -> {
+                                    host.mutex.withLock {
+                                        host.lastPingResponseAt.update(Instant.EPOCH)
+                                        if (host.pingMe) {
+                                            // Ping can take time, and host may have been turned off while waiting result
+                                            host.pingState = WolHost.PingStates.DEAD
+                                            host.pingedCountDead++
+                                            host.pingException = null
+                                        }
+                                        host.deadAliveTransition.addPingResult(-1)
                                     }
-                                    host.deadAliveTransition.addPingResult(-1)
-
                                 }
-                            }
 
-                            else -> {
-                                host.mutex.withLock {
-                                    host.pingState = WolHost.PingStates.EXCEPTION
-                                    host.pingException = exception
-                                    host.lastPingResponseAt.update(Instant.EPOCH)
-                                    host.deadAliveTransition.addPingResult(0)
+                                else -> {
+                                    host.mutex.withLock {
+                                        host.pingState = WolHost.PingStates.EXCEPTION
+                                        host.pingException = exception
+                                        host.lastPingResponseAt.update(Instant.EPOCH)
+                                        host.deadAliveTransition.addPingResult(0)
+                                    }
                                 }
                             }
                         }
+                        _targetPingChanged.postValue(host.pKey)
                     }
-                    _targetPingChanged.value = host.pKey
+
+                    val neededDelay = settingsData.pingDelayMillis - (System.currentTimeMillis() - pingUsedMillisOrigin)
+                    delay(neededDelay.coerceAtLeast(100L))
                 }
 
-                val neededDelay = settingsData.pingDelayMillis - (System.currentTimeMillis() - pingUsedMillisOrigin)
-                delay(neededDelay.coerceAtLeast(100L))
-            }
-
-            if (resetState) {
-                host.mutex.withLock {
-                    host.resetPingState()
+                if (resetState) {
+                    host.mutex.withLock {
+                        host.resetPingState()
+                    }
                 }
+                _targetPingChanged.postValue(host.pKey)
             }
-            _targetPingChanged.value = host.pKey
         }
     }
 
@@ -352,7 +344,7 @@ class MainViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        // FIX: Should not be needed. We add these at the application level,
+        // Should not be needed. We add these at the application level. Harmless -- never executed.
         targets.forEach { wh ->
             wh.deadAliveTransition.aliveDeadTransition.removeObserver(observerOfHostState)
         }
