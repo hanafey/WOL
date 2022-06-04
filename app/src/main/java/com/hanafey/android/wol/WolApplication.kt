@@ -1,9 +1,17 @@
 package com.hanafey.android.wol
 
 import android.app.Application
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.util.Log
+import androidx.lifecycle.Transformations
+import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
+import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
@@ -11,6 +19,11 @@ class WolApplication : Application() {
 
     private var _mainScope: CoroutineScope? = null
     private var _mvm: MainViewModel? = null
+    private lateinit var networkStateTracker: NetworkStateTracker
+    private val netStateMLD = Live(
+        NetworkStateTracker.NetState(System.currentTimeMillis(), isAvailable = false, isWifi = false)
+    )
+    private val netStateDMLD = Transformations.distinctUntilChanged(netStateMLD)
 
     /**
      * Valid only after [onCreate] is called.
@@ -31,12 +44,17 @@ class WolApplication : Application() {
         super.onCreate()
 
         _mainScope = MainScope()
+        networkStateTracker = NetworkStateTracker(mainScope, netStateMLD)
 
         _mvm = MainViewModel(this)
         initializeFromSharedPrefs()
 
         initializeNotifications()
+        initializeNetworkObserver()
         mvm.observeAliveDeadTransitions()
+        netStateDMLD.observeForever {
+            dog { "netState: $it" }
+        }
     }
 
     private fun initializeFromSharedPrefs() {
@@ -48,9 +66,52 @@ class WolApplication : Application() {
         mvm.hostStateNotification.createNotificationChannels()
     }
 
+    private fun initializeNetworkObserver() {
+
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                networkStateTracker.isAvailable = true
+                // val hostAddresses = lookupHosts(network, mvm.targets)
+                // dog { "onAvailable: $hostAddresses" }
+            }
+
+            override fun onLost(network: Network) {
+                networkStateTracker.isAvailable = false
+                // val hostAddresses = lookupHosts(network, mvm.targets)
+                // dog { "onLost: $hostAddresses" }
+            }
+
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                val cellular = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                val wifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                val wifiAware = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
+                networkStateTracker.isWifi = wifi
+                // val hostAddresses = lookupHosts(network, mvm.targets)
+                // dog { "onCapChanged: cellular=$cellular, wifi=$wifi, wifiWare=$wifiAware $hostAddresses" }
+            }
+
+            override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {
+                // val hostAddresses = lookupHosts(network, mvm.targets)
+                // dog { "onPropChanged: ${lp.interfaceName}, ${lp.dhcpServerAddress} ${lp.domains} $hostAddresses" }
+            }
+        })
+    }
+
+    private fun lookupHosts(network: Network, hosts: List<WolHost>): List<Pair<String, InetAddress?>> {
+        return hosts.map { wh ->
+            val address = try {
+                network.getByName(wh.pingName)
+            } catch (ex: Exception) {
+                null
+            }
+            wh.title to address
+        }
+    }
+
     companion object {
         private const val tag = "WolApplication"
-        private const val debugLoggingEnabled = false
+        private const val debugLoggingEnabled = true
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {

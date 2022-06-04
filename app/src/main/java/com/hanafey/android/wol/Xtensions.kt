@@ -9,6 +9,8 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import kotlin.math.roundToInt
 
 internal fun mSecFromSeconds(seconds: Int) = 1000L * seconds
@@ -86,4 +88,50 @@ fun Context.resIdByName(resIdName: String, resType: String): Int {
 
 fun Fragment.getToolbarTitle(): String {
     return this.requireAppCompatActivity().supportActionBar?.title?.toString() ?: ""
+}
+
+/**
+ * Creates a MutableLiveData initialized with the given `value`. This provides Kotlin null safety when using the value.
+ *
+ * @param value The initial value.
+ */
+@Suppress("UNCHECKED_CAST")
+open class Live<T>(value: T) : MutableLiveData<T>(value) {
+
+    override fun getValue(): T {
+        return super.getValue() as T
+    }
+
+    override fun postValue(value: T) {
+        super.postValue(value)
+    }
+
+    override fun setValue(value: T) {
+        super.setValue(value)
+    }
+
+    /**
+     * Equivalent to `this.value.toString`.
+     */
+    override fun toString(): String {
+        return value.toString()
+    }
+}
+
+open class LiveImmutable<T>(private val backer: Live<T>) : LiveData<T>() {
+
+    override fun getValue(): T {
+        return backer.value
+    }
+
+    override fun postValue(value: T) {}
+
+    override fun setValue(value: T) {}
+
+    /**
+     * Equivalent to `this.value.toString`.
+     */
+    override fun toString(): String {
+        return backer.value.toString()
+    }
 }
