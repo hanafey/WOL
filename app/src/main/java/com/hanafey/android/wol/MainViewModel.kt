@@ -216,7 +216,7 @@ class MainViewModel(
 
                 while (pingActive) {
                     var pingUsedMillisOrigin = System.currentTimeMillis()
-                    if (host.enabled && host.pingMe && wiFiOn) {
+                    if (host.enabled && host.pingMe && (settingsData.pingIgnoreWiFiState || wiFiOn)) {
                         if (address == null || pingName != host.pingName) {
                             address = try {
                                 val inetAddress = InetAddress.getByName(host.pingName)

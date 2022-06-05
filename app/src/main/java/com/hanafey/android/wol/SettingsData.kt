@@ -30,6 +30,7 @@ class SettingsData(val spm: SharedPreferences) {
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
     var pingKillDelayMinutes = 5
+    var pingIgnoreWiFiState = false
 
     var datBufferSize = 17
     var datBufferAliveAt = 14
@@ -59,6 +60,9 @@ class SettingsData(val spm: SharedPreferences) {
 
         prefName = PrefNames.PING_SUSPEND_DELAY.pref()
         pingKillDelayMinutes = spm.getString(prefName, pingKillDelayMinutes.toString())?.toInt() ?: pingKillDelayMinutes
+
+        prefName = PrefNames.PING_IGNORE_WIFI_STATE.pref()
+        pingIgnoreWiFiState = spm.getBoolean(prefName, pingIgnoreWiFiState)
 
         prefName = PrefNames.DAT_BUFFER_SIZE.pref()
         datBufferSize = spm.getString(prefName, datBufferSize.toString())?.toInt() ?: datBufferSize

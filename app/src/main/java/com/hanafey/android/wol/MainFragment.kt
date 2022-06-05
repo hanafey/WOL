@@ -143,7 +143,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         }
 
         mvm.networkStateLiveData.observe(viewLifecycleOwner) { ns ->
-            val alpha = if (ns.isAvailable && ns.isWifi) {
+            val alpha = if ((ns.isAvailable && ns.isWifi) || mvm.settingsData.pingIgnoreWiFiState) {
                 1.0f
             } else {
                 0.4f

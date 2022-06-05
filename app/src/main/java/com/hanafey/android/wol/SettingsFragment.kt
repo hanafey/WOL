@@ -73,6 +73,15 @@ class SettingsFragment : PreferenceFragmentCompat(),
         )
 
         screen.addPreference(
+            SwitchPreference(context).apply {
+                key = PrefNames.PING_IGNORE_WIFI_STATE.pref()
+                title = "Ping even without WiFi"
+                isChecked = mvm.settingsData.pingIgnoreWiFiState
+                onPreferenceChangeListener = this@SettingsFragment
+            }
+        )
+
+        screen.addPreference(
             PreferenceCategory(context).apply {
                 title = "Host Up / Down Detection"
             }
@@ -400,6 +409,11 @@ class SettingsFragment : PreferenceFragmentCompat(),
                         }
                     }
                 }
+            }
+
+            PrefNames.PING_IGNORE_WIFI_STATE -> {
+                mvm.settingsData.pingIgnoreWiFiState = newValue as Boolean
+                true
             }
 
             PrefNames.DAT_BUFFER_SIZE -> {
