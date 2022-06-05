@@ -7,6 +7,7 @@ import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.Transformations
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +24,7 @@ class WolApplication : Application() {
     private val netStateMLD = Live(
         NetworkStateTracker.NetState(System.currentTimeMillis(), isAvailable = false, isWifi = false)
     )
-    private val netStateDMLD = Transformations.distinctUntilChanged(netStateMLD)
+    private val netStateDMLD: LiveData<NetworkStateTracker.NetState> = Transformations.distinctUntilChanged(netStateMLD)
 
     /**
      * Valid only after [onCreate] is called.
@@ -44,17 +45,14 @@ class WolApplication : Application() {
         super.onCreate()
 
         _mainScope = MainScope()
-        networkStateTracker = NetworkStateTracker(mainScope, netStateMLD)
+        networkStateTracker = NetworkStateTracker(1_000L, mainScope, netStateMLD)
 
-        _mvm = MainViewModel(this)
+        _mvm = MainViewModel(this, netStateDMLD)
         initializeFromSharedPrefs()
 
         initializeNotifications()
         initializeNetworkObserver()
         mvm.observeAliveDeadTransitions()
-        netStateDMLD.observeForever {
-            dog { "netState: $it" }
-        }
     }
 
     private fun initializeFromSharedPrefs() {
@@ -111,7 +109,7 @@ class WolApplication : Application() {
 
     companion object {
         private const val tag = "WolApplication"
-        private const val debugLoggingEnabled = true
+        private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
         private fun dog(message: () -> String) {

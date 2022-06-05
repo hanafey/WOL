@@ -26,6 +26,7 @@ import java.time.Instant
 
 class MainViewModel(
     application: WolApplication,
+    val networkStateLiveData: LiveData<NetworkStateTracker.NetState>
 ) : AndroidViewModel(application) {
 
     val targets = defaultHostList()
@@ -69,6 +70,8 @@ class MainViewModel(
 
     var pingActive = false
         private set
+
+    var wiFiOn = false
 
     var pingFocussedTarget: WolHost? = null
 
@@ -213,7 +216,7 @@ class MainViewModel(
 
                 while (pingActive) {
                     var pingUsedMillisOrigin = System.currentTimeMillis()
-                    if (host.enabled && host.pingMe) {
+                    if (host.enabled && host.pingMe && wiFiOn) {
                         if (address == null || pingName != host.pingName) {
                             address = try {
                                 val inetAddress = InetAddress.getByName(host.pingName)

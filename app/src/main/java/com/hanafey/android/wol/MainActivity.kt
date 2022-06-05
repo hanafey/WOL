@@ -3,6 +3,8 @@ package com.hanafey.android.wol
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
+import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -38,6 +40,19 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
 
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
+
+        mvm.networkStateLiveData.observe(this) { ns ->
+            val toolBarTheme = ContextThemeWrapper(this, R.style.ThemeOverlay_Toolbar_Special).theme
+            if (ns.isAvailable && ns.isWifi) {
+                mvm.wiFiOn = true
+                binding.mainToolbar.logo = ResourcesCompat.getDrawable(resources, R.drawable.ic_wifi_on, toolBarTheme)
+                // binding.mainToolbar.logo = ContextCompat.getDrawable(this, R.drawable.ic_wifi_on)
+            } else {
+                mvm.wiFiOn = false
+                binding.mainToolbar.logo = ResourcesCompat.getDrawable(resources, R.drawable.ic_wifi_off, toolBarTheme)
+                // binding.mainToolbar.logo = ContextCompat.getDrawable(this, R.drawable.ic_wifi_off)
+            }
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

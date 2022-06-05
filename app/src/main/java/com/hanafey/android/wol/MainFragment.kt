@@ -142,6 +142,21 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             uiWake[ix].setOnClickListener(PingStateClickListener(wh, true))
         }
 
+        mvm.networkStateLiveData.observe(viewLifecycleOwner) { ns ->
+            val alpha = if (ns.isAvailable && ns.isWifi) {
+                1.0f
+            } else {
+                0.4f
+            }
+
+            mvm.targets.forEach { wh ->
+                val ix = wh.pKey
+                if (wh.enabled) {
+                    uiHosts[ix].alpha = alpha
+                }
+            }
+        }
+
         observePingLiveData()
 
         // The intent that is set by start by notification has bundle data that

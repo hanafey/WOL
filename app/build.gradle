@@ -42,7 +42,7 @@ android {
         versionCode 10
         versionName "2.0.0"
         // Set this false to disable debug logging.
-        buildConfigField "boolean", "DOG_ON", "true"
+        buildConfigField "boolean", "DOG_ON", "false"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config
