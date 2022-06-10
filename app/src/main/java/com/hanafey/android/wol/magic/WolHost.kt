@@ -75,6 +75,11 @@ class WolHost(
     var wolBundleSpacing = 100L
 
     /**
+     * Send notifications when dead / alive transitions are detected.
+     */
+    var datNotifications = true
+
+    /**
      * Alive / Dead transition hysteresis buffer size.
      */
     var datBufferSize = 15

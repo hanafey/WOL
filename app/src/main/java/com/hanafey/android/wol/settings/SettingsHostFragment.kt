@@ -65,7 +65,6 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
                     SwitchPreference(context).apply {
                         key = PrefNames.HOST_ENABLED.pref(hostIx)
                         title = "Include host ${wh.title}"
-
                         isChecked = wh.enabled
                         onPreferenceChangeListener = this@SettingsHostFragment
                     }
@@ -141,6 +140,15 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
                 pc.addPreference(
                     PreferenceCategory(context).apply {
                         title = "Up / Down Detection Settings"
+                    }
+                )
+
+                pc.addPreference(
+                    SwitchPreference(context).apply {
+                        key = PrefNames.HOST_DAT_NOTIFY.pref(hostIx)
+                        title = "Send Notifications of Dead/Alive transitions"
+                        isChecked = wh.datNotifications
+                        onPreferenceChangeListener = this@SettingsHostFragment
                     }
                 )
 
@@ -341,6 +349,13 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
                         }
                     }
                 }
+            }
+
+            PrefNames.HOST_DAT_NOTIFY -> {
+                val isEnabled = newValue as Boolean
+                wolHost.datNotifications = isEnabled
+                fvm.hostDataChanged = true
+                true
             }
 
             PrefNames.HOST_DAT_BUFFER_SIZE -> {

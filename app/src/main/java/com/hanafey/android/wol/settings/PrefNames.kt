@@ -2,19 +2,20 @@ package com.hanafey.android.wol.settings
 
 enum class PrefNames {
     HOST_TIME_TO_WAKE,
-    HOST_ENABLED,
-    HOST_SECTION,
     HOST_PING_ME,
 
     /**
      * [com.hanafey.android.wol.magic.WolHost] members
      */
+    HOST_ENABLED,
+    HOST_SECTION,
     HOST_TITLE,
     HOST_PING_NAME,
     HOST_MAC_STRING,
     HOST_BROADCAST_IP,
     HOST_WOL_BUNDLE_COUNT,
     HOST_WOL_BUNDLE_SPACING,
+    HOST_DAT_NOTIFY,
     HOST_DAT_BUFFER_SIZE,
     HOST_DAT_BUFFER_ALIVE_AT,
     HOST_DAT_BUFFER_DEAD_AT,

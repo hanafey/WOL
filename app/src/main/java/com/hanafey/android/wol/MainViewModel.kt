@@ -356,19 +356,21 @@ class MainViewModel(
     class ObserverOfHostState(private val hostStateNotification: HostStateNotification) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
         override fun onChanged(whs: PingDeadToAwakeTransition.WolHostSignal) {
             dog { "ObserverOfHostState: $whs" }
-            when (whs.signal) {
-                PingDeadToAwakeTransition.WHS.NOTHING -> {}
+            if (whs.host.datNotifications) {
+                when (whs.signal) {
+                    PingDeadToAwakeTransition.WHS.NOTHING -> {}
 
-                PingDeadToAwakeTransition.WHS.AWOKE -> {
-                    hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} Awoke", "${whs.host.title} transitioned to awake")
-                }
+                    PingDeadToAwakeTransition.WHS.AWOKE -> {
+                        hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} Awoke", "${whs.host.title} transitioned to awake")
+                    }
 
-                PingDeadToAwakeTransition.WHS.DIED -> {
-                    hostStateNotification.makeAsleepNotification(whs.host, "${whs.host.title} Unresponsive", "${whs.host.title} transitioned to unresponsive")
-                }
+                    PingDeadToAwakeTransition.WHS.DIED -> {
+                        hostStateNotification.makeAsleepNotification(whs.host, "${whs.host.title} Unresponsive", "${whs.host.title} transitioned to unresponsive")
+                    }
 
-                PingDeadToAwakeTransition.WHS.NOISE -> {
-                    hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} ${whs.extra}", "${Instant.now()}")
+                    PingDeadToAwakeTransition.WHS.NOISE -> {
+                        hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} ${whs.extra}", "${Instant.now()}")
+                    }
                 }
             }
         }
