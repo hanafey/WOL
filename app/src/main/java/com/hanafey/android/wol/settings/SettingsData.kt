@@ -1,6 +1,7 @@
-package com.hanafey.android.wol
+package com.hanafey.android.wol.settings
 
 import android.content.SharedPreferences
+import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.magic.WolHost
 
 class SettingsData(val spm: SharedPreferences) {
@@ -32,10 +33,6 @@ class SettingsData(val spm: SharedPreferences) {
     var pingKillDelayMinutes = 5
     var pingIgnoreWiFiState = false
 
-    var datBufferSize = 17
-    var datBufferAliveAt = 14
-    var datBufferDeadAt = 5
-
     var versionAcknowledged = 0
 
     fun initializeModel(mvm: MainViewModel) {
@@ -64,22 +61,13 @@ class SettingsData(val spm: SharedPreferences) {
         prefName = PrefNames.PING_IGNORE_WIFI_STATE.pref()
         pingIgnoreWiFiState = spm.getBoolean(prefName, pingIgnoreWiFiState)
 
-        prefName = PrefNames.DAT_BUFFER_SIZE.pref()
-        datBufferSize = spm.getString(prefName, datBufferSize.toString())?.toInt() ?: datBufferSize
-
-        prefName = PrefNames.DAT_BUFFER_ALIVE_AT.pref()
-        datBufferAliveAt = spm.getString(prefName, datBufferAliveAt.toString())?.toInt() ?: datBufferAliveAt
-
-        prefName = PrefNames.DAT_BUFFER_DEAD_AT.pref()
-        datBufferDeadAt = spm.getString(prefName, datBufferDeadAt.toString())?.toInt() ?: datBufferDeadAt
-
-
         prefName = PrefNames.VERSION_ACKNOWLEDGED.pref()
         versionAcknowledged = spm.getInt(prefName, versionAcknowledged)
 
         for (wh in mvm.targets) {
             prefName = PrefNames.HOST_ENABLED.pref(wh.pKey)
             wh.enabled = spm.getBoolean(prefName, wh.enabled)
+
             prefName = PrefNames.HOST_PING_ME.pref(wh.pKey)
             wh.pingMe = spm.getBoolean(prefName, wh.pingMe)
             if (wh.pingMe) {
@@ -87,14 +75,33 @@ class SettingsData(val spm: SharedPreferences) {
             } else {
                 wh.pingState = WolHost.PingStates.NOT_PINGING
             }
+
             prefName = PrefNames.HOST_TITLE.pref(wh.pKey)
             wh.title = spm.getString(prefName, wh.title) ?: wh.title
+
             prefName = PrefNames.HOST_PING_NAME.pref(wh.pKey)
             wh.pingName = spm.getString(prefName, wh.pingName) ?: wh.pingName
+
             prefName = PrefNames.HOST_MAC_STRING.pref(wh.pKey)
             wh.macAddress = spm.getString(prefName, wh.macAddress) ?: wh.macAddress
+
             prefName = PrefNames.HOST_BROADCAST_IP.pref(wh.pKey)
             wh.broadcastIp = spm.getString(prefName, wh.broadcastIp) ?: wh.broadcastIp
+
+            prefName = PrefNames.HOST_WOL_BUNDLE_COUNT.pref(wh.pKey)
+            wh.wolBundleCount = spm.getString(prefName, wh.wolBundleCount.toString())?.toInt() ?: wh.wolBundleCount
+
+            prefName = PrefNames.HOST_WOL_BUNDLE_SPACING.pref(wh.pKey)
+            wh.wolBundleSpacing = spm.getString(prefName, wh.wolBundleSpacing.toString())?.toLong() ?: wh.wolBundleSpacing
+
+            prefName = PrefNames.HOST_DAT_BUFFER_SIZE.pref(wh.pKey)
+            wh.datBufferSize = spm.getString(prefName, wh.datBufferSize.toString())?.toInt() ?: wh.datBufferSize
+
+            prefName = PrefNames.HOST_DAT_BUFFER_ALIVE_AT.pref(wh.pKey)
+            wh.datAliveAt = spm.getString(prefName, wh.datAliveAt.toString())?.toInt() ?: wh.datAliveAt
+
+            prefName = PrefNames.HOST_DAT_BUFFER_DEAD_AT.pref(wh.pKey)
+            wh.datDeadAt = spm.getString(prefName, wh.datDeadAt.toString())?.toInt() ?: wh.datDeadAt
         }
 
         readTimeToWakeHistory(mvm)

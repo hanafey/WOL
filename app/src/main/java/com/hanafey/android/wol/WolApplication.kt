@@ -112,8 +112,8 @@ class WolApplication : Application() {
         private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
-        private fun dog(message: () -> String) {
-            if (debugLoggingEnabled) {
+        private fun dog(forceOn: Boolean = false, message: () -> String) {
+            if (forceOn || debugLoggingEnabled) {
                 if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
                     if (Log.isLoggable(tag, Log.ERROR)) {
                         val duration = Duration.between(APP_EPOCH, Instant.now()).toMillis() / 1000.0
@@ -121,6 +121,12 @@ class WolApplication : Application() {
                         Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
                     }
                 }
+            }
+        }
+
+        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
+            if (BuildConfig.DEBUG) {
+                require(errorIfTrue, message)
             }
         }
 

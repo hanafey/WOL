@@ -110,22 +110,18 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      * @throws [IllegalArgumentException] if the parmeters do not specify a valid history buffer with appropriate
      * hysteresis.
      */
-    fun setBufferParameters(
-        size: Int,
-        upperThreshold: Int,
-        lowerThreshold: Int
-    ) {
-        val problem = validateBufferSettings(size, lowerThreshold, upperThreshold)
+    fun setBufferParameters(wh: WolHost) {
+        val problem = validateBufferSettings(wh.datBufferSize, wh.datDeadAt, wh.datAliveAt)
         if (problem.isNotEmpty()) {
             throw IllegalArgumentException(problem)
         }
 
-        if (size != bufferSize) {
-            buffer = IntArray(size)
+        if (wh.datBufferSize != bufferSize) {
+            buffer = IntArray(wh.datBufferSize)
         }
-        bufferSize = size
-        minSignalGoingUp = upperThreshold
-        minSignalGoingDown = lowerThreshold
+        bufferSize = wh.datBufferSize
+        minSignalGoingUp = wh.datAliveAt
+        minSignalGoingDown = wh.datDeadAt
         resetBuffer()
     }
 
@@ -243,8 +239,8 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
-        private fun dog(message: () -> String) {
-            if (debugLoggingEnabled) {
+        private fun dog(forceOn: Boolean = false, message: () -> String) {
+            if (forceOn || debugLoggingEnabled) {
                 if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
                     if (Log.isLoggable(tag, Log.ERROR)) {
                         val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
@@ -252,6 +248,12 @@ class PingDeadToAwakeTransition(val host: WolHost) {
                         Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
                     }
                 }
+            }
+        }
+
+        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
+            if (BuildConfig.DEBUG) {
+                require(errorIfTrue, message)
             }
         }
 

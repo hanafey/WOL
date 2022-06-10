@@ -16,12 +16,87 @@ import java.time.Instant
  * @param broadcastIp The broadcast address for WOL magic packets. Example: "192.168.1.255"
  */
 class WolHost(
-    val pKey: Int,
-    var title: String,
-    var pingName: String,
+    pKey: Int,
+    title: String,
+    pingName: String,
     macString: String,
-    var broadcastIp: String,
+    broadcastIp: String,
 ) : Comparable<WolHost> {
+
+    /**
+     * A unique key for each host that also orders a set of hosts. Currently this
+     * is used in conjunction with a list, and [pKey] must be array index position.
+     */
+    val pKey = pKey
+
+    // --------------------------------------------------------------------------------
+    // Host settings and data saved in prefs.
+    // --------------------------------------------------------------------------------
+    /**
+     * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
+     * done internally because both [enabled] and [pingMe] are persisted as settings.
+     */
+    var enabled = true
+
+    /**
+     * If this host is being pinged, or should be pinged, this is true.
+     */
+    var pingMe = true
+
+    /**
+     *  User understandable name for the WOL target.
+     */
+    var title = title
+
+    /**
+     * Name of ip address of WOL target. This is used to ping to see if host is
+     * awake. Examples "192.168.1.250", "nasa"
+     */
+    var pingName = pingName
+
+    /**
+     * The broadcast address for WOL magic packets. Example: "192.168.1.255"
+     */
+    var broadcastIp = broadcastIp
+
+    /**
+     * The MAC address in standard format.
+     */
+    var macAddress = MagicPacket.standardizeMac(macString)
+
+    /**
+     * Number of magic packets in a bundle.
+     */
+    var wolBundleCount = 3
+
+    /**
+     * Magic packet bundle spacing (mSec)
+     */
+    var wolBundleSpacing = 100L
+
+    /**
+     * Alive / Dead transition hysteresis buffer size.
+     */
+    var datBufferSize = 15
+
+    /**
+     * Alive / Dead transition hysteresis alive threshold.
+     */
+    var datAliveAt = 12
+
+    /**
+     * Alive / Dead transition hysteresis dead threshold.
+     */
+    var datDeadAt = 3
+
+    /**
+     * History of milliseconds from WOL to successful ping, with most recent history at the end.
+     * The purpose is to give an idea of how long the host takes to wake up to the ping responsive
+     * state.
+     */
+    var wolToWakeHistory = emptyList<Int>()
+
+    // --------------------------------------------------------------------------------
 
     /**
      * Used to control mutation of properties that may changed on another thread.
@@ -30,22 +105,11 @@ class WolHost(
 
     val deadAliveTransition = PingDeadToAwakeTransition(this)
 
-    /**
-     * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
-     * done internally because both [enabled] and [pingMe] are persisted as settings.
-     */
-    var enabled = true
 
     /**
-     * The MAC address in standard format.
+     * The number of wake up magic packets sent to [macAddress]
      */
-    var macAddress = MagicPacket.standardizeMac(macString)
-
-
-    /**
-     * If this host is being pinged, or should be pinged, this is true.
-     */
-    var pingMe = true
+    var wakeupCount = 0
 
     /**
      * The number of times host was pinged since last reset that were successful
@@ -80,13 +144,6 @@ class WolHost(
     val lastWolWakeAt = AckInstant()
 
     /**
-     * History of milliseconds from WOL to successful ping, with most recent history at the end.
-     * The purpose is to give an idea of how long the host takes to wake up to the ping responsive
-     * state.
-     */
-    var wolToWakeHistory = emptyList<Int>()
-
-    /**
      * Set true when history is added, and set false when history is saved to settings.
      */
     var wolToWakeHistoryChanged = false
@@ -97,32 +154,16 @@ class WolHost(
      */
     var pingState = PingStates.INDETERMINATE
 
-
     /**
      * The exception that produced [pingState] of [PingStates.EXCEPTION]
      */
     var pingException: Throwable? = null
 
-
-    /**
-     * The number of wake up magic packets sent to [macAddress]
-     */
-    var wakeupCount = 0
-
-    /**
-     * Number of magic packets in a bundle.
-     */
-    var magicPacketBundleCount = 3
-
-    /**
-     * Magic packet bundle spacing (mSec)
-     */
-    var magicPacketBundleSpacing = 100L
-
     /**
      * If the last wake up attempt threw an exception, this is it.
      */
     var wakeupException: Throwable? = null
+
 
     fun resetState() {
         pingedCountAlive = 0

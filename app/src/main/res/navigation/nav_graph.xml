@@ -13,11 +13,43 @@
         tools:layout="@layout/fragment_main"
         />
 
-    <fragment
-        android:id="@+id/SettingsFragment"
-        android:name="com.hanafey.android.wol.SettingsFragment"
-        android:label="SettingsFragment"
-        />
+    <navigation
+        android:id="@+id/ng_Settings"
+        app:startDestination="@id/SettingsFragment"
+        >
+        <fragment
+            android:id="@+id/SettingsFragment"
+            android:name="com.hanafey.android.wol.settings.SettingsFragment"
+            android:label="Settings"
+            >
+            <action
+                android:id="@+id/nga_Settings_SettingsHostList"
+                app:destination="@id/SettingsHostListFragment"
+                />
+        </fragment>
+
+        <fragment
+            android:id="@+id/SettingsHostListFragment"
+            android:name="com.hanafey.android.wol.settings.SettingsHostListFragment"
+            android:label="Settings/Host List"
+            >
+            <action
+                android:id="@+id/nga_Settings_SettingsHost"
+                app:destination="@id/SettingsHostFragment"
+                />
+        </fragment>
+
+        <fragment
+            android:id="@+id/SettingsHostFragment"
+            android:name="com.hanafey.android.wol.settings.SettingsHostFragment"
+            android:label="Settings/Host"
+            >
+            <argument
+                android:name="HOST_IX"
+                app:argType="integer"
+                />
+        </fragment>
+    </navigation>
 
     <fragment
         android:id="@+id/HostStatusFragment"

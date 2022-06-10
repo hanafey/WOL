@@ -39,8 +39,8 @@ android {
         applicationId "com.hanafey.android.wol"
         minSdkVersion 26
         targetSdkVersion 32
-        versionCode 11
-        versionName "2.0.1"
+        versionCode 12
+        versionName "2.0.2"
         // Set this false to disable debug logging.
         buildConfigField "boolean", "DOG_ON", "false"
 

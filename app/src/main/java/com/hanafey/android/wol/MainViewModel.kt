@@ -9,6 +9,7 @@ import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
+import com.hanafey.android.wol.settings.SettingsData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -108,9 +109,7 @@ class MainViewModel(
      */
     fun initializeFromSettings() {
         targets.forEach { wh ->
-            wh.deadAliveTransition.setBufferParameters(
-                settingsData.datBufferSize, settingsData.datBufferAliveAt, settingsData.datBufferDeadAt
-            )
+            wh.deadAliveTransition.setBufferParameters(wh)
         }
     }
 
@@ -322,8 +321,8 @@ class MainViewModel(
                     host.lastPingSentAt.age() < settingsData.pingDelayMillis * 3
                 ) {
                     try {
-                        repeat(host.magicPacketBundleCount) {
-                            if (it > 1) delay(host.magicPacketBundleSpacing)
+                        repeat(host.wolBundleCount) {
+                            if (it > 1) delay(host.wolBundleSpacing)
                             MagicPacket.sendWol(host.macAddress)
                         }
                         host.lastWolSentAt.update(Instant.now())
@@ -389,6 +388,12 @@ class MainViewModel(
                         Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
                     }
                 }
+            }
+        }
+
+        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
+            if (BuildConfig.DEBUG) {
+                require(errorIfTrue, message)
             }
         }
     }
