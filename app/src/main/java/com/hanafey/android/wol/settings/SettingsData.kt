@@ -14,20 +14,6 @@ class SettingsData(val spm: SharedPreferences) {
         private const val MAX_WOL_HISTORY = 25
     }
 
-    /**
-     * Before navigating to [SettingsFragment] set to false. If any host data is changed [SettingsFragment] will set
-     * it to true. When navigating back to MainFragment, if this is true then the hosts are re-pinged based on the current
-     * (and changed) settings.
-     */
-    var hostDataChanged = false
-
-    /**
-     * Before navigating to [SettingsFragment] set to false. If any DAT buffer setting  is changed [SettingsFragment] will set
-     * it to true. When navigating back to MainFragment, if this is true then the hosts [PingDeadToAwakeTransition] setting
-     * must be updated before re-pinging hosts. When this is set true, [hostDataChanged] must also be set true
-     */
-    var datBufferChanged = false
-
     var pingDelayMillis = 1000L
     var pingResponseWaitMillis = 500
     var pingKillDelayMinutes = 5

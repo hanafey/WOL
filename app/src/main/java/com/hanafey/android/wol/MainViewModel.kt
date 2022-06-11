@@ -49,7 +49,7 @@ class MainViewModel(
     /**
      * A value of 0 means ping jobs not running. A value of 1 means they are.
      */
-    val pingJobsStateLiveData: LiveData<Int>
+    private val pingJobsStateLiveData: LiveData<Int>
         get() = _pingJobsState
     private val _pingJobsState = MutableLiveData(0)
 
@@ -68,9 +68,12 @@ class MainViewModel(
     private var delayedKillJob: Job? = null
     private val delayedKillMutex = Mutex()
 
-
-    var pingActive = false
-        private set
+    /**
+     * When false the loop that pings a host ends on it's next iteration. The ping loop
+     * includes the ping spacing delay, and IO delay as the ping response is waits for
+     * a response, so the ping job does not end immediately when this is set to false.
+     */
+    private var pingActive = false
 
     var wiFiOn = false
 
@@ -131,7 +134,7 @@ class MainViewModel(
      * Start ping jobs on all hosts. Pinging will only happen if a host is [WolHost.pingMe] true.
      * [pingJobsStateLiveData] will register an event only if pinging is not already active.
      */
-    fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
+    private fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
         if (pingActive) return // ======================================== >>>
 
         dog { "pingTargetsIfNeeded" }
@@ -189,15 +192,19 @@ class MainViewModel(
         }
     }
 
-    fun cancelKillPingTargetsAfterWaiting(scope: CoroutineScope) {
+    fun cancelKillPingTargetsAfterWaiting(scope: CoroutineScope, restartJobs: Boolean) {
         scope.launch {
             delayedKillMutex.withLock {
                 delayedKillJob?.cancelAndJoin()
                 delayedKillJob = null
             }
+            if (restartJobs) {
+                pingTargetsIfNeeded(scope, false)
+            }
         }
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     private fun pingTarget(scope: CoroutineScope, host: WolHost, resetState: Boolean): Job {
 
         return scope.launch {
@@ -214,7 +221,7 @@ class MainViewModel(
                 var exception: Throwable? = null
 
                 while (pingActive) {
-                    var pingUsedMillisOrigin = System.currentTimeMillis()
+                    val pingUsedMillisOrigin = System.currentTimeMillis()
                     if (host.enabled && host.pingMe && (settingsData.pingIgnoreWiFiState || wiFiOn)) {
                         if (address == null || pingName != host.pingName) {
                             address = try {
@@ -314,6 +321,7 @@ class MainViewModel(
      *
      * @return True if WOL bundle was sent and [targetWakeChangedLiveData] was set to the [WolHost.pKey.
      */
+    @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun wakeTarget(host: WolHost): Boolean {
         val isSendWol = withContext(Dispatchers.IO) {
             host.mutex.withLock {
@@ -376,6 +384,7 @@ class MainViewModel(
         }
     }
 
+    @Suppress("unused")
     companion object {
         private const val tag = "MainViewModel"
         private const val debugLoggingEnabled = false

@@ -73,8 +73,7 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
             }
             Lifecycle.Event.ON_START -> {
                 dog { "ON_START: cancel kill ping, and re-ping if needed" }
-                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope)
-                mvm.pingTargetsIfNeeded(WolApplication.instance.mainScope, false)
+                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope, true)
             }
             Lifecycle.Event.ON_RESUME -> Unit
             Lifecycle.Event.ON_PAUSE -> Unit
@@ -87,6 +86,7 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
         }
     }
 
+    @Suppress("unused")
     companion object {
         private const val tag = "MainActivity"
         private const val debugLoggingEnabled = false

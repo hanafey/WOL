@@ -13,7 +13,6 @@ import com.hanafey.android.wol.databinding.FragmentFirstTimeInformationBinding
 
 
 class FirstTimeInformationFragment : Fragment() {
-    private val ltag = "FirstTimeInformationFragment"
     private val mvm: MainViewModel = WolApplication.instance.mvm
 
     private var _binding: FragmentFirstTimeInformationBinding? = null

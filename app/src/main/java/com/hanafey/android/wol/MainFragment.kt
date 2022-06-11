@@ -202,8 +202,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             }
 
             R.id.mi_settings -> {
-                mvm.settingsData.hostDataChanged = false
-                mvm.settingsData.datBufferChanged = false
                 findNavController().navigate(R.id.ng_Settings)
                 true
             }
@@ -214,7 +212,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                     val h2 = mvm.targets[1]
 
                     delay(mSecFromSeconds(2))
-                    val id1 = mvm.hostStateNotification.makeAsleepNotification(h1, "${h1.title} Asleep", "Test of host went to sleep.")
+                    mvm.hostStateNotification.makeAsleepNotification(h1, "${h1.title} Asleep", "Test of host went to sleep.")
                     delay(mSecFromSeconds(2))
                     mvm.hostStateNotification.makeAwokeNotification(h2, "${h2.title}  Awoke", "Test of host woke up.")
                 }
@@ -410,6 +408,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         }
     }
 
+    @Suppress("unused")
     companion object {
         private const val tag = "MainFragment"
         private const val debugLoggingEnabled = false

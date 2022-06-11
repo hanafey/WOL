@@ -8,7 +8,7 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * You must call [setBufferParameters] after creating an instance of this class. This is delayed because [SettingsData] is
+ * You must call [setBufferParameters] after creating an instance of this class. This is delayed because `SettingsData` is
  * needed to supply the DAT buffer information.
  */
 class PingDeadToAwakeTransition(val host: WolHost) {
@@ -107,7 +107,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     /**
      * Set the buffer parameters, and reset the buffer. This means the buffer history reverts to empty, and the
      * parameters that control alive / dead transitions are set.
-     * @throws [IllegalArgumentException] if the parmeters do not specify a valid history buffer with appropriate
+     * @throws [IllegalArgumentException] if the parameters do not specify a valid history buffer with appropriate
      * hysteresis.
      */
     fun setBufferParameters(wh: WolHost) {
@@ -251,6 +251,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
             }
         }
 
+        @Suppress("unused")
         private inline fun die(errorIfTrue: Boolean, message: () -> String) {
             if (BuildConfig.DEBUG) {
                 require(errorIfTrue, message)

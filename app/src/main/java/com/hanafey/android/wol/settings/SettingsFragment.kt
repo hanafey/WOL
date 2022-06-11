@@ -214,18 +214,13 @@ class SettingsFragment : PreferenceFragmentCompat(),
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
         when (destination.id) {
             R.id.MainFragment -> {
-                val sd = mvm.settingsData
-
                 if (fvm.datBufferChanged) {
-                    sd.datBufferChanged = true
-                    sd.hostDataChanged = true
                     mvm.targets.forEach { wh ->
                         wh.deadAliveTransition.setBufferParameters(wh)
                     }
                 }
 
                 if (fvm.hostDataChanged) {
-                    sd.hostDataChanged = true
                     mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
                     dog { "onDestinationChanged: RE-PING $destination" }
                 } else {
@@ -238,8 +233,9 @@ class SettingsFragment : PreferenceFragmentCompat(),
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
-                // Ensure fvm is instantiated
-                val x = fvm.hostDataChanged
+                // Essential because if no changes in child fragments up navigation
+                // throws up!
+                fvm.forceInstantiation()
             }
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
@@ -284,6 +280,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
             }
         }
 
+        @Suppress("SameParameterValue")
         private inline fun die(errorIfTrue: Boolean, message: () -> String) {
             if (BuildConfig.DEBUG) {
                 require(errorIfTrue, message)

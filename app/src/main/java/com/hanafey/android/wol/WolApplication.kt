@@ -70,29 +70,18 @@ class WolApplication : Application() {
         connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 networkStateTracker.isAvailable = true
-                // val hostAddresses = lookupHosts(network, mvm.targets)
-                // dog { "onAvailable: $hostAddresses" }
             }
 
             override fun onLost(network: Network) {
                 networkStateTracker.isAvailable = false
-                // val hostAddresses = lookupHosts(network, mvm.targets)
-                // dog { "onLost: $hostAddresses" }
             }
 
             override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                val cellular = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                 val wifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-                val wifiAware = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
                 networkStateTracker.isWifi = wifi
-                // val hostAddresses = lookupHosts(network, mvm.targets)
-                // dog { "onCapChanged: cellular=$cellular, wifi=$wifi, wifiWare=$wifiAware $hostAddresses" }
             }
 
-            override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {
-                // val hostAddresses = lookupHosts(network, mvm.targets)
-                // dog { "onPropChanged: ${lp.interfaceName}, ${lp.dhcpServerAddress} ${lp.domains} $hostAddresses" }
-            }
+            override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {}
         })
     }
 

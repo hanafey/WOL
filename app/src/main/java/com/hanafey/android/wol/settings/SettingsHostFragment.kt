@@ -530,6 +530,7 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
             }
         }
 
+        @Suppress("SameParameterValue")
         private inline fun die(errorIfTrue: Boolean, message: () -> String) {
             if (BuildConfig.DEBUG) {
                 require(errorIfTrue, message)

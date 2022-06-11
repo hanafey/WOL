@@ -33,7 +33,6 @@ class HostStatusFragment : Fragment(),
     LifecycleEventObserver,
     NavController.OnDestinationChangedListener {
 
-    private val ltag = "HostStatusFragment"
     private val mvm: MainViewModel = WolApplication.instance.mvm
 
     private var _binding: FragmentHostStatusBinding? = null
@@ -133,28 +132,14 @@ class HostStatusFragment : Fragment(),
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-                Unit
-            }
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
-                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope)
-            }
-            Lifecycle.Event.ON_RESUME -> {
-                Unit
-            }
-            Lifecycle.Event.ON_PAUSE -> {
-                Unit
+                mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope, false)
             }
             Lifecycle.Event.ON_STOP -> {
                 findNavController().removeOnDestinationChangedListener(this)
             }
-            Lifecycle.Event.ON_DESTROY -> {
-                Unit
-            }
-            Lifecycle.Event.ON_ANY -> {
-                Unit
-            }
+            else -> {}
         }
     }
 
@@ -279,7 +264,7 @@ class HostStatusFragment : Fragment(),
 
     /**
      * Observe completion of sending WOL packets to our host, and report any exception.
-     * Absent problem, do nothing -- the host will repond or not, and pinging will
+     * Absent problem, do nothing -- the host will respond or not, and pinging will
      * monitor when and if it comes online.
      */
     private fun observeWakeLiveData() {
@@ -288,7 +273,7 @@ class HostStatusFragment : Fragment(),
                 mvm.viewModelScope.launch {
                     val ex = wh.mutex.withLock {
                         val x = wh.wakeupException
-                        // Only report exection once.
+                        // Only report execution once.
                         wh.wakeupException = null
                         x
                     }
@@ -361,7 +346,7 @@ class HostStatusFragment : Fragment(),
         }
 
         /**
-         * True if [WolHost.lastWolSentAt.state] show an instant when WOL was sent, and not yet acknoledged
+         * True if [WolHost.lastWolSentAt]`.state` show an instant when WOL was sent, and not yet acknowledged
          */
         fun isWaitingToAwake(): Boolean {
             val (instant, ack) = wh.lastWolSentAt.state()

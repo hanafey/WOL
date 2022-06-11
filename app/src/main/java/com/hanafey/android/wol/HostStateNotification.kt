@@ -15,15 +15,15 @@ import com.hanafey.android.wol.magic.WolHost
  * Defines two notification channels, [channelIdAwoke] and [channelIdAsleep]
  */
 class HostStateNotification(val context: Context) {
-    private val REQUEST_CODE_BASE = 10000
+    private val requestCodeBase = 10000
     private var notificationId = 0
 
-    val channelIdAwoke = "HOST_AWOKE"
-    val channelNameAwoke = context.getString(R.string.notification_awoke_name)
+    private val channelIdAwoke = "HOST_AWOKE"
+    private val channelNameAwoke = context.getString(R.string.notification_awoke_name)
     private val channelDescriptionAwoke = context.getString(R.string.notification_awoke_description)
 
-    val channelIdAsleep = "HOST_ASLEEP"
-    val channelNameAsleep = context.getString(R.string.notification_asleep_name)
+    private val channelIdAsleep = "HOST_ASLEEP"
+    private val channelNameAsleep = context.getString(R.string.notification_asleep_name)
     private val channelDescriptionAsleep = context.getString(R.string.notification_asleep_description)
 
     private fun make(host: WolHost, channelId: String, @DrawableRes icon: Int, contentTitle: String, contentText: String): Int {
@@ -36,7 +36,7 @@ class HostStateNotification(val context: Context) {
         // This was observed experimentally. With the same request code the last host to notify affects all notifications.
         val pendingIntent = PendingIntent.getActivity(
             context,
-            host.pKey + REQUEST_CODE_BASE,
+            host.pKey + requestCodeBase,
             notificationIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -75,7 +75,7 @@ class HostStateNotification(val context: Context) {
     /**
      * Dismiss a notification by it's ID.
      */
-    fun dismiss(notificationId: Int) {
+    private fun dismiss(notificationId: Int) {
         val nm = NotificationManagerCompat.from(context)
         nm.cancel(notificationId)
     }
