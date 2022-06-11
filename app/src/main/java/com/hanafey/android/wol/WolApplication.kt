@@ -53,6 +53,15 @@ class WolApplication : Application() {
         initializeNotifications()
         initializeNetworkObserver()
         mvm.observeAliveDeadTransitions()
+        observerWiFiState()
+    }
+
+    private fun observerWiFiState() {
+        netStateDMLD.observeForever { ns ->
+            mvm.targets.forEach { wh ->
+                wh.deadAliveTransition.resetBuffer()
+            }
+        }
     }
 
     private fun initializeFromSharedPrefs() {
