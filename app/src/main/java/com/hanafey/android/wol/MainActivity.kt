@@ -44,15 +44,12 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
         mvm.networkStateLiveData.observe(this) { ns ->
             val toolBarTheme = ContextThemeWrapper(this, R.style.ThemeOverlay_Toolbar_Special).theme
             if (ns.isAvailable && ns.isWifi) {
-                mvm.wiFiOn = true
                 binding.mainToolbar.logo = ResourcesCompat.getDrawable(resources, R.drawable.ic_wifi_on, toolBarTheme)
                 // binding.mainToolbar.logo = ContextCompat.getDrawable(this, R.drawable.ic_wifi_on)
             } else {
-                mvm.wiFiOn = false
                 binding.mainToolbar.logo = ResourcesCompat.getDrawable(resources, R.drawable.ic_wifi_off, toolBarTheme)
                 // binding.mainToolbar.logo = ContextCompat.getDrawable(this, R.drawable.ic_wifi_off)
             }
-            dog { "Network Available? ${mvm.wiFiOn}" }
         }
     }
 

@@ -75,7 +75,11 @@ class MainViewModel(
      */
     private var pingActive = false
 
+    /**
+     * Set by an observer of network state.
+     */
     var wiFiOn = false
+        private set
 
     var pingFocussedTarget: WolHost? = null
 
@@ -114,6 +118,14 @@ class MainViewModel(
         targets.forEach { wh ->
             wh.deadAliveTransition.setBufferParameters(wh)
         }
+    }
+
+    /**
+     * Call in a forever observer of network state.
+     */
+    fun onNetworkStateChanged(ns: NetworkStateTracker.NetState) {
+        dog { "onNetworkStateChanged: $ns" }
+        wiFiOn = ns.isAvailable && ns.isWifi
     }
 
     @MainThread

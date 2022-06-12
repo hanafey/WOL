@@ -58,8 +58,7 @@ class WolApplication : Application() {
 
     private fun observerWiFiState() {
         netStateDMLD.observeForever { ns ->
-            dog { "observeForever: $ns" }
-            mvm.wiFiOn = ns.isAvailable && ns.isWifi
+            mvm.onNetworkStateChanged(ns)
         }
     }
 
