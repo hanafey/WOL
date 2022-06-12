@@ -137,7 +137,7 @@ class MainViewModel(
     private fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
         if (pingActive) return // ======================================== >>>
 
-        dog { "pingTargetsIfNeeded" }
+        dog { "pingTargetsBecauseNeeded." }
         pingActive = true
         pingJobs = targets.map { wh ->
             pingTarget(scope, wh, resetState)
@@ -195,6 +195,7 @@ class MainViewModel(
     fun cancelKillPingTargetsAfterWaiting(scope: CoroutineScope, restartJobs: Boolean) {
         scope.launch {
             delayedKillMutex.withLock {
+                dog { "cancelKillPingTargets." }
                 delayedKillJob?.cancelAndJoin()
                 delayedKillJob = null
             }
@@ -240,6 +241,7 @@ class MainViewModel(
 
                         if (address != null) {
                             host.lastPingSentAt.update(Instant.now())
+                            dog { "DOG1667: ping ${host.title}" }
                             val pingResult = try {
                                 val x = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
                                 if (x) 1 else 0

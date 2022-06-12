@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
                 binding.mainToolbar.logo = ResourcesCompat.getDrawable(resources, R.drawable.ic_wifi_off, toolBarTheme)
                 // binding.mainToolbar.logo = ContextCompat.getDrawable(this, R.drawable.ic_wifi_off)
             }
+            dog { "Network Available? ${mvm.wiFiOn}" }
         }
     }
 
