@@ -152,19 +152,18 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
         private const val debugLoggingEnabled = false
         private const val uniqueIdentifier = "DOGLOG"
 
+        @Suppress("unused")
         private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (forceOn || debugLoggingEnabled) {
-                if (BuildConfig.DOG_ON && BuildConfig.DEBUG) {
-                    if (Log.isLoggable(tag, Log.ERROR)) {
-                        val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                        val durationString = "[%8.3f]".format(duration)
-                        Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                    }
+            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
+                if (Log.isLoggable(tag, Log.ERROR)) {
+                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
+                    val durationString = "[%8.3f]".format(duration)
+                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
                 }
             }
         }
 
-        @Suppress("SameParameterValue")
+        @Suppress("unused")
         private inline fun die(errorIfTrue: Boolean, message: () -> String) {
             if (BuildConfig.DEBUG) {
                 require(errorIfTrue, message)
