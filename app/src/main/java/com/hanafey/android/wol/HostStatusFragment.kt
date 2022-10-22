@@ -66,7 +66,7 @@ class HostStatusFragment : Fragment(),
             showWol = args.getBoolean("show_wol", false)
         }
 
-        wolLateColor = MaterialColors.getColor(view, R.attr.colorError)
+        wolLateColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorError)
         pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive_dialog)!!
         pingResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_responsive_dialog)!!
         pingOtherTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_other_dialog)!!

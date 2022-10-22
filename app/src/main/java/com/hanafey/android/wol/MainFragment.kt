@@ -321,7 +321,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                             psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
                             if (target.wolToWakeHistoryChanged) {
                                 target.wolToWakeHistoryChanged = false
-                                mvm.settingsData.writeTimeToWakeHistory(target)
                             }
                         }
 
