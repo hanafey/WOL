@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -13,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CompoundButton
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -25,18 +26,19 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textview.MaterialTextView
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.databinding.FragmentMainBinding
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
-import java.time.Duration
-import java.time.Instant
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class MainFragment : Fragment(), NavController.OnDestinationChangedListener, LifecycleEventObserver {
+    private val ltag = "MainFragment"
+    private val lon = true
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
 
@@ -65,15 +67,58 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        dog { "onCreateView" }
+        Dog.bark(ltag, lon) { "onCreateView" }
         _binding = FragmentMainBinding.inflate(inflater, container, false)
-        setHasOptionsMenu(true)
+
+        val menuHost: MenuHost = requireActivity()
+
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.menu_main, menu)
+                val versionMi = menu.findItem(R.id.mi_version)
+                versionMi.title = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    android.R.id.home -> {
+                        // Up button clicked
+                        false
+                    }
+
+                    R.id.mi_web_site -> {
+                        openWebPageIntent()
+                        true
+                    }
+
+                    R.id.mi_settings -> {
+                        findNavController().navigate(R.id.ng_Settings)
+                        true
+                    }
+
+                    R.id.mi_test_notification -> {
+                        mvm.viewModelScope.launch {
+                            val h1 = mvm.targets[0]
+                            val h2 = mvm.targets[1]
+
+                            delay(mSecFromSeconds(2))
+                            mvm.hostStateNotification.makeAsleepNotification(h1, "${h1.title} Asleep", "Test of host went to sleep.")
+                            delay(mSecFromSeconds(2))
+                            mvm.hostStateNotification.makeAwokeNotification(h2, "${h2.title}  Awoke", "Test of host woke up.")
+                        }
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
         return ui.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        dog { "onViewCreated" }
+        Dog.bark(ltag, lon) { "onViewCreated" }
         super.onViewCreated(view, savedInstanceState)
 
         // Put the static names into lists
@@ -188,43 +233,9 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        val versionMi = menu.findItem(R.id.mi_version)
-        versionMi.title = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.mi_web_site -> {
-                openWebPageIntent("https://wol-bliss.hanafey.com")
-                true
-            }
-
-            R.id.mi_settings -> {
-                findNavController().navigate(R.id.ng_Settings)
-                true
-            }
-
-            R.id.mi_test_notification -> {
-                mvm.viewModelScope.launch {
-                    val h1 = mvm.targets[0]
-                    val h2 = mvm.targets[1]
-
-                    delay(mSecFromSeconds(2))
-                    mvm.hostStateNotification.makeAsleepNotification(h1, "${h1.title} Asleep", "Test of host went to sleep.")
-                    delay(mSecFromSeconds(2))
-                    mvm.hostStateNotification.makeAwokeNotification(h2, "${h2.title}  Awoke", "Test of host woke up.")
-                }
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        dog { "onStateChanged $event" }
+        Dog.bark(ltag, lon, "lifecycle") { "onStateChanged $event" }
+
         when (event) {
             Lifecycle.Event.ON_CREATE -> Unit
 
@@ -248,7 +259,8 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         }
     }
 
-    private fun openWebPageIntent(url: String) {
+    private fun openWebPageIntent() {
+        val url = "https://wol-bliss.hanafey.com"
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
@@ -403,31 +415,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                 }
 
                 mvm.signalPingTargetChanged(target)
-            }
-        }
-    }
-
-    @Suppress("unused")
-    companion object {
-        private const val tag = "MainFragment"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
             }
         }
     }

@@ -1,12 +1,12 @@
 package com.hanafey.android.wol
 
-import android.util.Log
 import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
 import com.hanafey.android.wol.settings.SettingsData
@@ -22,13 +22,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.InetAddress
-import java.time.Duration
 import java.time.Instant
 
 class MainViewModel(
     application: WolApplication,
     val networkStateLiveData: LiveData<NetworkStateTracker.NetState>
 ) : AndroidViewModel(application) {
+    private val ltag = "MainViewModel"
+    private val lon = true
 
     val targets = defaultHostList()
 
@@ -124,7 +125,7 @@ class MainViewModel(
      * Call in a forever observer of network state.
      */
     fun onNetworkStateChanged(ns: NetworkStateTracker.NetState) {
-        dog { "onNetworkStateChanged: $ns" }
+        Dog.bark(ltag, lon) { "onNetworkStateChanged: $ns" }
         wiFiOn = ns.isAvailable && ns.isWifi
     }
 
@@ -149,7 +150,7 @@ class MainViewModel(
     private fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
         if (pingActive) return // ======================================== >>>
 
-        dog { "pingTargetsBecauseNeeded." }
+        Dog.bark(ltag, lon) { "pingTargetsBecauseNeeded." }
         pingActive = true
         pingJobs = targets.map { wh ->
             pingTarget(scope, wh, resetState)
@@ -163,7 +164,7 @@ class MainViewModel(
      * be registered.
      */
     fun pingTargetsAgain(scope: CoroutineScope, resetState: Boolean) {
-        dog { "pingTargetsAgain" }
+        Dog.bark(ltag, lon) { "pingTargetsAgain" }
         scope.launch {
             if (pingJobs.isNotEmpty()) {
                 pingActive = false
@@ -187,9 +188,9 @@ class MainViewModel(
                 exitingKillJob?.cancelAndJoin()
             }
 
-            dog { "killPingTargetsAfterWaiting: Will delay ${settingsData.pingKillDelayMinutes} minutes" }
+            Dog.bark(ltag, lon) { "killPingTargetsAfterWaiting: Will delay ${settingsData.pingKillDelayMinutes} minutes" }
             delay(mSecFromMinutes(settingsData.pingKillDelayMinutes))
-            dog { "killPingTargetsAfterWaiting: Delay ${settingsData.pingKillDelayMinutes} minutes done. Kill now!" }
+            Dog.bark(ltag, lon) { "killPingTargetsAfterWaiting: Delay ${settingsData.pingKillDelayMinutes} minutes done. Kill now!" }
 
             delayedKillMutex.withLock {
                 if (pingActive) {
@@ -207,7 +208,7 @@ class MainViewModel(
     fun cancelKillPingTargetsAfterWaiting(scope: CoroutineScope, restartJobs: Boolean) {
         scope.launch {
             delayedKillMutex.withLock {
-                dog { "cancelKillPingTargets." }
+                Dog.bark(ltag, lon) { "cancelKillPingTargets." }
                 delayedKillJob?.cancelAndJoin()
                 delayedKillJob = null
             }
@@ -253,7 +254,7 @@ class MainViewModel(
 
                         if (address != null) {
                             host.lastPingSentAt.update(Instant.now())
-                            dog { "DOG1667: ping ${host.title}" }
+                            Dog.bark(ltag, lon) { "DOG1667: ping ${host.title}" }
                             val pingResult = try {
                                 val x = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
                                 if (x) 1 else 0
@@ -375,9 +376,14 @@ class MainViewModel(
     }
 
 
-    class ObserverOfHostState(private val hostStateNotification: HostStateNotification) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
+    class ObserverOfHostState(
+        private val hostStateNotification: HostStateNotification
+    ) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
+        private val ltag = "ObserverOfHostState"
+        private val lon = true
+
         override fun onChanged(whs: PingDeadToAwakeTransition.WolHostSignal) {
-            dog { "ObserverOfHostState: $whs" }
+            Dog.bark(ltag, lon) { "ObserverOfHostState: $whs" }
             if (whs.host.datNotifications) {
                 when (whs.signal) {
                     PingDeadToAwakeTransition.WHS.NOTHING -> {}
@@ -394,31 +400,6 @@ class MainViewModel(
                         hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} ${whs.extra}", "${Instant.now()}")
                     }
                 }
-            }
-        }
-    }
-
-    @Suppress("unused")
-    companion object {
-        private const val tag = "MainViewModel"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
             }
         }
     }

@@ -3,7 +3,6 @@ package com.hanafey.android.wol.settings
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -17,20 +16,20 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import com.google.android.material.snackbar.Snackbar
-import com.hanafey.android.wol.BuildConfig
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.PingDeadToAwakeTransition
 import com.hanafey.android.wol.R
 import com.hanafey.android.wol.WolApplication
 import com.hanafey.android.wol.magic.MagicPacket
-import java.time.Duration
-import java.time.Instant
 
 class SettingsHostFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
     SharedPreferences.OnSharedPreferenceChangeListener,
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
+    private val ltag = "SettingsHostFragment"
+    private val lon = true
 
     private var hostIx: Int = -1
     private val mvm: MainViewModel = WolApplication.instance.mvm
@@ -461,7 +460,7 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
             }
 
             else -> {
-                die(true) { "${pref.key} NOT EXPECTED!!" }
+                Dog.die(true) { "${pref.key} NOT EXPECTED!!" }
                 false
             }
         }
@@ -490,7 +489,7 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
         when (destination.id) {
             R.id.SettingsFragment -> {
-                dog { "Back to SettingsFragment. No action needed." }
+                Dog.bark(ltag, lon) { "Back to SettingsFragment. No action needed." }
             }
         }
     }
@@ -498,7 +497,7 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
-                dog { "ON_CREATE" }
+                Dog.bark(ltag, lon) { "ON_CREATE" }
             }
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
@@ -510,30 +509,6 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
             }
             Lifecycle.Event.ON_DESTROY -> {}
             Lifecycle.Event.ON_ANY -> {}
-        }
-    }
-
-    companion object {
-        private const val tag = "SettingsHostFragment"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused", "SameParameterValue")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
-            }
         }
     }
 }

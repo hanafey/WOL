@@ -3,7 +3,6 @@ package com.hanafey.android.wol.settings
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -16,12 +15,10 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import com.google.android.material.snackbar.Snackbar
-import com.hanafey.android.wol.BuildConfig
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.R
 import com.hanafey.android.wol.WolApplication
-import java.time.Duration
-import java.time.Instant
 
 class SettingsFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
@@ -29,6 +26,8 @@ class SettingsFragment : PreferenceFragmentCompat(),
     SharedPreferences.OnSharedPreferenceChangeListener,
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
+    private val ltag = "SettingsFragment"
+    private val lon = true
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
     private val fvm: SettingsViewModel by navGraphViewModels(R.id.ng_Settings)
@@ -198,7 +197,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
             }
 
             else -> {
-                die(true) { "${pref.key} NOT EXPECTED!!" }
+                Dog.bark(ltag, true) { "${pref.key} NOT EXPECTED!!" }
                 false
             }
         }
@@ -222,9 +221,9 @@ class SettingsFragment : PreferenceFragmentCompat(),
 
                 if (fvm.hostDataChanged) {
                     mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
-                    dog { "onDestinationChanged: RE-PING $destination" }
+                    Dog.bark(ltag, lon) { "onDestinationChanged: RE-PING $destination" }
                 } else {
-                    dog { "onDestinationChanged: NO RE-PING $destination" }
+                    Dog.bark(ltag, lon) { "onDestinationChanged: NO RE-PING $destination" }
                 }
             }
         }
@@ -248,7 +247,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
     }
 
     override fun onPreferenceStartFragment(caller: PreferenceFragmentCompat, pref: Preference): Boolean {
-        dog { "onPreferenceStartFragment: $pref" }
+        Dog.bark(ltag, lon) { "onPreferenceStartFragment: $pref" }
         require(pref.fragment != null)
 
         return when (pref.fragment) {
@@ -257,32 +256,8 @@ class SettingsFragment : PreferenceFragmentCompat(),
                 true
             }
             else -> {
-                die(true) { "SettingsFragment does not handle fragment '${pref.fragment}'" }
+                Dog.die(true) { "SettingsFragment does not handle fragment '${pref.fragment}'" }
                 false
-            }
-        }
-    }
-
-    companion object {
-        private const val tag = "SettingsFragment"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
             }
         }
     }

@@ -3,7 +3,6 @@ package com.hanafey.android.wol.settings
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -16,12 +15,10 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.color.MaterialColors
-import com.hanafey.android.wol.BuildConfig
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.R
 import com.hanafey.android.wol.WolApplication
-import java.time.Duration
-import java.time.Instant
 
 class SettingsHostListFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
@@ -29,6 +26,8 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
     SharedPreferences.OnSharedPreferenceChangeListener,
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
+    private val ltag = "SettingsHostListFragment"
+    private val lon = true
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
     private val fvm: SettingsViewModel by navGraphViewModels(R.id.ng_Settings)
@@ -79,7 +78,7 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
         when (destination.id) {
             R.id.SettingsHostListFragment -> {
                 // Host titles may have changed so update.
-                dog { "Back to SettingsHostListFragment. Host data changed? ${fvm.hostDataChanged}" }
+                Dog.bark(ltag, lon) { "Back to SettingsHostListFragment. Host data changed? ${fvm.hostDataChanged}" }
                 if (fvm.hostDataChanged) {
                     for (wh in mvm.targets) {
                         findPreference<Preference>(PrefNames.HOST_SECTION.pref(wh.pKey))?.apply {
@@ -94,10 +93,10 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
-                dog { "ON_CREATE" }
+                Dog.bark(ltag, lon) { "ON_CREATE" }
             }
             Lifecycle.Event.ON_START -> {
-                dog { "ON_START" }
+                Dog.bark(ltag, lon) { "ON_START" }
                 findNavController().addOnDestinationChangedListener(this)
                 // --------------------------------------------------------------------------------
                 // Create the icons for showing included and excluded hosts
@@ -128,7 +127,7 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
     }
 
     override fun onPreferenceStartFragment(caller: PreferenceFragmentCompat, pref: Preference): Boolean {
-        dog { "onPreferenceStartFragment: $pref" }
+        Dog.bark(ltag, lon) { "onPreferenceStartFragment: $pref" }
 
         require(pref.fragment != null)
 
@@ -141,32 +140,8 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
                 true
             }
             else -> {
-                die(true) { "${pref.key} NOT EXPECTED!!" }
+                Dog.die(true) { "${pref.key} NOT EXPECTED!!" }
                 false
-            }
-        }
-    }
-
-    companion object {
-        private const val tag = "SettingsHostList"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
             }
         }
     }

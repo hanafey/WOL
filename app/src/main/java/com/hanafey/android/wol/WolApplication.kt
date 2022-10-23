@@ -6,17 +6,18 @@ import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Transformations
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import java.net.InetAddress
-import java.time.Duration
 import java.time.Instant
 
 class WolApplication : Application() {
+    private val ltag = "WolApplication"
+    private val lon = true
 
     private var _mainScope: CoroutineScope? = null
     private var _mvm: MainViewModel? = null
@@ -36,12 +37,12 @@ class WolApplication : Application() {
         get() = _mvm ?: throw IllegalStateException("Cannot access 'mvm' before application 'onCreate'.")
 
     init {
-        dog { "init" }
+        Dog.bark(ltag, lon) { "init" }
         singleton = this
     }
 
     override fun onCreate() {
-        dog { "onCreate" }
+        Dog.bark(ltag, lon) { "onCreate" }
         super.onCreate()
 
         _mainScope = MainScope()
@@ -104,27 +105,6 @@ class WolApplication : Application() {
     }
 
     companion object {
-        private const val tag = "WolApplication"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
-            }
-        }
 
         private var singleton: WolApplication? = null
 

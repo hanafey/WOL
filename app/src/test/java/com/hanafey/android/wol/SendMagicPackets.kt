@@ -1,16 +1,16 @@
 package com.hanafey.android.wol
 
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.magic.MagicPacket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.time.Duration
-import java.time.Instant
 import kotlin.system.exitProcess
 
 object SendMagicPackets {
     private const val ltag = "SendMagicPackets"
+    private const val lon = true
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -26,8 +26,8 @@ object SendMagicPackets {
         val pingStr = if (args.size > 2) args[2] else ""
 
         runBlocking {
-            EXT_EPOCH = Instant.now()
-            dog { "Launch second ping and wol." }
+            Dog.resetTimeOrigin()
+            Dog.bark(ltag, lon) { "Launch second ping and wol." }
             launch(Dispatchers.IO) {
                 if (pingStr.isNotEmpty()) doPingTest("PING", pingStr)
                 if (macStr.length >= 12) doWolTest("WOL", ipStr, macStr)
@@ -38,12 +38,12 @@ object SendMagicPackets {
     private suspend fun doPingTest(name: String, pingStr: String) {
         for (i in 1..5) {
             try {
-                dog { "$name::  send $pingStr" }
+                Dog.bark(ltag, lon) { "$name::  send $pingStr" }
                 @Suppress("BlockingMethodInNonBlockingContext")
                 val pingable = MagicPacket.ping(pingStr)
-                dog { "$name::  result $pingable $pingStr" }
+                Dog.bark(ltag, lon) { "$name::  result $pingable $pingStr" }
             } catch (e: Throwable) {
-                dog { "$name:: FAILED: $e" }
+                Dog.bark(ltag, lon) { "$name:: FAILED: $e" }
             }
             delay(500L)
         }
@@ -52,30 +52,14 @@ object SendMagicPackets {
     private suspend fun doWolTest(name: String, ipStr: String, macStr: String) {
         try {
             for (i in 1..5) {
-                dog { "$name::  start $ipStr, $macStr" }
+                Dog.bark(ltag, lon) { "$name::  start $ipStr, $macStr" }
                 @Suppress("BlockingMethodInNonBlockingContext")
                 MagicPacket.sendWol(macStr, ipStr, MagicPacket.PORT)
-                dog { "$name::  end $ipStr, $macStr" }
+                Dog.bark(ltag, lon) { "$name::  end $ipStr, $macStr" }
                 delay(1000L)
             }
         } catch (e: Throwable) {
-            dog { "$name:: FAILED: $e" }
-        }
-    }
-
-    // --------------------------------------------------------------------------------
-    // Logging
-    // --------------------------------------------------------------------------------
-
-    private const val tag = "SMP"
-    private const val debugLoggingEnabled = false
-    var EXT_EPOCH: Instant = Instant.now()
-
-    private fun dog(message: () -> String) {
-        if (debugLoggingEnabled) {
-            val duration = Duration.between(EXT_EPOCH, Instant.now()).toMillis() / 1000.0
-            val prefix = "%s [%8.3f]: ".format(tag, duration)
-            println(prefix + message())
+            Dog.bark(ltag, lon) { "$name:: FAILED: $e" }
         }
     }
 }

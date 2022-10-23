@@ -1,7 +1,6 @@
 package com.hanafey.android.wol
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.res.ResourcesCompat
@@ -13,11 +12,12 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.databinding.ActivityMainBinding
-import java.time.Duration
-import java.time.Instant
 
 class MainActivity : AppCompatActivity(), LifecycleEventObserver {
+    private val ltag = "MainActivity"
+    private val lon = true
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
@@ -65,48 +65,23 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        val lab = "lifecycle"
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
-                dog { "ON_CREATE" }
+                Dog.bark(ltag, lon, lab) { "ON_CREATE" }
             }
             Lifecycle.Event.ON_START -> {
-                dog { "ON_START: cancel kill ping, and re-ping if needed" }
+                Dog.bark(ltag, lon, lab) { "ON_START: cancel kill ping, and re-ping if needed" }
                 mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope, true)
             }
             Lifecycle.Event.ON_RESUME -> Unit
             Lifecycle.Event.ON_PAUSE -> Unit
             Lifecycle.Event.ON_STOP -> {
-                dog { "ON_STOP: kill ping later" }
+                Dog.bark(ltag, lon, lab) { "ON_STOP: kill ping later" }
                 mvm.killPingTargetsAfterWaiting(WolApplication.instance.mainScope)
             }
             Lifecycle.Event.ON_DESTROY -> Unit
             Lifecycle.Event.ON_ANY -> Unit
         }
     }
-
-    @Suppress("unused")
-    companion object {
-        private const val tag = "MainActivity"
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
-            }
-        }
-    }
-
 }

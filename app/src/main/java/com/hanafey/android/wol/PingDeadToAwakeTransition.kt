@@ -1,17 +1,18 @@
 package com.hanafey.android.wol
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.magic.WolHost
-import java.time.Duration
-import java.time.Instant
 
 /**
  * You must call [setBufferParameters] after creating an instance of this class. This is delayed because `SettingsData` is
  * needed to supply the DAT buffer information.
  */
 class PingDeadToAwakeTransition(val host: WolHost) {
+    private val ltag = "PingDeadTo..."
+    private val lon = true
+
     /**
      * Signals that hosts can emit.
      */
@@ -92,7 +93,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      * Sets to the state at construction, empty buffer no current or previous signal
      */
     fun resetBuffer() {
-        dog { "resetBuffer" }
+        Dog.bark(ltag, lon) { "resetBuffer" }
         lastPingReportedMillies = 0L
         lastPingMillies = 0L
         previousBufferSignal = WHS.NOTHING
@@ -142,7 +143,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         buffer[bufferIx] = pmz
         previousBufferSignal = currentBufferSignal
         currentBufferSignal = assessBuffer(previousBufferSignal)
-        dog { "${host.title}  transitions = $transitionCount $previousBufferSignal -> $currentBufferSignal" }
+        Dog.bark(ltag, lon) { "${host.title}  transitions = $transitionCount $previousBufferSignal -> $currentBufferSignal" }
         if (currentBufferSignal != WHS.NOTHING) {
             // Interesting Transition
             transitionCount++
@@ -150,12 +151,12 @@ class PingDeadToAwakeTransition(val host: WolHost) {
                 // Do not report the first transition because is is from unknown to something.
                 lastPingReportedMillies = now
                 _aliveDeadTransition.postValue(WolHostSignal(host, currentBufferSignal))
-                dog { "signal!" }
+                Dog.bark(ltag, lon) { "signal!" }
             }
         } else if (testingReportPeriod > 0 && now - lastPingReportedMillies > testingReportPeriod) {
             lastPingReportedMillies = now
             _aliveDeadTransition.postValue(WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})"))
-            dog { "noise!" }
+            Dog.bark(ltag, lon) { "noise!" }
         }
         return currentBufferSignal
     }
@@ -229,31 +230,6 @@ class PingDeadToAwakeTransition(val host: WolHost) {
                 upperThreshold >= size -> "Upper threshold must be < sample size"
                 lowerThreshold > upperThreshold -> "The upper threshold must be the same or bigger than lower threshold"
                 else -> ""
-            }
-        }
-
-        // --------------------------------------------------------------------------------
-        // Logging
-        // --------------------------------------------------------------------------------
-        private const val tag = "PingDeadToAwake.."
-        private const val debugLoggingEnabled = false
-        private const val uniqueIdentifier = "DOGLOG"
-
-        @Suppress("unused")
-        private fun dog(forceOn: Boolean = false, message: () -> String) {
-            if (BuildConfig.DEBUG && (forceOn || (debugLoggingEnabled && BuildConfig.DOG_ON))) {
-                if (Log.isLoggable(tag, Log.ERROR)) {
-                    val duration = Duration.between(WolApplication.APP_EPOCH, Instant.now()).toMillis() / 1000.0
-                    val durationString = "[%8.3f]".format(duration)
-                    Log.println(Log.ERROR, tag, durationString + uniqueIdentifier + ":" + message())
-                }
-            }
-        }
-
-        @Suppress("unused")
-        private inline fun die(errorIfTrue: Boolean, message: () -> String) {
-            if (BuildConfig.DEBUG) {
-                require(errorIfTrue, message)
             }
         }
 
