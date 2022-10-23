@@ -9,6 +9,7 @@ import android.net.NetworkCapabilities
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Transformations
 import com.hanafey.android.ax.Dog
+import com.hanafey.android.ax.Live
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
