@@ -29,7 +29,8 @@ class MainViewModel(
     val networkStateLiveData: LiveData<NetworkStateTracker.NetState>
 ) : AndroidViewModel(application) {
     private val ltag = "MainViewModel"
-    private val lon = true
+    private val lon = BuildConfig.LON_MainViewModel
+    private val lonNoisy = BuildConfig.LON_MainViewModel_noisy
 
     val targets = defaultHostList()
 
@@ -254,7 +255,7 @@ class MainViewModel(
 
                         if (address != null) {
                             host.lastPingSentAt.update(Instant.now())
-                            Dog.bark(ltag, lon) { "DOG1667: ping ${host.title}" }
+                            Dog.bark(ltag, lonNoisy, "mpmpds") { "ping ${host.title}" }
                             val pingResult = try {
                                 val x = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
                                 if (x) 1 else 0
@@ -280,7 +281,8 @@ class MainViewModel(
                                             host.lastWolWakeAt.update(now)
                                             val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
                                             host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
-                                            host.wolToWakeHistoryChanged = true
+                                            val wasSet = host.wolToWakeHistoryChanged.getAndSet(true)
+                                            Dog.bark(ltag, lon) { "${host.pingName} wake history changed (was set? $wasSet)" }
                                         }
                                         host.deadAliveTransition.addPingResult(1)
                                     }
@@ -380,7 +382,7 @@ class MainViewModel(
         private val hostStateNotification: HostStateNotification
     ) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
         private val ltag = "ObserverOfHostState"
-        private val lon = true
+        private val lon = BuildConfig.LON_ObserverOfHostState
 
         override fun onChanged(whs: PingDeadToAwakeTransition.WolHostSignal) {
             Dog.bark(ltag, lon) { "ObserverOfHostState: $whs" }

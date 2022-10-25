@@ -38,7 +38,7 @@ import kotlinx.coroutines.sync.withLock
  */
 class MainFragment : Fragment(), NavController.OnDestinationChangedListener, LifecycleEventObserver {
     private val ltag = "MainFragment"
-    private val lon = true
+    private val lon = BuildConfig.LON_MainFragment
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
 
@@ -331,8 +331,10 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                                 psb.backgroundTintList = pingResponsiveTint
                             }
                             psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
-                            if (target.wolToWakeHistoryChanged) {
-                                target.wolToWakeHistoryChanged = false
+                            if (target.wolToWakeHistoryChanged.getAndSet(false)) {
+                                Dog.bark(ltag, lon, "targetPingChangedLiveData") { "wolToWakeHistoryChanged:true" }
+                                mvm.settingsData.writeTimeToWakeHistory(target)
+                                Dog.bark(ltag, lon, "targetPingChangedLiveData") { "history updated, wolToWakeHistoryChanged:false" }
                             }
                         }
 

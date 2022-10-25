@@ -11,7 +11,7 @@ import com.hanafey.android.wol.magic.WolHost
  */
 class PingDeadToAwakeTransition(val host: WolHost) {
     private val ltag = "PingDeadTo..."
-    private val lon = true
+    private val lon = BuildConfig.LON_PingDeadToAwakeTransition
 
     /**
      * Signals that hosts can emit.

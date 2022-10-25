@@ -18,6 +18,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
+import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.databinding.FragmentHostStatusBinding
 import com.hanafey.android.wol.magic.WolHost
 import kotlinx.coroutines.delay
@@ -32,6 +33,8 @@ import java.time.format.DateTimeFormatter
 class HostStatusFragment : Fragment(),
     LifecycleEventObserver,
     NavController.OnDestinationChangedListener {
+    private val ltag = "HostStatusFragment"
+    private val lon = BuildConfig.LON_HostStatusFragment
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
 
@@ -131,6 +134,7 @@ class HostStatusFragment : Fragment(),
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        Dog.bark(ltag, lon, "lifecycle") { event.name }
         when (event) {
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
@@ -255,9 +259,37 @@ class HostStatusFragment : Fragment(),
     }
 
     private fun observePingLiveData() {
-        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { px ->
-            if (wh.pKey == px) {
+        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
+            val target = when {
+                ix == -1 -> {
+                    return@observe // ======================================== >>>
+                }
+
+                mvm.targets.size > ix -> {
+                    mvm.targets[ix]
+                }
+
+                else -> {
+                    throw IllegalArgumentException("observePingLiveData: $ix is invalid target index")
+                }
+            }
+
+            if (wh.pKey == ix) {
+                // Reflect the current host status in the UI, because this is a ping result from our focussed host.
                 updateUi(wh)
+            }
+
+            when (target.pingState) {
+                WolHost.PingStates.ALIVE -> {
+                    if (target.wolToWakeHistoryChanged.getAndSet(false)) {
+                        // Respond to alive state if the target is marked that the history has been changed.
+                        // Commit the changes to settings.
+                        Dog.bark(ltag, lon, "targetPingChangedLiveData") { "wolToWakeHistoryChanged:true" }
+                        mvm.settingsData.writeTimeToWakeHistory(target)
+                        Dog.bark(ltag, lon, "targetPingChangedLiveData") { "history updated, wolToWakeHistoryChanged:false" }
+                    }
+                }
+                else -> {}
             }
         }
     }

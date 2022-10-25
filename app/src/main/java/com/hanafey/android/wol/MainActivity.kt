@@ -17,7 +17,7 @@ import com.hanafey.android.wol.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), LifecycleEventObserver {
     private val ltag = "MainActivity"
-    private val lon = true
+    private val lon = BuildConfig.LON_MainActivity
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding

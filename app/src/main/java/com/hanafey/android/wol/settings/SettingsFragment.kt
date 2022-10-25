@@ -16,6 +16,7 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.ax.Dog
+import com.hanafey.android.wol.BuildConfig
 import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.R
 import com.hanafey.android.wol.WolApplication
@@ -27,7 +28,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
     private val ltag = "SettingsFragment"
-    private val lon = true
+    private val lon = BuildConfig.LON_SettingsFragment
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
     private val fvm: SettingsViewModel by navGraphViewModels(R.id.ng_Settings)

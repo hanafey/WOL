@@ -41,8 +41,20 @@ android {
         targetSdkVersion 33
         versionCode 12
         versionName "2.0.2"
-        // Set this false to disable debug logging.
-        buildConfigField "boolean", "DOG_ON", "false"
+
+        // Set these LON_ vals to  false to disable debug logging.
+        buildConfigField "boolean", "LON_HostStatusFragment", "false"
+        buildConfigField "boolean", "LON_MainActivity", "false"
+        buildConfigField "boolean", "LON_MainFragment", "false"
+        buildConfigField "boolean", "LON_MainViewModel", "false"
+        buildConfigField "boolean", "LON_MainViewModel_noisy", "false"
+        buildConfigField "boolean", "LON_ObserverOfHostState", "false"
+        buildConfigField "boolean", "LON_PingDeadToAwakeTransition", "false"
+        buildConfigField "boolean", "LON_WolApplication", "false"
+        buildConfigField "boolean", "LON_SettingsFragment", "false"
+        buildConfigField "boolean", "LON_SettingsHostFragment", "false"
+        buildConfigField "boolean", "LON_SettingHostListFragment", "false"
+        buildConfigField "boolean", "LON_", "false"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config
@@ -88,6 +100,7 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.0'
     implementation 'androidx.webkit:webkit:1.5.0'
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 }

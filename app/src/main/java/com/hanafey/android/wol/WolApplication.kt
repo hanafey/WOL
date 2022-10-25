@@ -18,7 +18,7 @@ import java.time.Instant
 
 class WolApplication : Application() {
     private val ltag = "WolApplication"
-    private val lon = true
+    private val lon = BuildConfig.LON_WolApplication
 
     private var _mainScope: CoroutineScope? = null
     private var _mvm: MainViewModel? = null
@@ -38,6 +38,7 @@ class WolApplication : Application() {
         get() = _mvm ?: throw IllegalStateException("Cannot access 'mvm' before application 'onCreate'.")
 
     init {
+        Dog.turnDogOn(BuildConfig.DEBUG)
         Dog.bark(ltag, lon) { "init" }
         singleton = this
     }

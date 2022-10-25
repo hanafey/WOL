@@ -3,6 +3,7 @@ package com.hanafey.android.wol.magic
 import com.hanafey.android.wol.PingDeadToAwakeTransition
 import kotlinx.coroutines.sync.Mutex
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * You must call [PingDeadToAwakeTransition.setBufferParameters] on [deadAliveTransition] after instantiating this class.
@@ -151,7 +152,7 @@ class WolHost(
     /**
      * Set true when history is added, and set false when history is saved to settings.
      */
-    var wolToWakeHistoryChanged = false
+    val wolToWakeHistoryChanged = AtomicBoolean(false)
 
     /**
      *  0 means status not known, 1 means responded to last ping, -1 means last ping timed out and

@@ -17,6 +17,7 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.ax.Dog
+import com.hanafey.android.wol.BuildConfig
 import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.PingDeadToAwakeTransition
 import com.hanafey.android.wol.R
@@ -29,7 +30,7 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
     private val ltag = "SettingsHostFragment"
-    private val lon = true
+    private val lon = BuildConfig.LON_SettingsHostFragment
 
     private var hostIx: Int = -1
     private val mvm: MainViewModel = WolApplication.instance.mvm

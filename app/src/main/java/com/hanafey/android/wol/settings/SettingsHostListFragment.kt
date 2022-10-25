@@ -16,6 +16,7 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.color.MaterialColors
 import com.hanafey.android.ax.Dog
+import com.hanafey.android.wol.BuildConfig
 import com.hanafey.android.wol.MainViewModel
 import com.hanafey.android.wol.R
 import com.hanafey.android.wol.WolApplication
@@ -27,7 +28,7 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
     NavController.OnDestinationChangedListener,
     LifecycleEventObserver {
     private val ltag = "SettingsHostListFragment"
-    private val lon = true
+    private val lon = BuildConfig.LON_SettingHostListFragment
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
     private val fvm: SettingsViewModel by navGraphViewModels(R.id.ng_Settings)
