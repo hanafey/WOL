@@ -4,9 +4,11 @@ import com.hanafey.android.wol.PingDeadToAwakeTransition
 import kotlinx.coroutines.sync.Mutex
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 
 /**
  * You must call [PingDeadToAwakeTransition.setBufferParameters] on [deadAliveTransition] after instantiating this class.
+ * Data in this class is persisted in settings, see [com.hanafey.android.wol.settings.SettingsData.initializeModel]
  * @param pKey A unique key for each host that also orders a set of hosts. Currently this
  * is used in conjunction with a list, and [pKey] must be array index position.
  * @param title User understandable name for the WOL target.
@@ -17,22 +19,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param broadcastIp The broadcast address for WOL magic packets. Example: "192.168.1.255"
  */
 class WolHost(
-    pKey: Int,
-    title: String,
-    pingName: String,
+    val pKey: Int,
+    var title: String,
+    var pingName: String,
     macString: String,
-    broadcastIp: String,
+    var broadcastIp: String,
 ) : Comparable<WolHost> {
 
-    /**
-     * A unique key for each host that also orders a set of hosts. Currently this
-     * is used in conjunction with a list, and [pKey] must be array index position.
-     */
-    val pKey = pKey
-
-    // --------------------------------------------------------------------------------
-    // Host settings and data saved in prefs.
-    // --------------------------------------------------------------------------------
     /**
      * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
      * done internally because both [enabled] and [pingMe] are persisted as settings.
@@ -43,22 +36,6 @@ class WolHost(
      * If this host is being pinged, or should be pinged, this is true.
      */
     var pingMe = true
-
-    /**
-     *  User understandable name for the WOL target.
-     */
-    var title = title
-
-    /**
-     * Name of ip address of WOL target. This is used to ping to see if host is
-     * awake. Examples "192.168.1.250", "nasa"
-     */
-    var pingName = pingName
-
-    /**
-     * The broadcast address for WOL magic packets. Example: "192.168.1.255"
-     */
-    var broadcastIp = broadcastIp
 
     /**
      * The MAC address in standard format.
@@ -199,40 +176,6 @@ class WolHost(
     }
 
 
-    /**
-     * Average milliseconds from WOL to ping acknowledged.
-     */
-    fun wolToWakeAverage(): Double {
-        val sum = wolToWakeHistory.fold(0.0) { z, milli ->
-            z + milli
-        }
-        return if (wolToWakeHistory.isEmpty()) {
-            Double.NaN
-        } else {
-            sum / wolToWakeHistory.size
-        }
-    }
-
-    fun wolToWakeMedian(): Double {
-        return if (wolToWakeHistory.isEmpty()) {
-            return Double.NaN
-        } else {
-            val sorted = wolToWakeHistory.sorted()
-            val sz = sorted.size
-            when {
-                sz == 1 -> {
-                    sorted[0].toDouble()
-                }
-                sz % 2 == 0 -> {
-                    (sorted[sz / 2] + sorted[sz / 2 - 1]) / 2.0
-                }
-                else -> {
-                    sorted[sz / 2].toDouble()
-                }
-            }
-        }
-    }
-
     override fun compareTo(other: WolHost): Int {
         return pKey - other.pKey
     }
@@ -240,7 +183,6 @@ class WolHost(
     override fun toString(): String {
         return "WolHost(pKey=$pKey, title='$title', pingName='$pingName', enabled=$enabled, pingMe=$pingMe)"
     }
-
 
     enum class PingStates {
         /**
@@ -270,5 +212,77 @@ class WolHost(
          * Attempt to ping produced an exception.
          */
         EXCEPTION
+    }
+
+
+    companion object {
+
+        /**
+         * @param history The list of milli seconds to wake.
+         * @return Average milliseconds from WOL to ping acknowledged, or NaN if not enough data.
+         */
+        fun wolToWakeAverage(history: List<Int>): Double {
+            val sum = history.fold(0.0) { z, milli ->
+                z + milli
+            }
+            return if (history.isEmpty()) {
+                Double.NaN
+            } else {
+                sum / history.size
+            }
+        }
+
+        /**
+         * @param history The list of milli seconds to wake.
+         * @return Median milliseconds from WOL to ping acknowledged, or NaN if not enough data.
+         */
+        fun wolToWakeMedian(history: List<Int>): Double {
+            return if (history.isEmpty()) {
+                return Double.NaN
+            } else {
+                val sorted = history.sorted()
+                val sz = sorted.size
+                when {
+                    sz == 1 -> {
+                        sorted[0].toDouble()
+                    }
+                    sz % 2 == 0 -> {
+                        (sorted[sz / 2] + sorted[sz / 2 - 1]) / 2.0
+                    }
+                    else -> {
+                        sorted[sz / 2].toDouble()
+                    }
+                }
+            }
+        }
+
+        /**
+         * Purge the history data of values that are far from the median. The assumption is a host
+         * may not come online because it is unplugged, or it comes online very quickly because it was already
+         * on but slow to get ping response back. These events should not contaminate the history.
+         * @param history  The history of milli seconds to wake.
+         * @param tooLittleHistory If less than this number of samples do nothing.
+         * @param tooQuickFactor Divide median by this to get shortest time cutoff.
+         * @param tooSlowFactor Multiply median by this to get longest time cutoff.
+         */
+        fun purgeWolToWakeAberrations(
+            history: List<Int>,
+            tooLittleHistory: Int,
+            tooQuickFactor: Double,
+            tooSlowFactor: Double
+        ): List<Int> {
+            return if (history.isEmpty()) {
+                // No data
+                history
+            } else if (history.size < tooLittleHistory) {
+                // Too little data
+                history
+            } else {
+                val median = wolToWakeMedian(history)
+                val lowLimit = (median / tooQuickFactor).roundToInt()
+                val highLimit = (median * tooSlowFactor).roundToInt()
+                history.filter { it in lowLimit..highLimit }
+            }
+        }
     }
 }

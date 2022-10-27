@@ -342,8 +342,8 @@ class HostStatusFragment : Fragment(),
         init {
             val n = wh.wolToWakeHistory.size
             if (n > 0) {
-                aveLatency = wh.wolToWakeAverage() / 1000.0
-                medianLatency = wh.wolToWakeMedian() / 1000.0
+                aveLatency = WolHost.wolToWakeAverage(wh.wolToWakeHistory) / 1000.0
+                medianLatency = WolHost.wolToWakeMedian(wh.wolToWakeHistory) / 1000.0
                 isDefined = true
             } else {
                 aveLatency = Double.NaN

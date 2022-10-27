@@ -39,8 +39,8 @@ android {
         applicationId "com.hanafey.android.wol"
         minSdkVersion 26
         targetSdkVersion 33
-        versionCode 13
-        versionName "2.0.3"
+        versionCode 14
+        versionName "2.0.4"
 
         // Set these LON_ vals to  false to disable debug logging.
         buildConfigField "boolean", "LON_HostStatusFragment", "false"

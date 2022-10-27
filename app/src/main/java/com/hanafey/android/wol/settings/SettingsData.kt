@@ -19,6 +19,11 @@ class SettingsData(val spm: SharedPreferences) {
     var pingKillDelayMinutes = 5
     var pingIgnoreWiFiState = false
 
+    val purgeAberrantWakeHistory = true
+    val tooLittleWakeHistoryForPurge = 10
+    val tooShortWakeTimeFactor = 3.5
+    val tooLongWakeTimeFactor = 3.5
+
     var versionAcknowledged = 0
 
     fun initializeModel(mvm: MainViewModel) {
@@ -98,37 +103,78 @@ class SettingsData(val spm: SharedPreferences) {
 
     private fun readTimeToWakeHistory(mvm: MainViewModel) {
         for (wh in mvm.targets) {
+            var changed = false
             val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.pKey)
             val string: String = spm.getString(prefName, "") ?: ""
             val strings = if (string.isNotBlank()) {
-                string.split(',')
+                val x1 = string.split(',')
+                if (x1.size >= 4 && x1[0] == "5111" && x1[1] == "5222") {
+                    // We have added two new values, get rid of fake start values.
+                    changed = true
+                    x1.subList(2, x1.size)
+                } else {
+                    x1
+                }
             } else {
                 // Fake history. Better than empty because at least the
-                // progress bar shows for the new user.
-                listOf("10000", "15000")
+                // progress bar shows for the new user. These special values
+                // are purged when real data is added.
+                changed = true
+                listOf("5111", "5222")
             }
 
             val ints = strings.map {
                 try {
                     it.toInt()
                 } catch (_: Exception) {
+                    changed = true
                     0
                 }
             }.filter { it > 0 }
 
-            wh.wolToWakeHistory = ints
+            val purgedInts = if (purgeAberrantWakeHistory) {
+                WolHost.purgeWolToWakeAberrations(
+                    ints,
+                    tooLittleWakeHistoryForPurge,
+                    tooShortWakeTimeFactor,
+                    tooLongWakeTimeFactor
+                )
+            } else {
+                ints
+            }
+
+            wh.wolToWakeHistory = purgedInts
+            if (changed || ints !== purgedInts) {
+                // This happens uncommonly. Updated history is always purged, so unless purging params
+                // are changed the read history does not need to be purged and object identity will be true.
+                writeTimeToWakeHistory(wh)
+            }
         }
     }
 
     fun writeTimeToWakeHistory(wh: WolHost) {
         val prefName = PrefNames.HOST_TIME_TO_WAKE.pref(wh.pKey)
+
         val truncatedHistory = if (wh.wolToWakeHistory.size > MAX_WOL_HISTORY) {
             wh.wolToWakeHistory.subList(wh.wolToWakeHistory.size - MAX_WOL_HISTORY, wh.wolToWakeHistory.size)
         } else {
             wh.wolToWakeHistory
         }
-        wh.wolToWakeHistory = truncatedHistory
-        val strings = truncatedHistory.map { it.toString() }
+
+        val truncatedPurgedHistory = if (purgeAberrantWakeHistory) {
+            WolHost.purgeWolToWakeAberrations(
+                truncatedHistory,
+                tooLittleWakeHistoryForPurge,
+                tooShortWakeTimeFactor,
+                tooLongWakeTimeFactor
+            )
+        } else {
+            truncatedHistory
+        }
+
+        wh.wolToWakeHistory = truncatedPurgedHistory
+
+        val strings = truncatedPurgedHistory.map { it.toString() }
         val string = strings.joinToString(",")
         with(spm.edit()) {
             putString(prefName, string)
