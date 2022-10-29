@@ -378,10 +378,10 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                 wh.mutex.withLock {
                     mvm.wolFocussedTarget = wh
                     findNavController().navigate(
-                        R.id.HostStatusFragment,
-                        Bundle().apply {
-                            putBoolean("show_wol", showWol)
-                        }
+                        if (showWol)
+                            R.id.action_MainFragment_to_HostStatusFragment_wol
+                        else
+                            R.id.action_MainFragment_to_HostStatusFragment_status
                     )
                 }
             }

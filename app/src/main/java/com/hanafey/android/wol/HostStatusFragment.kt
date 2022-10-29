@@ -4,9 +4,15 @@ import android.content.res.ColorStateList
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -17,6 +23,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.databinding.FragmentHostStatusBinding
@@ -47,7 +54,6 @@ class HostStatusFragment : Fragment(),
     private lateinit var pingUnResponsiveTint: ColorStateList
     private lateinit var pingOtherTint: ColorStateList
     private var wolLateColor = 0
-    private lateinit var wolStats: WolStats
     private var showWol: Boolean = false
     private val preamble: String by lazy { getString(R.string.error_wake_failed_preamble) }
     private val postamble: String by lazy { getString(R.string.error_wake_failed_postamble) }
@@ -58,16 +64,58 @@ class HostStatusFragment : Fragment(),
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHostStatusBinding.inflate(inflater, container, false)
-        return ui.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         val args = arguments
         if (args != null) {
             showWol = args.getBoolean("show_wol", false)
         }
+
+        val menuHost: MenuHost = requireActivity()
+
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.menu_host_status, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    android.R.id.home -> {
+                        // Up button clicked
+                        false
+                    }
+
+                    R.id.mi_reset_history -> {
+                        val ad: AlertDialog = MaterialAlertDialogBuilder(requireContext()).apply {
+                            setTitle("Reset WOL Time To Wake History for ${wh.title}")
+                            setMessage("These are details of what you can do.")
+                            setPositiveButton("Do it") { _, _ ->
+                                mvm.settingsData.resetTimeToWakeHistory(wh)
+                                updateUi(wh)
+
+                                Snackbar
+                                    .make(ui.root, "Wake history for ${wh.title} reinitialized", Snackbar.LENGTH_LONG)
+                                    .show()
+                            }
+                            setNegativeButton("CANCEL") { _, _ ->
+                                Snackbar
+                                    .make(ui.root, "Cancelled: Wake history for ${wh.title} unchanged.", Snackbar.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }.create()
+                        ad.show()
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+        return ui.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         wolLateColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorError)
         pingUnResponsiveTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_un_responsive_dialog)!!
@@ -77,7 +125,7 @@ class HostStatusFragment : Fragment(),
         val wft = mvm.wolFocussedTarget
         if (wft != null) {
             wh = wft
-            wolStats = WolStats(wh)
+            wh.updateWolStats()
             updateUi(wh)
 
             ui.wolButton.setOnLongClickListener {
@@ -106,7 +154,7 @@ class HostStatusFragment : Fragment(),
                     }
                     mvm.viewModelScope.launch {
                         wh.mutex.withLock {
-                            wolStats.cancelWaitingToAwake()
+                            wh.cancelWaitingToAwake()
                         }
                     }
                 }
@@ -199,10 +247,10 @@ class HostStatusFragment : Fragment(),
     }
 
     private fun updateProgress() {
-        if (wolStats.isWaitingToAwake() && wolStats.isDefined) {
+        if (wh.isWaitingToAwake() && wh.wolStats.isDefined) {
             // Track progress
             ui.wolProgress.visibility = View.VISIBLE
-            val progress = wolStats.progress(Instant.now())
+            val progress = wh.wolStats.progress(Instant.now())
             ui.wolProgress.progress = progress
             if (progress > 150) {
                 ui.wolProgress.setIndicatorColor(wolLateColor)
@@ -225,7 +273,7 @@ class HostStatusFragment : Fragment(),
     }
 
     private fun wolStatusMessage(): String {
-        return wolStats.latencyHistoryMessage
+        return wh.wolStats.latencyHistoryMessage
     }
 
     private fun wolWaitingMessage(wh: WolHost): String {
@@ -329,74 +377,5 @@ class HostStatusFragment : Fragment(),
         sb.append(meat)
         sb.append(postamble)
         return sb.toString()
-    }
-
-    private class WolStats(val wh: WolHost) {
-        val wolLastSentAt: Instant
-            get() = wh.lastWolSentAt.state().first
-        val isDefined: Boolean
-        val aveLatency: Double
-        val medianLatency: Double
-        val latencyHistoryMessage: String
-
-        init {
-            val n = wh.wolToWakeHistory.size
-            if (n > 0) {
-                aveLatency = WolHost.wolToWakeAverage(wh.wolToWakeHistory) / 1000.0
-                medianLatency = WolHost.wolToWakeMedian(wh.wolToWakeHistory) / 1000.0
-                isDefined = true
-            } else {
-                aveLatency = Double.NaN
-                medianLatency = Double.NaN
-                isDefined = false
-            }
-
-            val message = when (n) {
-                0 -> {
-                    "\nNo history to inform WOL to wake latency."
-                }
-                1 -> {
-                    String.format("\nA single previous WOL to wake took %1.1f sec", aveLatency)
-                }
-                else -> {
-                    String.format(
-                        "\nWOL to Wake latency (%d samples)\n %1.1f median, %1.1f ave [sec]",
-                        n,
-                        medianLatency,
-                        aveLatency
-                    )
-                }
-            }
-            latencyHistoryMessage = DateTimeFormatter.ofPattern("'WOL at - 'hh:mm:ss a").format(
-                LocalDateTime.ofInstant(wolLastSentAt, ZoneId.systemDefault())
-            ) + message
-        }
-
-        fun isAwake(): Boolean {
-            val (instant, ack) = wh.lastWolSentAt.state()
-            return instant != Instant.EPOCH && ack
-        }
-
-        /**
-         * True if [WolHost.lastWolSentAt]`.state` show an instant when WOL was sent, and not yet acknowledged
-         */
-        fun isWaitingToAwake(): Boolean {
-            val (instant, ack) = wh.lastWolSentAt.state()
-            return instant != Instant.EPOCH && !ack
-        }
-
-        fun cancelWaitingToAwake() {
-            wh.lastWolSentAt.update(Instant.EPOCH)
-            wh.lastWolWakeAt.update(Instant.EPOCH)
-        }
-
-        fun progress(now: Instant): Int {
-            return if (isDefined) {
-                val duration = Duration.between(wolLastSentAt, now).seconds.toDouble()
-                ((duration / medianLatency) * 100).toInt()
-            } else {
-                100
-            }
-        }
     }
 }

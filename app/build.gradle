@@ -54,6 +54,7 @@ android {
         buildConfigField "boolean", "LON_SettingsFragment", "false"
         buildConfigField "boolean", "LON_SettingsHostFragment", "false"
         buildConfigField "boolean", "LON_SettingHostListFragment", "false"
+        buildConfigField "boolean", "LON_WolStats", "true"
         buildConfigField "boolean", "LON_", "false"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -72,11 +73,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
     buildFeatures {
         viewBinding true
@@ -94,8 +95,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'com.google.android.material:material:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.2'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.5.2'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
     implementation 'androidx.preference:preference-ktx:1.2.0'
     implementation 'androidx.webkit:webkit:1.5.0'

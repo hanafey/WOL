@@ -12,6 +12,7 @@ class SettingsData(val spm: SharedPreferences) {
          * time evolves.
          */
         private const val MAX_WOL_HISTORY = 25
+        private val FIRST_TIME_HISTORY = listOf("5111", "5222")
     }
 
     var pingDelayMillis = 1000L
@@ -108,7 +109,7 @@ class SettingsData(val spm: SharedPreferences) {
             val string: String = spm.getString(prefName, "") ?: ""
             val strings = if (string.isNotBlank()) {
                 val x1 = string.split(',')
-                if (x1.size >= 4 && x1[0] == "5111" && x1[1] == "5222") {
+                if (x1.size >= 4 && x1[0] == FIRST_TIME_HISTORY[0] && x1[1] == FIRST_TIME_HISTORY[1]) {
                     // We have added two new values, get rid of fake start values.
                     changed = true
                     x1.subList(2, x1.size)
@@ -120,7 +121,7 @@ class SettingsData(val spm: SharedPreferences) {
                 // progress bar shows for the new user. These special values
                 // are purged when real data is added.
                 changed = true
-                listOf("5111", "5222")
+                FIRST_TIME_HISTORY
             }
 
             val ints = strings.map {
@@ -180,6 +181,14 @@ class SettingsData(val spm: SharedPreferences) {
             putString(prefName, string)
             apply()
         }
+    }
+
+    /**
+     * Resets the wake history to a host to first time state, and writes this to shared prefs.
+     */
+    fun resetTimeToWakeHistory(wh: WolHost) {
+        wh.wolToWakeHistory = FIRST_TIME_HISTORY.map { it.toInt() }
+        writeTimeToWakeHistory(wh)
     }
 
     fun writeVersionAcknowledged(version: Int) {

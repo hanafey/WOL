@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">WOLBliss</string>
     <string name="action_settings">Settings</string>
+    <string name="action_reset_history">History Reset</string>
     <string name="action_web_site">Web Site</string>
     <!-- Strings used for fragments for navigation -->
     <string name="main_fragment_label">WOL Bliss</string>

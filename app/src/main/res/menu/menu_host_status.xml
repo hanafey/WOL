@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.hanafey.android.wol.MainActivity"
+    >
+    <item
+        android:id="@+id/mi_reset_history"
+        android:icon="@drawable/ic_baseline_reset"
+        android:orderInCategory="100"
+        android:title="@string/action_reset_history"
+        app:showAsAction="ifRoom"
+        />
+</menu>

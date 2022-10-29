@@ -11,7 +11,34 @@
         android:name="com.hanafey.android.wol.MainFragment"
         android:label="@string/main_fragment_label"
         tools:layout="@layout/fragment_main"
-        />
+        >
+        <action
+            android:id="@+id/action_MainFragment_to_HostStatusFragment_wol"
+            app:destination="@id/HostStatusFragment"
+            >
+            <argument
+                android:name="title"
+                android:defaultValue="Wake On Lan"
+                />
+            <argument
+                android:name="show_wol"
+                android:defaultValue="true"
+                />
+        </action>
+        <action
+            android:id="@+id/action_MainFragment_to_HostStatusFragment_status"
+            app:destination="@id/HostStatusFragment"
+            >
+            <argument
+                android:name="title"
+                android:defaultValue="Host Status"
+                />
+            <argument
+                android:name="show_wol"
+                android:defaultValue="false"
+                />
+        </action>
+    </fragment>
 
     <navigation
         android:id="@+id/ng_Settings"
@@ -54,13 +81,18 @@
     <fragment
         android:id="@+id/HostStatusFragment"
         android:name="com.hanafey.android.wol.HostStatusFragment"
-        android:label="Host Status"
+        android:label="{title}"
         tools:layout="@layout/fragment_host_status"
         >
         <argument
             android:name="show_wol"
             android:defaultValue="false"
             app:argType="boolean"
+            />
+        <argument
+            android:name="title"
+            android:defaultValue="No Title Supplied In Arg"
+            app:argType="string"
             />
     </fragment>
 

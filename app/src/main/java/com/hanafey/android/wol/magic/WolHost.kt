@@ -9,22 +9,47 @@ import kotlin.math.roundToInt
 /**
  * You must call [PingDeadToAwakeTransition.setBufferParameters] on [deadAliveTransition] after instantiating this class.
  * Data in this class is persisted in settings, see [com.hanafey.android.wol.settings.SettingsData.initializeModel]
- * @param pKey A unique key for each host that also orders a set of hosts. Currently this
- * is used in conjunction with a list, and [pKey] must be array index position.
- * @param title User understandable name for the WOL target.
- * @param pingName Name of ip address of WOL target. This is used to ping to see if host is
- * awake. Examples "192.168.1.250", "nasa"
+ * @param pKey See [pKey]
+ * @param title See [title]
+ * @param pingName See [pingName]
  * @param macString The MAC address to create magic WOL packet for. Example: "001132F00EC1" or
- * "00:11:32:F0:0E:C1"
- * @param broadcastIp The broadcast address for WOL magic packets. Example: "192.168.1.255"
+ * "00:11:32:F0:0E:C1". Used to initialize [macAddress]
+ * @param broadcastIp See [broadcastIp]
  */
+@Suppress("CanBePrimaryConstructorProperty")
 class WolHost(
-    val pKey: Int,
-    var title: String,
-    var pingName: String,
+    pKey: Int,
+    title: String,
+    pingName: String,
     macString: String,
-    var broadcastIp: String,
+    broadcastIp: String,
 ) : Comparable<WolHost> {
+
+    // --------------------------------------------------------------------------------
+    //region Settings
+    // --------------------------------------------------------------------------------
+
+    /**
+     * A unique key for each host that also orders a set of hosts. Currently this
+     * is used in conjunction with a list, and [pKey] must be array index position.
+     */
+    val pKey: Int = pKey
+
+    /**
+     * User understandable name for the WOL target.
+     */
+    var title: String = title
+
+    /**
+     *  Name of ip address of WOL target. This is used to ping to see if host is
+     * awake. Examples "192.168.1.250", "nasa"
+     */
+    var pingName: String = pingName
+
+    /**
+     * The broadcast address for WOL magic packets. Example: "192.168.1.255"
+     */
+    var broadcastIp: String = broadcastIp
 
     /**
      * If false this host is not shown. If a host is not enabled you should also set [pingMe] false. This cannot be
@@ -71,23 +96,18 @@ class WolHost(
      * Alive / Dead transition hysteresis dead threshold.
      */
     var datDeadAt = 3
-
-    /**
-     * History of milliseconds from WOL to successful ping, with most recent history at the end.
-     * The purpose is to give an idea of how long the host takes to wake up to the ping responsive
-     * state.
-     */
-    var wolToWakeHistory = emptyList<Int>()
-
+    //endregion
     // --------------------------------------------------------------------------------
 
+
+    // --------------------------------------------------------------------------------
+    //region Host State
+    // --------------------------------------------------------------------------------
     /**
-     * Used to control mutation of properties that may changed on another thread.
+     * Wake on Lan stats
      */
-    val mutex = Mutex()
-
-    val deadAliveTransition = PingDeadToAwakeTransition(this)
-
+    var wolStats: WolStats // Initialized in late init block because it depends on 'this'
+        private set
 
     /**
      * The number of wake up magic packets sent to [macAddress]
@@ -127,11 +147,6 @@ class WolHost(
     val lastWolWakeAt = AckInstant()
 
     /**
-     * Set true when history is added, and set false when history is saved to settings.
-     */
-    val wolToWakeHistoryChanged = AtomicBoolean(false)
-
-    /**
      *  0 means status not known, 1 means responded to last ping, -1 means last ping timed out and
      *  -2 means attempt to ping threw exception.
      */
@@ -147,6 +162,71 @@ class WolHost(
      */
     var wakeupException: Throwable? = null
 
+    //endregion
+    // --------------------------------------------------------------------------------
+
+    /**
+     * Used to control mutation of properties that may changed on another thread.
+     */
+    val mutex = Mutex()
+
+    val deadAliveTransition = PingDeadToAwakeTransition(this)
+
+    /**
+     * History of milliseconds from WOL to successful ping, with most recent history at the end.
+     * The purpose is to give an idea of how long the host takes to wake up to the ping responsive
+     * state.
+     */
+    var wolToWakeHistory = emptyList<Int>()
+        set(value) {
+            val changed = field != value
+            field = value
+            if (changed) {
+                wolStats = WolStats(this)
+            }
+        }
+
+
+    /**
+     * Set true when history is added, and set false when history is saved to settings.
+     */
+    val wolToWakeHistoryChanged = AtomicBoolean(false)
+
+    init {
+        // IMPORTANT: This depends on 'this' and so it is instantiated at the end of object initialization.
+        wolStats = WolStats(this)
+    }
+
+    /**
+     * Ensures [wolStats] is up to date with respect to the data currently in this instance
+     * of [WolHost]. Note that setting the wake history already updates [wolStats] and this
+     * is the only update that currently matters. This method is provided just to make sure
+     * the stats are up to date and it makes sense to use when a fragment is created and you
+     * want to be very certain the stats are up to date. It is really the responsibility of
+     * this class to ensure that any change that affects [wolStats] internally updates it.
+     */
+    fun updateWolStats() {
+        wolStats = WolStats(this)
+    }
+
+    fun isAwake(): Boolean {
+        val (instant, ack) = lastWolSentAt.state()
+        return instant != Instant.EPOCH && ack
+    }
+
+    /**
+     * True if [WolHost.lastWolSentAt]`.state` show an instant when WOL was sent, and not yet acknowledged
+     */
+    fun isWaitingToAwake(): Boolean {
+        val (instant, ack) = lastWolSentAt.state()
+        return instant != Instant.EPOCH && !ack
+    }
+
+    fun cancelWaitingToAwake() {
+        lastWolSentAt.update(Instant.EPOCH)
+        lastWolWakeAt.update(Instant.EPOCH)
+    }
+
 
     fun resetState() {
         pingedCountAlive = 0
@@ -160,6 +240,8 @@ class WolHost(
         wakeupException = null
         lastWolWakeAt.update(Instant.EPOCH)
         lastWolSentAt.update(Instant.EPOCH)
+        // lastPingSentAt
+        // lastPingResponseAt
     }
 
 
