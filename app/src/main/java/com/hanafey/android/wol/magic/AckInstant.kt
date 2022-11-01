@@ -6,14 +6,14 @@ import java.time.Instant
 /**
  * Methods should be called only in the context of the [WolHost.mutex] lock.
  */
-class AckInstant internal constructor() {
-    private var instant: Instant = Instant.EPOCH
+open class AckInstant internal constructor() {
+    protected var instant: Instant = Instant.EPOCH
     private var ack: Boolean = true
 
     /**
      * Sets the instant and marks it not yet acknowledged.
      */
-    fun update(inst: Instant) {
+    open fun update(inst: Instant) {
         instant = inst
         ack = false
     }

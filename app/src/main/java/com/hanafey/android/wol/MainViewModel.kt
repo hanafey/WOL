@@ -5,8 +5,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import com.hanafey.android.ax.Dog
+import com.hanafey.android.ax.EventData
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
 import com.hanafey.android.wol.settings.SettingsData
@@ -42,10 +44,6 @@ class MainViewModel(
     private val _targetPingChanged = MutableLiveData(-1)
     val targetPingChangedLiveData: LiveData<Int>
         get() = _targetPingChanged
-
-    private val _targetWakeChanged = MutableLiveData(-1)
-    val targetWakeChangedLiveData: LiveData<Int>
-        get() = _targetWakeChanged
 
 
     /**
@@ -92,19 +90,19 @@ class MainViewModel(
     private fun defaultHostList(): List<WolHost> {
         return if (BuildConfig.BUILD_TYPE == "debug") {
             listOf(
-                WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
-                WolHost(1, "Nasa", "192.168.1.250", "00:11:32:f0:0e:c1", "192.168.1.255"),
-                WolHost(2, "SpaceX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255"),
-                WolHost(3, "Phony", "192.168.1.5", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),
-                WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255"),
+                WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255", viewModelScope),
+                WolHost(1, "Nasa", "192.168.1.250", "00:11:32:f0:0e:c1", "192.168.1.255", viewModelScope),
+                WolHost(2, "SpaceX", "192.168.1.202", "00:11:32:3a:52:e3", "192.168.1.255", viewModelScope),
+                WolHost(3, "Phony", "192.168.1.5", "a4:b4:c4:d4:e4:f4", "192.168.1.255", viewModelScope),
+                WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255", viewModelScope),
             )
         } else {
             listOf(
-                WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255"),
-                WolHost(1, "HOST 2", "192.168.1.12", "a2:b2:c2:d2:e2:f2", "192.168.1.255"),
-                WolHost(2, "HOST 3", "192.168.1.13", "a3:b3:c3:d3:e3:f3", "192.168.1.255"),
-                WolHost(3, "HOST 4", "192.168.1.14", "a4:b4:c4:d4:e4:f4", "192.168.1.255"),
-                WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255"),
+                WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255", viewModelScope),
+                WolHost(1, "HOST 2", "192.168.1.12", "a2:b2:c2:d2:e2:f2", "192.168.1.255", viewModelScope),
+                WolHost(2, "HOST 3", "192.168.1.13", "a3:b3:c3:d3:e3:f3", "192.168.1.255", viewModelScope),
+                WolHost(3, "HOST 4", "192.168.1.14", "a4:b4:c4:d4:e4:f4", "192.168.1.255", viewModelScope),
+                WolHost(4, "HOST 5", "192.168.1.15", "a5:b5:c5:d5:e5:f5", "192.168.1.255", viewModelScope),
             )
         }
     }
@@ -133,6 +131,7 @@ class MainViewModel(
     @MainThread
     fun signalPingTargetChanged(wh: WolHost) {
         _targetPingChanged.value = wh.pKey
+        wh.hostChangedLive.signal()
     }
 
     /**
@@ -229,6 +228,7 @@ class MainViewModel(
                         host.resetPingState()
                     }
                     _targetPingChanged.postValue(host.pKey)
+                    host.hostChangedLive.postSignal()
                 }
 
                 var address: InetAddress? = null
@@ -276,7 +276,8 @@ class MainViewModel(
                                         host.lastPingSentAt.consume()
                                         host.lastPingResponseAt.update(Instant.now())
                                         val (then, ack) = host.lastWolSentAt.consume()
-                                        if (!ack) {
+                                        if (!ack && then != Instant.EPOCH) {
+                                            // Only if 'then' is not epoch does the result still apply
                                             val now = Instant.now()
                                             host.lastWolWakeAt.update(now)
                                             val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
@@ -312,6 +313,7 @@ class MainViewModel(
                             }
                         }
                         _targetPingChanged.postValue(host.pKey)
+                        host.hostChangedLive.postSignal()
                     }
 
                     val neededDelay = settingsData.pingDelayMillis - (System.currentTimeMillis() - pingUsedMillisOrigin)
@@ -324,25 +326,27 @@ class MainViewModel(
                     }
                 }
                 _targetPingChanged.postValue(host.pKey)
+                host.hostChangedLive.postSignal()
             }
         }
     }
 
     /**
      * Runs in [Dispatchers.IO] context with a mutex lock on the host. Sends a WOL bundle to the host.
-     * Observe [targetWakeChangedLiveData] to respond after all the WOL packets have been sent (or
+     * Observe [WolHost.hostChangedLive] to respond after all the WOL packets have been sent (or
      * [WolHost.wakeupException] will be non-null.)
      *
      * If host responded to a ping inside of [SettingsData.pingResponseWaitMillis], no WOL is sent and the
      * return is false.
      *
-     * @return True if WOL bundle was sent and [targetWakeChangedLiveData] was set to the [WolHost.pKey.
+     * @return True if WOL bundle was sent.
      */
     @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun wakeTarget(host: WolHost): Boolean {
         val isSendWol = withContext(Dispatchers.IO) {
             host.mutex.withLock {
-                if (host.lastPingResponseAt.age(host.lastPingSentAt) > settingsData.pingResponseWaitMillis * 2 &&
+                if (
+                    host.lastPingResponseAt.age(host.lastPingSentAt) > settingsData.pingResponseWaitMillis * 2 &&
                     host.lastPingSentAt.age() < settingsData.pingDelayMillis * 3
                 ) {
                     try {
@@ -353,17 +357,13 @@ class MainViewModel(
                         host.lastWolSentAt.update(Instant.now())
                         host.wakeupCount++
                     } catch (ex: IOException) {
-                        host.wakeupException = ex
+                        host.wakeupException = EventData(ex)
                     }
                     true
                 } else {
                     false
                 }
             }
-        }
-
-        if (isSendWol) {
-            _targetWakeChanged.value = host.pKey
         }
 
         return isSendWol

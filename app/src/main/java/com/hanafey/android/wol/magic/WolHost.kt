@@ -1,6 +1,8 @@
 package com.hanafey.android.wol.magic
 
+import com.hanafey.android.ax.EventData
 import com.hanafey.android.wol.PingDeadToAwakeTransition
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -15,6 +17,10 @@ import kotlin.math.roundToInt
  * @param macString The MAC address to create magic WOL packet for. Example: "001132F00EC1" or
  * "00:11:32:F0:0E:C1". Used to initialize [macAddress]
  * @param broadcastIp See [broadcastIp]
+ * @param coScope A coroutine scope under which we signal via [hostChangedLive] that host status has changed and thus
+ * information about the host displayed to the user should be updated. These signals are sent only when these is at
+ * least one active observer so it is correct to use an activity scope for this purpose. See [WolEventLiveData] for
+ * details.
  */
 @Suppress("CanBePrimaryConstructorProperty")
 class WolHost(
@@ -23,6 +29,7 @@ class WolHost(
     pingName: String,
     macString: String,
     broadcastIp: String,
+    coScope: CoroutineScope
 ) : Comparable<WolHost> {
 
     // --------------------------------------------------------------------------------
@@ -113,16 +120,28 @@ class WolHost(
      * The number of wake up magic packets sent to [macAddress]
      */
     var wakeupCount = 0
+        set(value) {
+            field = value
+            hostChangedLive.postSignal()
+        }
 
     /**
      * The number of times host was pinged since last reset that were successful
      */
     var pingedCountAlive = 0
+        set(value) {
+            field = value
+            hostChangedLive.postSignal()
+        }
 
     /**
      * The number of times host was pinged since last reset that were unsuccessful
      */
     var pingedCountDead = 0
+        set(value) {
+            field = value
+            hostChangedLive.postSignal()
+        }
 
     /**
      * Records the instant the last ping was attempted.
@@ -138,13 +157,13 @@ class WolHost(
     /**
      * Records the instant the last WOL was sent.
      */
-    val lastWolSentAt = AckInstant()
+    val lastWolSentAt = AckInstantWatched(this)
 
     /**
      * Records the instant of the first live ping following the instant when the
      * WOL was sent.
      */
-    val lastWolWakeAt = AckInstant()
+    val lastWolWakeAt = AckInstantWatched(this)
 
     /**
      *  0 means status not known, 1 means responded to last ping, -1 means last ping timed out and
@@ -156,11 +175,19 @@ class WolHost(
      * The exception that produced [pingState] of [PingStates.EXCEPTION]
      */
     var pingException: Throwable? = null
+        set(value) {
+            field = value
+            hostChangedLive.postSignal()
+        }
 
     /**
      * If the last wake up attempt threw an exception, this is it.
      */
-    var wakeupException: Throwable? = null
+    var wakeupException: EventData<Throwable?> = EventData(null)
+        set(value) {
+            field = value
+            hostChangedLive.postSignal()
+        }
 
     //endregion
     // --------------------------------------------------------------------------------
@@ -183,6 +210,7 @@ class WolHost(
             field = value
             if (changed) {
                 wolStats = WolStats(this)
+                hostChangedLive.signal()
             }
         }
 
@@ -191,6 +219,8 @@ class WolHost(
      * Set true when history is added, and set false when history is saved to settings.
      */
     val wolToWakeHistoryChanged = AtomicBoolean(false)
+
+    val hostChangedLive = WolEventLiveData(coScope, this, emptyList())
 
     init {
         // IMPORTANT: This depends on 'this' and so it is instantiated at the end of object initialization.
@@ -237,7 +267,7 @@ class WolHost(
         // pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
         pingException = null
         wakeupCount = 0
-        wakeupException = null
+        wakeupException = EventData(null)
         lastWolWakeAt.update(Instant.EPOCH)
         lastWolSentAt.update(Instant.EPOCH)
         // lastPingSentAt

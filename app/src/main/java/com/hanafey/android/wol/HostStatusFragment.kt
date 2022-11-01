@@ -167,17 +167,8 @@ class HostStatusFragment : Fragment(),
                     delay(100L)
                 }
             }
-            /* Note that this looks similar, but this 'lifecycleScope' is too long. It continues
-               after the view is destroyed.
-
-            lifecycleScope.launch { }
-            */
 
             observePingLiveData()
-            observeWakeLiveData()
-        } else {
-            // Presumable we got here by rotation
-            findNavController().navigateUp()
         }
     }
 
@@ -207,6 +198,7 @@ class HostStatusFragment : Fragment(),
     private fun updateUi(wh: WolHost) {
         ui.wolStatusTitle.text = getString(R.string.host_title, wh.title)
         ui.wolStatusAddress.text = getString(R.string.host_address, wh.pingName, wh.pingedCountAlive, wh.pingedCountDead, wh.broadcastIp)
+
         ui.pingStatus.text = when (wh.pingState) {
             WolHost.PingStates.NOT_PINGING -> {
                 ui.wolStatusTitle.backgroundTintList = pingOtherTint
@@ -307,25 +299,27 @@ class HostStatusFragment : Fragment(),
     }
 
     private fun observePingLiveData() {
-        mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            val target = when {
-                ix == -1 -> {
-                    return@observe // ======================================== >>>
-                }
+        wh.hostChangedLive.observe(viewLifecycleOwner) { target ->
+            Dog.bark(ltag, lon) { "Observe $target" }
 
-                mvm.targets.size > ix -> {
-                    mvm.targets[ix]
-                }
-
-                else -> {
-                    throw IllegalArgumentException("observePingLiveData: $ix is invalid target index")
-                }
-            }
-
-            if (wh.pKey == ix) {
+            if (wh.pKey == target.pKey) {
                 // Reflect the current host status in the UI, because this is a ping result from our focussed host.
                 updateUi(wh)
             }
+
+            // --------------------------------------------------------------------------------
+            // Navigate to error fragment if wake up exception occurred.
+            // --------------------------------------------------------------------------------
+            val ex = wh.wakeupException.onceValue()
+            if (ex != null) {
+                val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
+
+                Bundle().let { bundle ->
+                    bundle.putString("error_report", wakeMessageComposer(report))
+                    findNavController().navigate(R.id.ErrorReportFragment, bundle)
+                }
+            }
+            // --------------------------------------------------------------------------------
 
             when (target.pingState) {
                 WolHost.PingStates.ALIVE -> {
@@ -338,35 +332,6 @@ class HostStatusFragment : Fragment(),
                     }
                 }
                 else -> {}
-            }
-        }
-    }
-
-    /**
-     * Observe completion of sending WOL packets to our host, and report any exception.
-     * Absent problem, do nothing -- the host will respond or not, and pinging will
-     * monitor when and if it comes online.
-     */
-    private fun observeWakeLiveData() {
-        mvm.targetWakeChangedLiveData.observe(viewLifecycleOwner) { px ->
-            if (wh.pKey == px) {
-                mvm.viewModelScope.launch {
-                    val ex = wh.mutex.withLock {
-                        val x = wh.wakeupException
-                        // Only report execution once.
-                        wh.wakeupException = null
-                        x
-                    }
-
-                    if (ex != null) {
-                        val report = getString(R.string.error_wake_failed_meat_general, ex.localizedMessage)
-
-                        Bundle().let { bundle ->
-                            bundle.putString("error_report", wakeMessageComposer(report))
-                            findNavController().navigate(R.id.ErrorReportFragment, bundle)
-                        }
-                    }
-                }
             }
         }
     }
