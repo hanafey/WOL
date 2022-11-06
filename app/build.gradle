@@ -42,20 +42,24 @@ android {
         versionCode 14
         versionName "2.0.4"
 
-        // Set these LON_ vals to  false to disable debug logging.
-        buildConfigField "boolean", "LON_HostStatusFragment", "false"
-        buildConfigField "boolean", "LON_MainActivity", "false"
-        buildConfigField "boolean", "LON_MainFragment", "false"
-        buildConfigField "boolean", "LON_MainViewModel", "false"
-        buildConfigField "boolean", "LON_MainViewModel_noisy", "false"
-        buildConfigField "boolean", "LON_ObserverOfHostState", "false"
-        buildConfigField "boolean", "LON_PingDeadToAwakeTransition", "false"
-        buildConfigField "boolean", "LON_WolApplication", "false"
-        buildConfigField "boolean", "LON_SettingsFragment", "false"
-        buildConfigField "boolean", "LON_SettingsHostFragment", "false"
-        buildConfigField "boolean", "LON_SettingHostListFragment", "false"
-        buildConfigField "boolean", "LON_WolStats", "true"
-        buildConfigField "boolean", "LON_", "false"
+        def lon = ""
+
+        lon = "false"
+        buildConfigField "boolean", "LON_HostAwokeFragment", lon
+        buildConfigField "boolean", "LON_MainActivity", lon
+        buildConfigField "boolean", "LON_MainViewModel_noisy", lon
+        buildConfigField "boolean", "LON_ObserverOfHostState", lon
+        buildConfigField "boolean", "LON_PingDeadToAwakeTransition", lon
+        buildConfigField "boolean", "LON_SettingHostListFragment", lon
+        buildConfigField "boolean", "LON_SettingsFragment", lon
+        buildConfigField "boolean", "LON_SettingsHostFragment", lon
+        buildConfigField "boolean", "LON_WolApplication", lon
+        buildConfigField "boolean", "LON_WolStats", lon
+        buildConfigField "boolean", "LON_HostStatusFragment", lon
+        buildConfigField "boolean", "LON_MainFragment", lon
+        buildConfigField "boolean", "LON_MainViewModel", lon
+
+        lon = "true"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config

@@ -38,6 +38,60 @@
                 android:defaultValue="false"
                 />
         </action>
+        <action
+            android:id="@+id/action_MainFragment_to_HostAwokeFragment"
+            app:destination="@id/HostAwokeFragment"
+            >
+            <argument
+                android:name="title"
+                android:defaultValue="!title!"
+                />
+            <argument
+                android:name="wh_pkey"
+                />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/HostStatusFragment"
+        android:name="com.hanafey.android.wol.HostStatusFragment"
+        android:label="{title}"
+        tools:layout="@layout/fragment_host_status"
+        >
+        <argument
+            android:name="show_wol"
+            android:defaultValue="false"
+            app:argType="boolean"
+            />
+        <argument
+            android:name="title"
+            android:defaultValue="No Title Supplied In Arg"
+            app:argType="string"
+            />
+        <action
+            android:id="@+id/action_HostStatusFragment_to_HostAwokeFragment"
+            app:destination="@id/HostAwokeFragment"
+            app:popUpTo="@id/HostStatusFragment"
+            app:popUpToInclusive="true"
+            />
+    </fragment>
+
+    <fragment
+        android:id="@+id/HostAwokeFragment"
+        android:name="com.hanafey.android.wol.HostAwokeFragment"
+        android:label="{title} Awoke"
+        tools:layout="@layout/fragment_host_awoke"
+        >
+        <argument
+            android:name="wh_pkey"
+            android:defaultValue="-1"
+            app:argType="integer"
+            />
+        <argument
+            android:name="title"
+            android:defaultValue="!title!"
+            app:argType="string"
+            />
     </fragment>
 
     <navigation
@@ -77,24 +131,6 @@
                 />
         </fragment>
     </navigation>
-
-    <fragment
-        android:id="@+id/HostStatusFragment"
-        android:name="com.hanafey.android.wol.HostStatusFragment"
-        android:label="{title}"
-        tools:layout="@layout/fragment_host_status"
-        >
-        <argument
-            android:name="show_wol"
-            android:defaultValue="false"
-            app:argType="boolean"
-            />
-        <argument
-            android:name="title"
-            android:defaultValue="No Title Supplied In Arg"
-            app:argType="string"
-            />
-    </fragment>
 
     <fragment
         android:id="@+id/FirstTimeInformationFragment"

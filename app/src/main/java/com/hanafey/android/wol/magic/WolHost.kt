@@ -92,12 +92,12 @@ class WolHost(
     /**
      * Alive / Dead transition hysteresis buffer size.
      */
-    var datBufferSize = 15
+    var datBufferSize = 5
 
     /**
      * Alive / Dead transition hysteresis alive threshold.
      */
-    var datAliveAt = 12
+    var datAliveAt = 4
 
     /**
      * Alive / Dead transition hysteresis dead threshold.
@@ -114,7 +114,7 @@ class WolHost(
      * Wake on Lan stats
      */
     var wolStats: WolStats // Initialized in late init block because it depends on 'this'
-        private set
+        internal set
 
     /**
      * The number of wake up magic packets sent to [macAddress]
@@ -164,6 +164,13 @@ class WolHost(
      * WOL was sent.
      */
     val lastWolWakeAt = AckInstantWatched(this)
+
+    /**
+     * This is set true when a WOL is detected. When this is true navigation to a reporting fragment
+     * will happen, but only once. The report may be initiated from more than one place, but the
+     * first to do it means it is done.
+     */
+    val lastWolWakeMustBeReported = AtomicBoolean(false)
 
     /**
      *  0 means status not known, 1 means responded to last ping, -1 means last ping timed out and
@@ -253,8 +260,9 @@ class WolHost(
     }
 
     fun cancelWaitingToAwake() {
+        lastWolWakeMustBeReported.set(false)
         lastWolSentAt.update(Instant.EPOCH)
-        lastWolWakeAt.update(Instant.EPOCH)
+        wolStats = WolStats(this)
     }
 
 
@@ -269,6 +277,7 @@ class WolHost(
         wakeupCount = 0
         wakeupException = EventData(null)
         lastWolWakeAt.update(Instant.EPOCH)
+        lastWolWakeMustBeReported.set(false)
         lastWolSentAt.update(Instant.EPOCH)
         // lastPingSentAt
         // lastPingResponseAt
@@ -287,6 +296,11 @@ class WolHost(
         pingException = null
     }
 
+    fun resetWolState() {
+        lastWolWakeAt.update(Instant.EPOCH)
+        lastWolWakeMustBeReported.set(false)
+        lastWolSentAt.update(Instant.EPOCH)
+    }
 
     override fun compareTo(other: WolHost): Int {
         return pKey - other.pKey

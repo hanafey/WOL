@@ -11,6 +11,7 @@ import com.hanafey.android.ax.Dog
 import com.hanafey.android.ax.EventData
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
+import com.hanafey.android.wol.magic.WolStats
 import com.hanafey.android.wol.settings.SettingsData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -279,6 +280,7 @@ class MainViewModel(
                                         if (!ack && then != Instant.EPOCH) {
                                             // Only if 'then' is not epoch does the result still apply
                                             val now = Instant.now()
+                                            host.lastWolWakeMustBeReported.set(true)
                                             host.lastWolWakeAt.update(now)
                                             val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
                                             host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
@@ -354,7 +356,9 @@ class MainViewModel(
                             if (it > 1) delay(host.wolBundleSpacing)
                             MagicPacket.sendWol(host.macAddress)
                         }
+                        host.lastWolWakeMustBeReported.set(false)
                         host.lastWolSentAt.update(Instant.now())
+                        host.wolStats = WolStats(host)
                         host.wakeupCount++
                     } catch (ex: IOException) {
                         host.wakeupException = EventData(ex)
@@ -380,28 +384,36 @@ class MainViewModel(
 
     class ObserverOfHostState(
         private val hostStateNotification: HostStateNotification
-    ) : Observer<PingDeadToAwakeTransition.WolHostSignal> {
+    ) : Observer<EventDataDAT> {
         private val ltag = "ObserverOfHostState"
         private val lon = BuildConfig.LON_ObserverOfHostState
 
-        override fun onChanged(whs: PingDeadToAwakeTransition.WolHostSignal) {
+        override fun onChanged(ed: EventDataDAT) {
+            val whs = ed.onceValueForNotify()
             Dog.bark(ltag, lon) { "ObserverOfHostState: $whs" }
-            if (whs.host.datNotifications) {
-                when (whs.signal) {
-                    PingDeadToAwakeTransition.WHS.NOTHING -> {}
+            when (whs?.signal) {
+                PingDeadToAwakeTransition.WHS.NOTHING -> {}
 
-                    PingDeadToAwakeTransition.WHS.AWOKE -> {
-                        hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} Awoke", "${whs.host.title} transitioned to awake")
+                PingDeadToAwakeTransition.WHS.AWOKE -> {
+                    if (whs.host.datNotifications) {
+                        hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} Awoke", "")
                     }
+                }
 
-                    PingDeadToAwakeTransition.WHS.DIED -> {
-                        hostStateNotification.makeAsleepNotification(whs.host, "${whs.host.title} Unresponsive", "${whs.host.title} transitioned to unresponsive")
+                PingDeadToAwakeTransition.WHS.DIED -> {
+                    if (whs.host.datNotifications) {
+                        whs.host.resetWolState()
+                        hostStateNotification.makeAsleepNotification(whs.host, "${whs.host.title} Unresponsive", "")
                     }
+                }
 
-                    PingDeadToAwakeTransition.WHS.NOISE -> {
+                PingDeadToAwakeTransition.WHS.NOISE -> {
+                    if (whs.host.datNotifications) {
                         hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} ${whs.extra}", "${Instant.now()}")
                     }
                 }
+
+                null -> {}
             }
         }
     }

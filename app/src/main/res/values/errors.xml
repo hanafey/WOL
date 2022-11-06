@@ -39,15 +39,37 @@
 
 
     <string name="error_wake_failed_meat_general"><![CDATA[
-        <p>Look at the exception message for clues about the failure reason.
-    <p>
-        Exception:
-    </p>
-    <code>
+<p>Look at the exception message for clues about the failure reason.</p>
+<p> Exception:</p>
+<code>
 %1$s
-    </code>
+</code>
 ]]></string>
 
+    <!--
+    Args:
+        * Size of the host target list.
+        * Target host index supplied.
+    -->
+    <string name="error_wake_awoke_invalid_pkey"><![CDATA[
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Application Error</h1>
+    <p>Cannot show Host awoke screen without providing a valid host key.</p>
+    <p>Valid host keys are 0 up to %1$d, but %2$d was provided.</p>
+    <p>
+        Normally this screen would show that a particular host woke up after it
+        after receiving a Wake On Lan magic packet.
+    </p>
+</body>
+</html>
+]]></string>
+
+    <!--
+   Args:
+       * Exception.
+   -->
     <string name="error_wake_failed_meat_unreachable"><![CDATA[
     <ul>
         <li>

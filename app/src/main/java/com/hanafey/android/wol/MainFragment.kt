@@ -203,6 +203,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         }
 
         observePingLiveData()
+        observeDeadAliveTransition()
 
         // The intent that is set by start by notification has bundle data that
         // determines which host status to show.
@@ -331,11 +332,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                                 psb.backgroundTintList = pingResponsiveTint
                             }
                             psb.icon = ContextCompat.getDrawable(requireActivity(), R.drawable.ic_baseline_thumb_up_24)
-                            if (target.wolToWakeHistoryChanged.getAndSet(false)) {
-                                Dog.bark(ltag, lon, "targetPingChangedLiveData") { "wolToWakeHistoryChanged:true" }
-                                mvm.settingsData.writeTimeToWakeHistory(target)
-                                Dog.bark(ltag, lon, "targetPingChangedLiveData") { "history updated, wolToWakeHistoryChanged:false" }
-                            }
                         }
 
                         WolHost.PingStates.DEAD -> {
@@ -371,6 +367,51 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
 
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {}
+
+    /**
+     * Navigate to [HostAwokeFragment] one time when getting the [PingDeadToAwakeTransition.WHS.AWOKE] event
+     */
+    private fun observeDeadAliveTransition() {
+        val lun = "observeDeadAliveTransition"
+        // Only one navigation can be done, and when the up button is clicked in HostAwoke the main fragment
+        // is created again, and then the next one is done, etc
+        var firstNavigationDone = false
+        mvm.targets.forEach { wh ->
+            wh.deadAliveTransition.aliveDeadTransition.observe(viewLifecycleOwner) { ed ->
+                when (ed.onceValueForHistory()?.signal) {
+                    PingDeadToAwakeTransition.WHS.AWOKE -> {
+                        if (wh.wolToWakeHistoryChanged.getAndSet(false)) {
+                            // Respond to alive state if the target is marked that the history has been changed.
+                            // Commit the changes to settings.
+                            Dog.bark(ltag, lon, lun) { "wolToWakeHistoryChanged:true" }
+                            mvm.settingsData.writeTimeToWakeHistory(wh)
+                            Dog.bark(ltag, lon, lun) { "history updated, wolToWakeHistoryChanged:false" }
+                        }
+                    }
+                    else -> {}
+                }
+
+                if (!firstNavigationDone) {
+                    when (ed.onceValueForNavigation()?.signal) {
+                        PingDeadToAwakeTransition.WHS.AWOKE -> {
+                            if (wh.lastWolWakeMustBeReported.getAndSet(false)) {
+                                firstNavigationDone = true
+                                Dog.bark(ltag, lon, lun) { "navigate to awoke for ${wh.title}" }
+                                findNavController().navigate(
+                                    R.id.action_MainFragment_to_HostAwokeFragment,
+                                    Bundle().apply {
+                                        putInt("wh_pkey", wh.pKey)
+                                        putString("title", wh.title)
+                                    }
+                                )
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
+    }
 
     inner class PingStateClickListener(private val wh: WolHost, private val showWol: Boolean) : View.OnClickListener {
         override fun onClick(v: View?) {

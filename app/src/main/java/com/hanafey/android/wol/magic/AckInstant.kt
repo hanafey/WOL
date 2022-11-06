@@ -5,6 +5,7 @@ import java.time.Instant
 
 /**
  * Methods should be called only in the context of the [WolHost.mutex] lock.
+ * @constructor Create an acknowledged instance with an instant set to the EPOCH.
  */
 open class AckInstant internal constructor() {
     protected var instant: Instant = Instant.EPOCH

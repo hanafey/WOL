@@ -48,11 +48,11 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     data class WolHostSignal(val host: WolHost, val signal: WHS, val extra: String = "")
 
     /**
-     * Observe this to be able to response to host alive/dead changes.
+     * Observe this to be able to response to host alive/dead changes. Up to 3 observers will see the `onceValue`.
      */
-    val aliveDeadTransition: LiveData<WolHostSignal>
+    val aliveDeadTransition: LiveData<EventDataDAT>
         get() = _aliveDeadTransition
-    private val _aliveDeadTransition = MutableLiveData(WolHostSignal(host, WHS.NOTHING))
+    private val _aliveDeadTransition = MutableLiveData(EventDataDAT(WolHostSignal(host, WHS.NOTHING)))
 
     /**
      * Must be odd number, no ties allowed. This number of pings must be in the buffer to render an awake / asleep signal.
@@ -61,6 +61,11 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     private var bufferSize = 0
     private var minSignalGoingUp = 0
     private var minSignalGoingDown = 0
+
+    /**
+     * Zero until the state is assessed, and incremented for each state. Only if the count is bigger than
+     * 1 do we have a real transitions from an confirmed state to another confirmed state.
+     */
     private var transitionCount = 0
 
     /**
@@ -87,7 +92,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     /**
      * Special value zero means no test reporting. This must be zero for any released version.
      */
-    private val testingReportPeriod = mSecFromMinutes(0)
+    private val testingReportPeriod = if (BuildConfig.DEBUG) mSecFromMinutes(0) else mSecFromMinutes(0)
 
     /**
      * Sets to the state at construction, empty buffer no current or previous signal
@@ -130,7 +135,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      * Record ping assessment of wakefulness by sending a 1 for responded, -1 for no response, and 0 for problem sending ping.
      *
      * @param pmz Plus, Minus, or Zero for ping response, no ping response, exception trying to ping host.
-     * @return the New signal. Normally this is observer via [aliveDeadTransition] live data.
+     * @return the New signal. Normally this is observed via [aliveDeadTransition] live data.
      */
     fun addPingResult(pmz: Int): WHS {
         val now = System.currentTimeMillis()
@@ -150,12 +155,15 @@ class PingDeadToAwakeTransition(val host: WolHost) {
             if (transitionCount > 1 && currentBufferSignal != previousBufferSignal && previousBufferSignal != WHS.NOTHING) {
                 // Do not report the first transition because is is from unknown to something.
                 lastPingReportedMillies = now
-                _aliveDeadTransition.postValue(WolHostSignal(host, currentBufferSignal))
+                _aliveDeadTransition.postValue(EventDataDAT(WolHostSignal(host, currentBufferSignal)))
                 Dog.bark(ltag, lon) { "signal!" }
             }
         } else if (testingReportPeriod > 0 && now - lastPingReportedMillies > testingReportPeriod) {
+            // For testing only. This should only run for debugging purposes
             lastPingReportedMillies = now
-            _aliveDeadTransition.postValue(WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})"))
+            _aliveDeadTransition.postValue(
+                EventDataDAT(WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})"))
+            )
             Dog.bark(ltag, lon) { "noise!" }
         }
         return currentBufferSignal
@@ -185,14 +193,19 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         val tc = nc + pc + zc
 
         return if (tc < bs || zc > 0) {
+            // Buffer is not filled with +1 and -1
             WHS.NOTHING
         } else {
             when (currentState) {
                 WHS.NOTHING -> {
                     if (pc > minSignalGoingUp) {
                         WHS.AWOKE
-                    } else {
+                    } else if (nc >= minSignalGoingDown) {
                         WHS.DIED
+                    } else {
+                        // Not possible with valid settings. Buffer is full of pos and neg, and settings do
+                        // not allow an ambiguous state.
+                        WHS.NOTHING
                     }
                 }
                 WHS.DIED -> {

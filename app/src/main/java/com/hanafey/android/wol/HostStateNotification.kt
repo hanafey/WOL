@@ -42,8 +42,8 @@ class HostStateNotification(val context: Context) {
         )
         val builder = NotificationCompat.Builder(context, channelId).apply {
             setSmallIcon(icon)
-            setContentTitle(contentTitle)
-            setContentText(contentText)
+            if (contentTitle.isNotBlank()) setContentTitle(contentTitle)
+            if (contentText.isNotBlank()) setContentText(contentText)
             priority = NotificationCompat.PRIORITY_HIGH
             // setSound(alarmSound)
             setContentIntent(pendingIntent)

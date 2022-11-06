@@ -169,6 +169,7 @@ class HostStatusFragment : Fragment(),
             }
 
             observePingLiveData()
+            observeDeadAliveTransition()
         }
     }
 
@@ -268,15 +269,37 @@ class HostStatusFragment : Fragment(),
         return wh.wolStats.latencyHistoryMessage
     }
 
+    /**
+     * If [WolHost.lastWolSentAt] is the EPOCH, return blank string.
+     *
+     * If above is false then if [WolHost.lastWolWakeAt] is not the EPOCH we are actively waiting for a host to
+     * wake up.
+     *
+     * If both wake times are not the EPOCH it records the last wake up operation, with times from WOL sent to
+     * dead to alive transition.
+     */
     private fun wolWaitingMessage(wh: WolHost): String {
         val (lastSent, _) = wh.lastWolSentAt.state()
-        return if (lastSent == Instant.EPOCH) {
-            "No elapsed time to report..."
-        } else {
-            String.format(
-                "It has been %1.1f sec since WOL...",
-                Duration.between(lastSent, Instant.now()).toMillis() / 1000.0
-            )
+        val (lastWake, _) = wh.lastWolWakeAt.state()
+        return when {
+            lastSent == Instant.EPOCH -> {
+                ""
+            }
+
+            lastWake != Instant.EPOCH -> {
+                String.format(
+                    "Host Awoke %1.1f secs ago (%1.1f secs to wake up).",
+                    Duration.between(lastWake, Instant.now()).toMillis() / 1000.0,
+                    Duration.between(lastSent, lastWake).toMillis() / 1000.0
+                )
+            }
+
+            else -> {
+                String.format(
+                    "It has been %1.1f sec since WOL...",
+                    Duration.between(lastSent, Instant.now()).toMillis() / 1000.0
+                )
+            }
         }
     }
 
@@ -300,7 +323,6 @@ class HostStatusFragment : Fragment(),
 
     private fun observePingLiveData() {
         wh.hostChangedLive.observe(viewLifecycleOwner) { target ->
-            Dog.bark(ltag, lon) { "Observe $target" }
 
             if (wh.pKey == target.pKey) {
                 // Reflect the current host status in the UI, because this is a ping result from our focussed host.
@@ -320,15 +342,40 @@ class HostStatusFragment : Fragment(),
                 }
             }
             // --------------------------------------------------------------------------------
+        }
+    }
 
-            when (target.pingState) {
-                WolHost.PingStates.ALIVE -> {
-                    if (target.wolToWakeHistoryChanged.getAndSet(false)) {
+    /**
+     * Navigate to [HostAwokeFragment] one time when getting the [PingDeadToAwakeTransition.WHS.AWOKE] event
+     */
+    private fun observeDeadAliveTransition() {
+        val lun = "observeDeadAliveTransition"
+
+        wh.deadAliveTransition.aliveDeadTransition.observe(viewLifecycleOwner) { ed ->
+            when (ed.onceValueForHistory()?.signal) {
+                PingDeadToAwakeTransition.WHS.AWOKE -> {
+                    if (wh.wolToWakeHistoryChanged.getAndSet(false)) {
                         // Respond to alive state if the target is marked that the history has been changed.
                         // Commit the changes to settings.
-                        Dog.bark(ltag, lon, "targetPingChangedLiveData") { "wolToWakeHistoryChanged:true" }
-                        mvm.settingsData.writeTimeToWakeHistory(target)
-                        Dog.bark(ltag, lon, "targetPingChangedLiveData") { "history updated, wolToWakeHistoryChanged:false" }
+                        Dog.bark(ltag, lon, lun) { "wolToWakeHistoryChanged:true" }
+                        mvm.settingsData.writeTimeToWakeHistory(wh)
+                        Dog.bark(ltag, lon, lun) { "history updated, wolToWakeHistoryChanged:false" }
+                    }
+                }
+                else -> {}
+            }
+
+            when (ed.onceValueForNavigation()?.signal) {
+                PingDeadToAwakeTransition.WHS.AWOKE -> {
+                    if (wh.lastWolWakeMustBeReported.getAndSet(false)) {
+                        Dog.bark(ltag, lon, lun) { "navigate to awoke for ${wh.title}" }
+                        findNavController().navigate(
+                            R.id.action_HostStatusFragment_to_HostAwokeFragment,
+                            Bundle().apply {
+                                putInt("wh_pkey", wh.pKey)
+                                putString("title", wh.title)
+                            }
+                        )
                     }
                 }
                 else -> {}

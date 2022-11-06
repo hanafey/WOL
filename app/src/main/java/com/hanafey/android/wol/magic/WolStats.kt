@@ -35,25 +35,30 @@ class WolStats internal constructor(private val wh: WolHost) {
             isDefined = false
         }
 
-        val message = when (n) {
+        val lastWolAt = if (wolLastSentAt == Instant.EPOCH) {
+            "No WOL Pending"
+        } else {
+            DateTimeFormatter.ofPattern("'WOL at - 'hh:mm:ss a")
+                .format(LocalDateTime.ofInstant(wolLastSentAt, ZoneId.systemDefault()))
+        }
+
+        latencyHistoryMessage = when (n) {
             0 -> {
-                "\nNo history to inform WOL to wake latency."
+                "$lastWolAt\nNo history to inform WOL to wake latency."
             }
             1 -> {
-                String.format("\nA single previous WOL to wake took %1.1f sec", aveLatency)
+                String.format("%s\nA single previous WOL to wake took %1.1f sec", lastWolAt, aveLatency)
             }
             else -> {
                 String.format(
-                    "\nWOL to Wake latency (%d samples)\n %1.1f median, %1.1f ave [sec]",
+                    "%s\nWOL to Wake latency (%d samples)\n %1.1f median, %1.1f ave [sec]",
+                    lastWolAt,
                     n,
                     medianLatency,
                     aveLatency
                 )
             }
         }
-        latencyHistoryMessage = DateTimeFormatter.ofPattern("'WOL at - 'hh:mm:ss a").format(
-            LocalDateTime.ofInstant(wolLastSentAt, ZoneId.systemDefault())
-        ) + message
 
         Dog.bark(ltag, lon) { "Init: host=${wh.title} history size=${wh.wolToWakeHistory.size}" }
     }
