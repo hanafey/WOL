@@ -24,7 +24,11 @@ class WolApplication : Application() {
     private var _mvm: MainViewModel? = null
     private lateinit var networkStateTracker: NetworkStateTracker
     private val netStateMLD = Live(
-        NetworkStateTracker.NetState(System.currentTimeMillis(), isAvailable = false, isWifi = false)
+        NetworkStateTracker.NetState(
+            System.currentTimeMillis(),
+            isAvailable = false,
+            isWifi = false
+        )
     )
     private val netStateDMLD: LiveData<NetworkStateTracker.NetState> = Transformations.distinctUntilChanged(netStateMLD)
 
@@ -39,12 +43,11 @@ class WolApplication : Application() {
 
     init {
         Dog.turnDogOn(BuildConfig.DEBUG)
-        Dog.bark(ltag, lon) { "init" }
+        Dog.bark(ltag, lon) { "WolApplication init block." }
         singleton = this
     }
 
     override fun onCreate() {
-        Dog.bark(ltag, lon) { "onCreate" }
         super.onCreate()
 
         _mainScope = MainScope()

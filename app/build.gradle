@@ -44,10 +44,17 @@ android {
 
         def lon = ""
 
+        // ---------------------------------------------------------------------
         lon = "false"
+        // ---------------------------------------------------------------------
+        buildConfigField "boolean", "LON_MainViewModel_noisy", lon
+        // ---------------------------------------------------------------------
+
+        // ---------------------------------------------------------------------
+        lon = "true"
+        // ---------------------------------------------------------------------
         buildConfigField "boolean", "LON_HostAwokeFragment", lon
         buildConfigField "boolean", "LON_MainActivity", lon
-        buildConfigField "boolean", "LON_MainViewModel_noisy", lon
         buildConfigField "boolean", "LON_ObserverOfHostState", lon
         buildConfigField "boolean", "LON_PingDeadToAwakeTransition", lon
         buildConfigField "boolean", "LON_SettingHostListFragment", lon
@@ -58,8 +65,7 @@ android {
         buildConfigField "boolean", "LON_HostStatusFragment", lon
         buildConfigField "boolean", "LON_MainFragment", lon
         buildConfigField "boolean", "LON_MainViewModel", lon
-
-        lon = "true"
+        // ---------------------------------------------------------------------
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug_signing_config

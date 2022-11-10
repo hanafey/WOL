@@ -1,8 +1,8 @@
 package com.hanafey.android.wol
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.hanafey.android.ax.Dog
+import com.hanafey.android.ax.Live
 import com.hanafey.android.wol.magic.WolHost
 
 /**
@@ -48,11 +48,11 @@ class PingDeadToAwakeTransition(val host: WolHost) {
     data class WolHostSignal(val host: WolHost, val signal: WHS, val extra: String = "")
 
     /**
-     * Observe this to be able to response to host alive/dead changes. Up to 3 observers will see the `onceValue`.
+     * Observe this to be able to response to host alive/dead changes. Multiple observers see the `onceValue` [EventDataDAT].
      */
     val aliveDeadTransition: LiveData<EventDataDAT>
         get() = _aliveDeadTransition
-    private val _aliveDeadTransition = MutableLiveData(EventDataDAT(WolHostSignal(host, WHS.NOTHING)))
+    private val _aliveDeadTransition = Live(EventDataDAT(WolHostSignal(host, WHS.NOTHING), true))
 
     /**
      * Must be odd number, no ties allowed. This number of pings must be in the buffer to render an awake / asleep signal.
@@ -98,7 +98,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
      * Sets to the state at construction, empty buffer no current or previous signal
      */
     fun resetBuffer() {
-        Dog.bark(ltag, lon) { "resetBuffer" }
+        Dog.bark(ltag, lon) { "resetBuffer()" }
         lastPingReportedMillies = 0L
         lastPingMillies = 0L
         previousBufferSignal = WHS.NOTHING
@@ -148,7 +148,6 @@ class PingDeadToAwakeTransition(val host: WolHost) {
         buffer[bufferIx] = pmz
         previousBufferSignal = currentBufferSignal
         currentBufferSignal = assessBuffer(previousBufferSignal)
-        Dog.bark(ltag, lon) { "${host.title}  transitions = $transitionCount $previousBufferSignal -> $currentBufferSignal" }
         if (currentBufferSignal != WHS.NOTHING) {
             // Interesting Transition
             transitionCount++
@@ -156,7 +155,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
                 // Do not report the first transition because is is from unknown to something.
                 lastPingReportedMillies = now
                 _aliveDeadTransition.postValue(EventDataDAT(WolHostSignal(host, currentBufferSignal)))
-                Dog.bark(ltag, lon) { "signal!" }
+                Dog.bark(ltag, lon) { "_aliveDeadTransition ${host.title} post $currentBufferSignal!" }
             }
         } else if (testingReportPeriod > 0 && now - lastPingReportedMillies > testingReportPeriod) {
             // For testing only. This should only run for debugging purposes
@@ -164,7 +163,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
             _aliveDeadTransition.postValue(
                 EventDataDAT(WolHostSignal(host, WHS.NOISE, "Pinged (period=${mSecToMinutes(testingReportPeriod)})"))
             )
-            Dog.bark(ltag, lon) { "noise!" }
+            Dog.bark(ltag, lon) { "_aliveDeadTransition: noise!" }
         }
         return currentBufferSignal
     }
@@ -246,6 +245,7 @@ class PingDeadToAwakeTransition(val host: WolHost) {
             }
         }
 
+        @Suppress("unused")
         private fun datBufferToString(buffer: IntArray, cix: Int): String {
             val z = buffer.size
             val sa = StringBuilder(z)

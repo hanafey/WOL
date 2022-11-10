@@ -17,7 +17,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param wh The wol host that is reported via live data.
  * @param basedOn A list of other live data who setting cascades to this live data, just like a direct call to [signal] or [postSignal].
  */
-class WolEventLiveData(private val scope: CoroutineScope, private val wh: WolHost, basedOn: List<Live<out Any>>) : MediatorLiveData<WolHost>() {
+class WolEventLiveData(
+    private val scope: CoroutineScope,
+    private val wh: WolHost,
+    basedOn: List<Live<out Any>>
+) : MediatorLiveData<WolHost>() {
+
     private val ltag = "WolEventLiveData"
     private val lon = true
     private val lun = wh.title
@@ -44,13 +49,17 @@ class WolEventLiveData(private val scope: CoroutineScope, private val wh: WolHos
 
     override fun onActive() {
         super.onActive()
-        Dog.bark(ltag, lon, lun) { "onActive: start emitting." }
+        Dog.bark(ltag, lon, lun) { "onActive(): start emitting." }
         signallingOn.set(true)
+
+        // This is the loop where we ensure observers are called if any triggering
+        // event happens in the interval we delay to accumulated the related
+        // instigating events.
         scope.launch {
             while (signallingOn.get()) {
-                delay(100L)
+                delay(250L)
                 if (signalNextTime.getAndSet(false)) {
-                    Dog.bark(ltag, lon, lun) { "active: Set live data now." }
+                    Dog.bark(ltag, lon, lun) { "onActive(): Set live data now." }
                     this@WolEventLiveData.value = wh
                 }
             }
@@ -58,9 +67,9 @@ class WolEventLiveData(private val scope: CoroutineScope, private val wh: WolHos
     }
 
     override fun onInactive() {
-        Dog.bark(ltag, lon, lun) { "onInactive" }
+        Dog.bark(ltag, lon, lun) { "onInactive()" }
         if (signallingOn.getAndSet(false)) {
-            Dog.bark(ltag, lon, lun) { "going inactive: Set live data now." }
+            Dog.bark(ltag, lon, lun) { "onInactive(): Set live data now." }
             this@WolEventLiveData.value = wh
         }
         super.onInactive()

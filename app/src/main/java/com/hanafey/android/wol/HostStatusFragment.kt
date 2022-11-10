@@ -169,7 +169,7 @@ class HostStatusFragment : Fragment(),
             }
 
             observePingLiveData()
-            observeDeadAliveTransition()
+            observeWolDetected()
         }
     }
 
@@ -348,37 +348,19 @@ class HostStatusFragment : Fragment(),
     /**
      * Navigate to [HostAwokeFragment] one time when getting the [PingDeadToAwakeTransition.WHS.AWOKE] event
      */
-    private fun observeDeadAliveTransition() {
-        val lun = "observeDeadAliveTransition"
+    private fun observeWolDetected() {
+        val lun = "observeWolDetected()"
 
-        wh.deadAliveTransition.aliveDeadTransition.observe(viewLifecycleOwner) { ed ->
-            when (ed.onceValueForHistory()?.signal) {
-                PingDeadToAwakeTransition.WHS.AWOKE -> {
-                    if (wh.wolToWakeHistoryChanged.getAndSet(false)) {
-                        // Respond to alive state if the target is marked that the history has been changed.
-                        // Commit the changes to settings.
-                        Dog.bark(ltag, lon, lun) { "wolToWakeHistoryChanged:true" }
-                        mvm.settingsData.writeTimeToWakeHistory(wh)
-                        Dog.bark(ltag, lon, lun) { "history updated, wolToWakeHistoryChanged:false" }
+        wh.wolDetectedLive.observe(viewLifecycleOwner) { ed ->
+            if (ed.onceValueForNavigation() != null) {
+                Dog.bark(ltag, lon, lun) { "navigate to awoke for ${wh.title}" }
+                findNavController().navigate(
+                    R.id.action_HostStatusFragment_to_HostAwokeFragment,
+                    Bundle().apply {
+                        putInt("wh_pkey", wh.pKey)
+                        putString("title", wh.title)
                     }
-                }
-                else -> {}
-            }
-
-            when (ed.onceValueForNavigation()?.signal) {
-                PingDeadToAwakeTransition.WHS.AWOKE -> {
-                    if (wh.lastWolWakeMustBeReported.getAndSet(false)) {
-                        Dog.bark(ltag, lon, lun) { "navigate to awoke for ${wh.title}" }
-                        findNavController().navigate(
-                            R.id.action_HostStatusFragment_to_HostAwokeFragment,
-                            Bundle().apply {
-                                putInt("wh_pkey", wh.pKey)
-                                putString("title", wh.title)
-                            }
-                        )
-                    }
-                }
-                else -> {}
+                )
             }
         }
     }

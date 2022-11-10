@@ -11,17 +11,38 @@ import java.time.format.DateTimeFormatter
 /**
  * This class must be instantiated  if the wake history changes or else it does not reflect the current
  * host state.
+ * @param wh The host the stats apply to. At construction the only parts of [WolHost] that are referenced
+ * are [WolHost.wolToWakeHistory].
  */
 class WolStats internal constructor(private val wh: WolHost) {
     private val ltag = "WolStats"
     private val lon = BuildConfig.LON_WolStats
 
+    /**
+     * True if there is enough history to define average and median, else these are NaN.
+     */
+    val isDefined: Boolean
+
+    /**
+     * The average latency in seconds.
+     */
+    @Suppress("MemberVisibilityCanBePrivate")
+    val aveLatency: Double
+
+    /**
+     * The median latency in seconds.
+     */
+    @Suppress("MemberVisibilityCanBePrivate")
+    val medianLatency: Double
+
+    /**
+     * A message that describes the latency in two lines.
+     */
+    val latencyHistoryMessage: String
+        get() = computeLatencyMessage()
+
     private val wolLastSentAt: Instant
         get() = wh.lastWolSentAt.state().first
-    val isDefined: Boolean
-    val aveLatency: Double
-    val medianLatency: Double
-    val latencyHistoryMessage: String
 
     init {
         val n = wh.wolToWakeHistory.size
@@ -35,6 +56,10 @@ class WolStats internal constructor(private val wh: WolHost) {
             isDefined = false
         }
 
+        Dog.bark(ltag, lon) { "init block: host=${wh.title} history size=${wh.wolToWakeHistory.size}" }
+    }
+
+    private fun computeLatencyMessage(): String {
         val lastWolAt = if (wolLastSentAt == Instant.EPOCH) {
             "No WOL Pending"
         } else {
@@ -42,7 +67,7 @@ class WolStats internal constructor(private val wh: WolHost) {
                 .format(LocalDateTime.ofInstant(wolLastSentAt, ZoneId.systemDefault()))
         }
 
-        latencyHistoryMessage = when (n) {
+        return when (val n = wh.wolToWakeHistory.size) {
             0 -> {
                 "$lastWolAt\nNo history to inform WOL to wake latency."
             }
@@ -59,8 +84,6 @@ class WolStats internal constructor(private val wh: WolHost) {
                 )
             }
         }
-
-        Dog.bark(ltag, lon) { "Init: host=${wh.title} history size=${wh.wolToWakeHistory.size}" }
     }
 
     fun progress(now: Instant): Int {

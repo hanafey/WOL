@@ -4,14 +4,12 @@ import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import com.hanafey.android.ax.Dog
 import com.hanafey.android.ax.EventData
 import com.hanafey.android.wol.magic.MagicPacket
 import com.hanafey.android.wol.magic.WolHost
-import com.hanafey.android.wol.magic.WolStats
 import com.hanafey.android.wol.settings.SettingsData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +36,7 @@ class MainViewModel(
     val targets = defaultHostList()
 
     val hostStateNotification = HostStateNotification(application)
-    private val observerOfHostState = ObserverOfHostState(hostStateNotification)
+    private val observerOfDeadOrAlive = ObserverOfDeadOrAlive(this, hostStateNotification)
 
     val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
@@ -79,6 +77,7 @@ class MainViewModel(
     /**
      * Set by an observer of network state.
      */
+    @Suppress("MemberVisibilityCanBePrivate")
     var wiFiOn = false
         private set
 
@@ -89,6 +88,7 @@ class MainViewModel(
     var firstVisit = true
 
     private fun defaultHostList(): List<WolHost> {
+        @Suppress("KotlinConstantConditions")
         return if (BuildConfig.BUILD_TYPE == "debug") {
             listOf(
                 WolHost(0, "Router", "192.168.1.1", "a1:b1:c1:d1:e1:f1", "192.168.1.255", viewModelScope),
@@ -117,7 +117,7 @@ class MainViewModel(
      */
     fun initializeFromSettings() {
         targets.forEach { wh ->
-            wh.deadAliveTransition.setBufferParameters(wh)
+            wh.deadOrAliveTransitionDetector.setBufferParameters(wh)
         }
     }
 
@@ -125,7 +125,7 @@ class MainViewModel(
      * Call in a forever observer of network state.
      */
     fun onNetworkStateChanged(ns: NetworkStateTracker.NetState) {
-        Dog.bark(ltag, lon) { "onNetworkStateChanged: $ns" }
+        Dog.bark(ltag, lon) { "onNetworkStateChanged(): $ns" }
         wiFiOn = ns.isAvailable && ns.isWifi
     }
 
@@ -140,7 +140,7 @@ class MainViewModel(
      */
     fun observeAliveDeadTransitions() {
         targets.forEach { wh ->
-            wh.deadAliveTransition.aliveDeadTransition.observeForever(observerOfHostState)
+            wh.deadOrAliveTransitionDetector.aliveDeadTransition.observeForever(observerOfDeadOrAlive)
         }
     }
 
@@ -149,9 +149,9 @@ class MainViewModel(
      * [pingJobsStateLiveData] will register an event only if pinging is not already active.
      */
     private fun pingTargetsIfNeeded(scope: CoroutineScope, resetState: Boolean) {
+        Dog.bark(ltag, lon) { "pingTargetsIfNeeded()? $pingActive" }
         if (pingActive) return // ======================================== >>>
 
-        Dog.bark(ltag, lon) { "pingTargetsBecauseNeeded." }
         pingActive = true
         pingJobs = targets.map { wh ->
             pingTarget(scope, wh, resetState)
@@ -165,7 +165,7 @@ class MainViewModel(
      * be registered.
      */
     fun pingTargetsAgain(scope: CoroutineScope, resetState: Boolean) {
-        Dog.bark(ltag, lon) { "pingTargetsAgain" }
+        Dog.bark(ltag, lon) { "pingTargetsAgain()" }
         scope.launch {
             if (pingJobs.isNotEmpty()) {
                 pingActive = false
@@ -189,9 +189,9 @@ class MainViewModel(
                 exitingKillJob?.cancelAndJoin()
             }
 
-            Dog.bark(ltag, lon) { "killPingTargetsAfterWaiting: Will delay ${settingsData.pingKillDelayMinutes} minutes" }
+            Dog.bark(ltag, lon) { "killPingTargetsAfterWaiting(): Will delay ${settingsData.pingKillDelayMinutes} minutes" }
             delay(mSecFromMinutes(settingsData.pingKillDelayMinutes))
-            Dog.bark(ltag, lon) { "killPingTargetsAfterWaiting: Delay ${settingsData.pingKillDelayMinutes} minutes done. Kill now!" }
+            Dog.bark(ltag, lon) { "killPingTargetsAfterWaiting(): Delay ${settingsData.pingKillDelayMinutes} minutes done. Kill now!" }
 
             delayedKillMutex.withLock {
                 if (pingActive) {
@@ -209,7 +209,7 @@ class MainViewModel(
     fun cancelKillPingTargetsAfterWaiting(scope: CoroutineScope, restartJobs: Boolean) {
         scope.launch {
             delayedKillMutex.withLock {
-                Dog.bark(ltag, lon) { "cancelKillPingTargets." }
+                Dog.bark(ltag, lon) { "cancelKillPingTargetsAfterWaiting()." }
                 delayedKillJob?.cancelAndJoin()
                 delayedKillJob = null
             }
@@ -256,7 +256,7 @@ class MainViewModel(
 
                         if (address != null) {
                             host.lastPingSentAt.update(Instant.now())
-                            Dog.bark(ltag, lonNoisy, "mpmpds") { "ping ${host.title}" }
+                            Dog.bark(ltag, lonNoisy, "u1247") { "ping ${host.title}" }
                             val pingResult = try {
                                 val x = MagicPacket.ping(address, settingsData.pingResponseWaitMillis)
                                 if (x) 1 else 0
@@ -276,18 +276,7 @@ class MainViewModel(
                                         }
                                         host.lastPingSentAt.consume()
                                         host.lastPingResponseAt.update(Instant.now())
-                                        val (then, ack) = host.lastWolSentAt.consume()
-                                        if (!ack && then != Instant.EPOCH) {
-                                            // Only if 'then' is not epoch does the result still apply
-                                            val now = Instant.now()
-                                            host.lastWolWakeMustBeReported.set(true)
-                                            host.lastWolWakeAt.update(now)
-                                            val deltaMilli = now.toEpochMilli() - then.toEpochMilli()
-                                            host.wolToWakeHistory = host.wolToWakeHistory + deltaMilli.toInt()
-                                            val wasSet = host.wolToWakeHistoryChanged.getAndSet(true)
-                                            Dog.bark(ltag, lon) { "${host.pingName} wake history changed (was set? $wasSet)" }
-                                        }
-                                        host.deadAliveTransition.addPingResult(1)
+                                        host.deadOrAliveTransitionDetector.addPingResult(1)
                                     }
                                 }
 
@@ -300,7 +289,7 @@ class MainViewModel(
                                             host.pingedCountDead++
                                             host.pingException = null
                                         }
-                                        host.deadAliveTransition.addPingResult(-1)
+                                        host.deadOrAliveTransitionDetector.addPingResult(-1)
                                     }
                                 }
 
@@ -309,7 +298,7 @@ class MainViewModel(
                                         host.pingState = WolHost.PingStates.EXCEPTION
                                         host.pingException = exception
                                         host.lastPingResponseAt.update(Instant.EPOCH)
-                                        host.deadAliveTransition.addPingResult(0)
+                                        host.deadOrAliveTransitionDetector.addPingResult(0)
                                     }
                                 }
                             }
@@ -352,13 +341,12 @@ class MainViewModel(
                     host.lastPingSentAt.age() < settingsData.pingDelayMillis * 3
                 ) {
                     try {
+                        host.resetWolState()
                         repeat(host.wolBundleCount) {
                             if (it > 1) delay(host.wolBundleSpacing)
                             MagicPacket.sendWol(host.macAddress)
                         }
-                        host.lastWolWakeMustBeReported.set(false)
                         host.lastWolSentAt.update(Instant.now())
-                        host.wolStats = WolStats(host)
                         host.wakeupCount++
                     } catch (ex: IOException) {
                         host.wakeupException = EventData(ex)
@@ -377,44 +365,7 @@ class MainViewModel(
         super.onCleared()
         // Should not be needed. We add these at the application level. Harmless -- never executed.
         targets.forEach { wh ->
-            wh.deadAliveTransition.aliveDeadTransition.removeObserver(observerOfHostState)
-        }
-    }
-
-
-    class ObserverOfHostState(
-        private val hostStateNotification: HostStateNotification
-    ) : Observer<EventDataDAT> {
-        private val ltag = "ObserverOfHostState"
-        private val lon = BuildConfig.LON_ObserverOfHostState
-
-        override fun onChanged(ed: EventDataDAT) {
-            val whs = ed.onceValueForNotify()
-            Dog.bark(ltag, lon) { "ObserverOfHostState: $whs" }
-            when (whs?.signal) {
-                PingDeadToAwakeTransition.WHS.NOTHING -> {}
-
-                PingDeadToAwakeTransition.WHS.AWOKE -> {
-                    if (whs.host.datNotifications) {
-                        hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} Awoke", "")
-                    }
-                }
-
-                PingDeadToAwakeTransition.WHS.DIED -> {
-                    if (whs.host.datNotifications) {
-                        whs.host.resetWolState()
-                        hostStateNotification.makeAsleepNotification(whs.host, "${whs.host.title} Unresponsive", "")
-                    }
-                }
-
-                PingDeadToAwakeTransition.WHS.NOISE -> {
-                    if (whs.host.datNotifications) {
-                        hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} ${whs.extra}", "${Instant.now()}")
-                    }
-                }
-
-                null -> {}
-            }
+            wh.deadOrAliveTransitionDetector.aliveDeadTransition.removeObserver(observerOfDeadOrAlive)
         }
     }
 }

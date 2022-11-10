@@ -67,19 +67,21 @@ class MainActivity : AppCompatActivity(), LifecycleEventObserver {
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         val lab = "lifecycle"
         when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-                Dog.bark(ltag, lon, lab) { "ON_CREATE" }
-            }
+            Lifecycle.Event.ON_CREATE -> Unit
+
             Lifecycle.Event.ON_START -> {
                 Dog.bark(ltag, lon, lab) { "ON_START: cancel kill ping, and re-ping if needed" }
                 mvm.cancelKillPingTargetsAfterWaiting(WolApplication.instance.mainScope, true)
             }
+
             Lifecycle.Event.ON_RESUME -> Unit
             Lifecycle.Event.ON_PAUSE -> Unit
+
             Lifecycle.Event.ON_STOP -> {
                 Dog.bark(ltag, lon, lab) { "ON_STOP: kill ping later" }
                 mvm.killPingTargetsAfterWaiting(WolApplication.instance.mainScope)
             }
+
             Lifecycle.Event.ON_DESTROY -> Unit
             Lifecycle.Event.ON_ANY -> Unit
         }

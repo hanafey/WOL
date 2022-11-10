@@ -67,7 +67,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        Dog.bark(ltag, lon) { "onCreateView" }
         _binding = FragmentMainBinding.inflate(inflater, container, false)
 
         val menuHost: MenuHost = requireActivity()
@@ -118,7 +117,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        Dog.bark(ltag, lon) { "onViewCreated" }
         super.onViewCreated(view, savedInstanceState)
 
         // Put the static names into lists
@@ -203,7 +201,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
         }
 
         observePingLiveData()
-        observeDeadAliveTransition()
+        observeWolDetected()
 
         // The intent that is set by start by notification has bundle data that
         // determines which host status to show.
@@ -235,7 +233,6 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        Dog.bark(ltag, lon, "lifecycle") { "onStateChanged $event" }
 
         when (event) {
             Lifecycle.Event.ON_CREATE -> Unit
@@ -243,12 +240,14 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
             Lifecycle.Event.ON_RESUME -> Unit
 
             Lifecycle.Event.ON_START -> {
+                Dog.bark(ltag, lon, "lifecycle") { "addOnDestinationChangedListener $event" }
                 findNavController().addOnDestinationChangedListener(this)
             }
 
             Lifecycle.Event.ON_PAUSE -> Unit
 
             Lifecycle.Event.ON_STOP -> {
+                Dog.bark(ltag, lon, "lifecycle") { "removeOnDestinationChangedListener $event" }
                 findNavController().removeOnDestinationChangedListener(this)
             }
 
@@ -371,42 +370,25 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
     /**
      * Navigate to [HostAwokeFragment] one time when getting the [PingDeadToAwakeTransition.WHS.AWOKE] event
      */
-    private fun observeDeadAliveTransition() {
-        val lun = "observeDeadAliveTransition"
+    private fun observeWolDetected() {
+        val lun = "observeWolDetected()"
         // Only one navigation can be done, and when the up button is clicked in HostAwoke the main fragment
         // is created again, and then the next one is done, etc
         var firstNavigationDone = false
         mvm.targets.forEach { wh ->
-            wh.deadAliveTransition.aliveDeadTransition.observe(viewLifecycleOwner) { ed ->
-                when (ed.onceValueForHistory()?.signal) {
-                    PingDeadToAwakeTransition.WHS.AWOKE -> {
-                        if (wh.wolToWakeHistoryChanged.getAndSet(false)) {
-                            // Respond to alive state if the target is marked that the history has been changed.
-                            // Commit the changes to settings.
-                            Dog.bark(ltag, lon, lun) { "wolToWakeHistoryChanged:true" }
-                            mvm.settingsData.writeTimeToWakeHistory(wh)
-                            Dog.bark(ltag, lon, lun) { "history updated, wolToWakeHistoryChanged:false" }
-                        }
-                    }
-                    else -> {}
-                }
+            wh.wolDetectedLive.observe(viewLifecycleOwner) { ed ->
 
                 if (!firstNavigationDone) {
-                    when (ed.onceValueForNavigation()?.signal) {
-                        PingDeadToAwakeTransition.WHS.AWOKE -> {
-                            if (wh.lastWolWakeMustBeReported.getAndSet(false)) {
-                                firstNavigationDone = true
-                                Dog.bark(ltag, lon, lun) { "navigate to awoke for ${wh.title}" }
-                                findNavController().navigate(
-                                    R.id.action_MainFragment_to_HostAwokeFragment,
-                                    Bundle().apply {
-                                        putInt("wh_pkey", wh.pKey)
-                                        putString("title", wh.title)
-                                    }
-                                )
+                    if (ed.onceValueForNavigation() != null) {
+                        Dog.bark(ltag, lon, lun) { "navigate to awoke for ${wh.title}" }
+                        firstNavigationDone = true
+                        findNavController().navigate(
+                            R.id.action_MainFragment_to_HostAwokeFragment,
+                            Bundle().apply {
+                                putInt("wh_pkey", wh.pKey)
+                                putString("title", wh.title)
                             }
-                        }
-                        else -> {}
+                        )
                     }
                 }
             }
@@ -448,7 +430,7 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                     if (!target.pingMe) {
                         // Ping is disabled for this host
                         target.resetState()
-                        target.deadAliveTransition.resetBuffer()
+                        target.deadOrAliveTransitionDetector.resetBuffer()
                         uiPingState[ix].backgroundTintList = pingOffTint
                         uiPingState[ix].icon = ContextCompat.getDrawable(
                             requireActivity(),

@@ -216,15 +216,15 @@ class SettingsFragment : PreferenceFragmentCompat(),
             R.id.MainFragment -> {
                 if (fvm.datBufferChanged) {
                     mvm.targets.forEach { wh ->
-                        wh.deadAliveTransition.setBufferParameters(wh)
+                        wh.deadOrAliveTransitionDetector.setBufferParameters(wh)
                     }
                 }
 
                 if (fvm.hostDataChanged) {
                     mvm.pingTargetsAgain(WolApplication.instance.mainScope, false)
-                    Dog.bark(ltag, lon) { "onDestinationChanged: RE-PING $destination" }
+                    Dog.bark(ltag, lon) { "onDestinationChanged(): RE-PING $destination" }
                 } else {
-                    Dog.bark(ltag, lon) { "onDestinationChanged: NO RE-PING $destination" }
+                    Dog.bark(ltag, lon) { "onDestinationChanged(): NO RE-PING $destination" }
                 }
             }
         }
@@ -248,7 +248,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
     }
 
     override fun onPreferenceStartFragment(caller: PreferenceFragmentCompat, pref: Preference): Boolean {
-        Dog.bark(ltag, lon) { "onPreferenceStartFragment: $pref" }
+        Dog.bark(ltag, lon) { "onPreferenceStartFragment(): $pref" }
         require(pref.fragment != null)
 
         return when (pref.fragment) {

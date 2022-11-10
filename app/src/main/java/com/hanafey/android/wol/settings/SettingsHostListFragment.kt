@@ -79,7 +79,7 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
         when (destination.id) {
             R.id.SettingsHostListFragment -> {
                 // Host titles may have changed so update.
-                Dog.bark(ltag, lon) { "Back to SettingsHostListFragment. Host data changed? ${fvm.hostDataChanged}" }
+                Dog.bark(ltag, lon) { "onDestinationChanged(): Back to SettingsHostListFragment. Host data changed? ${fvm.hostDataChanged}" }
                 if (fvm.hostDataChanged) {
                     for (wh in mvm.targets) {
                         findPreference<Preference>(PrefNames.HOST_SECTION.pref(wh.pKey))?.apply {
@@ -93,11 +93,10 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-                Dog.bark(ltag, lon) { "ON_CREATE" }
-            }
+            Lifecycle.Event.ON_CREATE -> Unit
+
             Lifecycle.Event.ON_START -> {
-                Dog.bark(ltag, lon) { "ON_START" }
+                Dog.bark(ltag, lon) { "ON_START -- addOnDestinationChangedListener" }
                 findNavController().addOnDestinationChangedListener(this)
                 // --------------------------------------------------------------------------------
                 // Create the icons for showing included and excluded hosts
@@ -119,6 +118,7 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
 
             Lifecycle.Event.ON_RESUME -> {}
             Lifecycle.Event.ON_PAUSE -> {}
+
             Lifecycle.Event.ON_STOP -> {
                 findNavController().removeOnDestinationChangedListener(this)
             }
@@ -128,7 +128,7 @@ class SettingsHostListFragment : PreferenceFragmentCompat(),
     }
 
     override fun onPreferenceStartFragment(caller: PreferenceFragmentCompat, pref: Preference): Boolean {
-        Dog.bark(ltag, lon) { "onPreferenceStartFragment: $pref" }
+        Dog.bark(ltag, lon) { "onPreferenceStartFragment(): $pref" }
 
         require(pref.fragment != null)
 

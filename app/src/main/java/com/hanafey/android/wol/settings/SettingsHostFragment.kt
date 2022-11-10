@@ -490,24 +490,26 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {
         when (destination.id) {
             R.id.SettingsFragment -> {
-                Dog.bark(ltag, lon) { "Back to SettingsFragment. No action needed." }
+                Dog.bark(ltag, lon) { "onDestinationChanged(): Back to SettingsFragment. No action needed." }
             }
         }
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-                Dog.bark(ltag, lon) { "ON_CREATE" }
-            }
+            Lifecycle.Event.ON_CREATE -> Unit
+
             Lifecycle.Event.ON_START -> {
                 findNavController().addOnDestinationChangedListener(this)
             }
+
             Lifecycle.Event.ON_RESUME -> {}
             Lifecycle.Event.ON_PAUSE -> {}
+
             Lifecycle.Event.ON_STOP -> {
                 findNavController().removeOnDestinationChangedListener(this)
             }
+
             Lifecycle.Event.ON_DESTROY -> {}
             Lifecycle.Event.ON_ANY -> {}
         }

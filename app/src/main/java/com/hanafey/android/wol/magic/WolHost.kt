@@ -1,15 +1,17 @@
 package com.hanafey.android.wol.magic
 
+import androidx.lifecycle.LiveData
 import com.hanafey.android.ax.EventData
+import com.hanafey.android.ax.Live
+import com.hanafey.android.wol.EventDataWOL
 import com.hanafey.android.wol.PingDeadToAwakeTransition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 /**
- * You must call [PingDeadToAwakeTransition.setBufferParameters] on [deadAliveTransition] after instantiating this class.
+ * You must call [PingDeadToAwakeTransition.setBufferParameters] on [deadOrAliveTransitionDetector] after instantiating this class.
  * Data in this class is persisted in settings, see [com.hanafey.android.wol.settings.SettingsData.initializeModel]
  * @param pKey See [pKey]
  * @param title See [title]
@@ -85,9 +87,16 @@ class WolHost(
     var wolBundleSpacing = 100L
 
     /**
-     * Send notifications when dead / alive transitions are detected.
+     * Send notifications when dead / alive transitions are detected. These can
+     * be more noisy, and in many cases less interesting.
      */
-    var datNotifications = true
+    var datNotifications = false
+
+    /**
+     * Send notification when host awoke in response to WOL. More interesting
+     * because the user did something that resulted in a delayed response.
+     */
+    var wolNotifications = true
 
     /**
      * Alive / Dead transition hysteresis buffer size.
@@ -114,7 +123,7 @@ class WolHost(
      * Wake on Lan stats
      */
     var wolStats: WolStats // Initialized in late init block because it depends on 'this'
-        internal set
+        private set
 
     /**
      * The number of wake up magic packets sent to [macAddress]
@@ -166,13 +175,6 @@ class WolHost(
     val lastWolWakeAt = AckInstantWatched(this)
 
     /**
-     * This is set true when a WOL is detected. When this is true navigation to a reporting fragment
-     * will happen, but only once. The report may be initiated from more than one place, but the
-     * first to do it means it is done.
-     */
-    val lastWolWakeMustBeReported = AtomicBoolean(false)
-
-    /**
      *  0 means status not known, 1 means responded to last ping, -1 means last ping timed out and
      *  -2 means attempt to ping threw exception.
      */
@@ -204,7 +206,11 @@ class WolHost(
      */
     val mutex = Mutex()
 
-    val deadAliveTransition = PingDeadToAwakeTransition(this)
+    val wolDetectedLive: LiveData<EventDataWOL>
+        get() = _wolDetectedLive
+    private val _wolDetectedLive = Live(EventDataWOL(this, true))
+
+    val deadOrAliveTransitionDetector = PingDeadToAwakeTransition(this)
 
     /**
      * History of milliseconds from WOL to successful ping, with most recent history at the end.
@@ -222,16 +228,18 @@ class WolHost(
         }
 
 
-    /**
-     * Set true when history is added, and set false when history is saved to settings.
-     */
-    val wolToWakeHistoryChanged = AtomicBoolean(false)
-
     val hostChangedLive = WolEventLiveData(coScope, this, emptyList())
 
     init {
         // IMPORTANT: This depends on 'this' and so it is instantiated at the end of object initialization.
         wolStats = WolStats(this)
+    }
+
+    /**
+     * Call only once after WOL has happened, and the history of WOL has been updated.
+     */
+    fun signalWakeOnLanEvent() {
+        _wolDetectedLive.value = EventDataWOL(this)
     }
 
     /**
@@ -246,6 +254,7 @@ class WolHost(
         wolStats = WolStats(this)
     }
 
+    @Suppress("unused")
     fun isAwake(): Boolean {
         val (instant, ack) = lastWolSentAt.state()
         return instant != Instant.EPOCH && ack
@@ -260,27 +269,14 @@ class WolHost(
     }
 
     fun cancelWaitingToAwake() {
-        lastWolWakeMustBeReported.set(false)
         lastWolSentAt.update(Instant.EPOCH)
         wolStats = WolStats(this)
     }
 
 
     fun resetState() {
-        pingedCountAlive = 0
-        pingedCountDead = 0
-        if (!pingMe) {
-            pingState = PingStates.NOT_PINGING
-        }
-        // pingState = if (pingMe) PingStates.INDETERMINATE else PingStates.NOT_PINGING
-        pingException = null
-        wakeupCount = 0
-        wakeupException = EventData(null)
-        lastWolWakeAt.update(Instant.EPOCH)
-        lastWolWakeMustBeReported.set(false)
-        lastWolSentAt.update(Instant.EPOCH)
-        // lastPingSentAt
-        // lastPingResponseAt
+        resetPingState()
+        resetWolState()
     }
 
 
@@ -297,9 +293,9 @@ class WolHost(
     }
 
     fun resetWolState() {
-        lastWolWakeAt.update(Instant.EPOCH)
-        lastWolWakeMustBeReported.set(false)
         lastWolSentAt.update(Instant.EPOCH)
+        lastWolWakeAt.update(Instant.EPOCH)
+        wakeupException = EventData(null)
     }
 
     override fun compareTo(other: WolHost): Int {
