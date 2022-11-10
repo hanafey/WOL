@@ -153,6 +153,15 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
                 )
 
                 pc.addPreference(
+                    SwitchPreference(context).apply {
+                        key = PrefNames.HOST_WOL_NOTIFY.pref(hostIx)
+                        title = "Send Notifications of Wake-On-Lan success"
+                        isChecked = wh.wolNotifications
+                        onPreferenceChangeListener = this@SettingsHostFragment
+                    }
+                )
+
+                pc.addPreference(
                     EditTextPreference(context).apply {
                         key = PrefNames.HOST_DAT_BUFFER_SIZE.pref(hostIx)
                         title = "Length of Alive / Dead Transition Detection Buffer"
@@ -354,6 +363,13 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
             PrefNames.HOST_DAT_NOTIFY -> {
                 val isEnabled = newValue as Boolean
                 wolHost.datNotifications = isEnabled
+                fvm.hostDataChanged = true
+                true
+            }
+
+            PrefNames.HOST_WOL_NOTIFY -> {
+                val isEnabled = newValue as Boolean
+                wolHost.wolNotifications = isEnabled
                 fvm.hostDataChanged = true
                 true
             }

@@ -63,6 +63,9 @@ class SettingsData(val spm: SharedPreferences) {
             prefName = PrefNames.HOST_DAT_NOTIFY.pref(wh.pKey)
             wh.datNotifications = spm.getBoolean(prefName, wh.datNotifications)
 
+            prefName = PrefNames.HOST_WOL_NOTIFY.pref(wh.pKey)
+            wh.wolNotifications = spm.getBoolean(prefName, wh.wolNotifications)
+
             prefName = PrefNames.HOST_PING_ME.pref(wh.pKey)
             wh.pingMe = spm.getBoolean(prefName, wh.pingMe)
             if (wh.pingMe) {
