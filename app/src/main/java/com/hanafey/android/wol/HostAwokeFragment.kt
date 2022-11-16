@@ -12,21 +12,26 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
 import com.hanafey.android.ax.Dog
 import com.hanafey.android.wol.databinding.FragmentHostAwokeBinding
+import com.hanafey.android.wol.databinding.RecyclerHostWolHistoryBinding
 import com.hanafey.android.wol.magic.WolHost
+import java.lang.Double.NaN
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 class HostAwokeFragment : Fragment(),
     LifecycleEventObserver,
@@ -35,6 +40,13 @@ class HostAwokeFragment : Fragment(),
     private val lon = BuildConfig.LON_HostAwokeFragment
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
+    private val vm: HostAwokeViewModel by viewModels {
+        val track = wh.wolSoundTrackIndex
+        HostAwokeViewModel.Factory(
+            requireActivity().application,
+            if (track < 0 || track >= mvm.settingsData.wolSoundTracks.size) 0 else mvm.settingsData.wolSoundTracks[track]
+        )
+    }
 
     private var _binding: FragmentHostAwokeBinding? = null
     private val ui: FragmentHostAwokeBinding
@@ -88,6 +100,11 @@ class HostAwokeFragment : Fragment(),
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
+        ui.wolStatsRecycler.run {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = WolStatsRecyclerAdapter(inflater, wh)
+        }
+
         return ui.root
     }
 
@@ -100,11 +117,14 @@ class HostAwokeFragment : Fragment(),
         pingOtherTint = ContextCompat.getColorStateList(requireContext(), R.color.ping_other_dialog)!!
 
         wh.updateWolStats()
+        updateUi(wh)
 
+        // FIX: Do we want a back button?
+        // ui.done.setOnClickListener {
+        //     findNavController().navigateUp()
+        // }
 
-        ui.wolButton.setOnClickListener {
-            findNavController().navigateUp()
-        }
+        vm.ensureInstantiation()
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
@@ -116,7 +136,6 @@ class HostAwokeFragment : Fragment(),
         }
     }
 
-
     override fun onDestinationChanged(controller: NavController, destination: NavDestination, arguments: Bundle?) {}
 
     override fun onDestroyView() {
@@ -125,7 +144,11 @@ class HostAwokeFragment : Fragment(),
     }
 
     private fun updateUi(wh: WolHost) {
-        ui.wolAwokeTitle.text = getString(R.string.host_title, wh.title)
+        val wakeInSeconds = (wh.wolToWakeHistory.lastOrNull()?.toDouble() ?: NaN) / 1000.0
+        ui.hostTitle.text = getString(R.string.host_id, wh.title, wh.pingName, wh.macAddress, wakeInSeconds)
+        ui.hostStatsMin.text = "%1.1f".format(wh.wolStats.minLatency)
+        ui.hostStatsMax.text = "%1.1f".format(wh.wolStats.maxLatency)
+        ui.hostStatsMedAve.text = "%1.1f / %1.1f".format(wh.wolStats.medianLatency, wh.wolStats.aveLatency)
     }
 
 
@@ -195,5 +218,47 @@ class HostAwokeFragment : Fragment(),
         sb.append(meat)
         sb.append(postamble)
         return sb.toString()
+    }
+
+
+    class WolStatsRecyclerAdapter(
+        private val inflater: LayoutInflater,
+        private val wolHost: WolHost
+    ) : RecyclerView.Adapter<WolStatsRecyclerAdapter.WolStatsViewHolder>() {
+        class WolStatsViewHolder(val ui: RecyclerHostWolHistoryBinding) : RecyclerView.ViewHolder(ui.root)
+
+        private val progressFactor = 1000.0
+
+        /**
+         * History as parts per thousand of the range between min and max. We use PPK so that
+         * the bar length has resolution.
+         */
+        private val historyPpk: List<Int> = if (wolHost.wolToWakeHistory.isNotEmpty()) {
+            val max = wolHost.wolStats.maxLatency
+            val min = wolHost.wolStats.minLatency
+            if (max == min) {
+                List(wolHost.wolToWakeHistory.size) { (progressFactor / 2).roundToInt() }
+            } else {
+                wolHost.wolToWakeHistory.map { ((it / 1000.0 - min) * progressFactor / (max - min)).roundToInt() }
+            }
+        } else {
+            emptyList()
+        }
+
+        private val nHistory = wolHost.wolToWakeHistory.size - 1
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WolStatsViewHolder {
+            val ui: RecyclerHostWolHistoryBinding = RecyclerHostWolHistoryBinding.inflate(inflater, parent, false)
+            return WolStatsViewHolder(ui)
+        }
+
+        override fun onBindViewHolder(holder: WolStatsViewHolder, position: Int) {
+            holder.ui.secondsText.text = "%6.1f".format(wolHost.wolToWakeHistory[nHistory - position] / 1000.0)
+            holder.ui.secondsPpk.progress = historyPpk[nHistory - position]
+        }
+
+        override fun getItemCount(): Int {
+            return wolHost.wolToWakeHistory.size
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.hanafey.android.wol.settings
 
 import android.content.SharedPreferences
 import com.hanafey.android.wol.MainViewModel
+import com.hanafey.android.wol.R
 import com.hanafey.android.wol.magic.WolHost
 
 class SettingsData(val spm: SharedPreferences) {
@@ -26,6 +27,12 @@ class SettingsData(val spm: SharedPreferences) {
     val tooLongWakeTimeFactor = 3.5
 
     var versionAcknowledged = 0
+
+    /**
+     * Index zero always means no sound track. The remaining access a raw resource that is
+     * an audio file.
+     */
+    val wolSoundTracks = listOf(0, R.raw.rooster_crow_a, R.raw.alarm_clock_a)
 
     fun initializeModel(mvm: MainViewModel) {
         readSettings(mvm)
@@ -59,6 +66,9 @@ class SettingsData(val spm: SharedPreferences) {
         for (wh in mvm.targets) {
             prefName = PrefNames.HOST_ENABLED.pref(wh.pKey)
             wh.enabled = spm.getBoolean(prefName, wh.enabled)
+
+            prefName = PrefNames.HOST_SOUND_TRACK_NOTIFY.pref(wh.pKey)
+            wh.wolSoundTrackIndex = spm.getString(prefName, wh.wolSoundTrackIndex.toString())?.toInt() ?: -1
 
             prefName = PrefNames.HOST_DAT_NOTIFY.pref(wh.pKey)
             wh.datNotifications = spm.getBoolean(prefName, wh.datNotifications)

@@ -10,7 +10,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import androidx.preference.DropDownPreference
 import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
@@ -140,6 +142,21 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
                 pc.addPreference(
                     PreferenceCategory(context).apply {
                         title = "Up / Down Detection Settings"
+                    }
+                )
+
+                pc.addPreference(
+                    DropDownPreference(context).apply {
+                        key = PrefNames.HOST_SOUND_TRACK_NOTIFY.pref(hostIx)
+                        title = "Sound Track for WOL Announcement"
+                        value = "0"
+                        entries = arrayOf("None", "Rooster", "Alarm Clock")
+                        entryValues = arrayOf("0", "1", "2")
+                        require(entries.size == entryValues.size && entries.size == mvm.settingsData.wolSoundTracks.size) {
+                            "The preference ${PrefNames.HOST_SOUND_TRACK_NOTIFY} must be consistent across 3 arrays!"
+                        }
+                        summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
+                        onPreferenceChangeListener = this@SettingsHostFragment
                     }
                 )
 
@@ -358,6 +375,13 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
                         }
                     }
                 }
+            }
+
+            PrefNames.HOST_SOUND_TRACK_NOTIFY -> {
+                val ix = (newValue as String).toInt()
+                wolHost.wolSoundTrackIndex = if (ix >= 0 && ix < mvm.settingsData.wolSoundTracks.size) ix else 0
+                fvm.hostDataChanged = true
+                true
             }
 
             PrefNames.HOST_DAT_NOTIFY -> {

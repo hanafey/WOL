@@ -36,6 +36,18 @@ class WolStats internal constructor(private val wh: WolHost) {
     val medianLatency: Double
 
     /**
+     * The minimum latency in seconds.
+     */
+    @Suppress("MemberVisibilityCanBePrivate")
+    val minLatency: Double
+
+    /**
+     * The maximum latency in seconds.
+     */
+    @Suppress("MemberVisibilityCanBePrivate")
+    val maxLatency: Double
+
+    /**
      * A message that describes the latency in two lines.
      */
     val latencyHistoryMessage: String
@@ -49,10 +61,14 @@ class WolStats internal constructor(private val wh: WolHost) {
         if (n > 0) {
             aveLatency = WolHost.wolToWakeAverage(wh.wolToWakeHistory) / 1000.0
             medianLatency = WolHost.wolToWakeMedian(wh.wolToWakeHistory) / 1000.0
+            minLatency = (wh.wolToWakeHistory.minOrNull() ?: 0) / 1000.0
+            maxLatency = (wh.wolToWakeHistory.maxOrNull() ?: 0) / 1000.0
             isDefined = true
         } else {
             aveLatency = Double.NaN
             medianLatency = Double.NaN
+            minLatency = Double.NaN
+            maxLatency = Double.NaN
             isDefined = false
         }
 

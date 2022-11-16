@@ -14,7 +14,8 @@
     <string name="new_user_help">First time users must configure their hosts. Please navigate to the help site.</string>
     <string name="okay">Okay</string>
     <string name="send_wol_magic_packet">LONG Press to Wake-On-LAN</string>
-    <string name="host_title">Name: %1$s</string>
+    <string name="host_id">%1$s Woke-On-LAN\nIP: %2$s MAC: %3$s\nWOL To Wake in %4$1.1f sec</string>
+    <string name="host_title">%1$s</string>
     <string name="host_address">"%1$s (%4$s)\nPings: +%2$d / -%3$d"</string>
     <string name="info_no_hosts_enabled">The screen is blank because no hosts are enabled!</string>
 

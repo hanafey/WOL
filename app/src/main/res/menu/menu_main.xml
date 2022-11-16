@@ -9,6 +9,11 @@
         app:showAsAction="never"
         />
     <item
+        android:id="@+id/mi_test_audio"
+        android:title="Test Awoke Audio"
+        app:showAsAction="never"
+        />
+    <item
         android:id="@+id/mi_version"
         android:title=""
         app:showAsAction="never"

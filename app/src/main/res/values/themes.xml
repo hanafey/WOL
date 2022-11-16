@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
     <style name="BaseThemeApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="toolbarStyle">@style/Toolbar.Special</item>
@@ -37,6 +37,10 @@
 
         <!-- Status bar color. -->
         <item name="android:statusBarColor">@color/primaryStatus_day</item>
+
+        <!-- Input Card color -->
+        <item name="colorInputCardSurface">@color/inputCardSurface_day</item>
+        <item name="colorOnInputCardSurface">@color/inputOnCardSurface_day</item>
 
         <!-- Customize your theme here. -->
         <item name="colorPingable">@color/pingable</item>

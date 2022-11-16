@@ -8,4 +8,7 @@
     <!-- Attributes for a [@style/toolbarStyleSpecial] -->
     <attr name="colorSurfaceToolbarSpecial" format="color|reference" />
     <attr name="colorOnSurfaceToolbarSpecial" format="color|reference" />
+
+    <attr name="colorInputCardSurface" format="color|reference" />
+    <attr name="colorOnInputCardSurface" format="color|reference" />
 </resources>

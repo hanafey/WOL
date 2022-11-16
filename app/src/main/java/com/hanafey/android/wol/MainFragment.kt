@@ -108,6 +108,16 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                         true
                     }
 
+                    R.id.mi_test_audio -> {
+                        findNavController().navigate(
+                            R.id.action_MainFragment_to_HostAwokeFragment,
+                            Bundle().apply {
+                                putInt("wh_pkey", 4)
+                            }
+                        )
+                        true
+                    }
+
                     else -> false
                 }
             }

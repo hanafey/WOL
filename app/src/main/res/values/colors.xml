@@ -31,6 +31,9 @@
     <color name="onError_day">#000000</color>
     <color name="accent_day">#005183</color>
 
+    <color name="inputCardSurface_day">#C2AAF2</color>
+    <color name="inputOnCardSurface_day">#1A1A1A</color>
+
     <!-- App Specific-->
     <color name="pingable">#006600</color>
     <color name="unPingable">#0019A6</color>
@@ -57,6 +60,9 @@
     <color name="onSurface_night">#FFFFFF</color>
     <color name="onError_night">#ffffff</color>
     <color name="accent_night">#84FFFF</color>
+
+    <color name="inputCardSurface_night">#515166</color>
+    <color name="inputOnCardSurface_night">#F2F2F2</color>
 
     <!-- App Specific-->
     <color name="pingable_dark">#7ACC7A</color>

@@ -87,6 +87,13 @@ class WolHost(
     var wolBundleSpacing = 100L
 
     /**
+     * The index into [com.hanafey.android.wol.settings.SettingsData.wolSoundTracks] which
+     * gives the raw resource id of the track that notifies of WOL. Zero means play
+     * no track.
+     */
+    var wolSoundTrackIndex = 0
+
+    /**
      * Send notifications when dead / alive transitions are detected. These can
      * be more noisy, and in many cases less interesting.
      */

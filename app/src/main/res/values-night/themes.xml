@@ -31,6 +31,10 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor">@color/primaryStatus_night</item>
 
+        <!-- Input Card color -->
+        <item name="colorInputCardSurface">@color/inputCardSurface_night</item>
+        <item name="colorOnInputCardSurface">@color/inputOnCardSurface_night</item>
+
         <!-- Customize your theme here. -->
         <item name="colorPingable">@color/pingable_dark</item>
         <item name="colorUnPingable">@color/unPingable_dark</item>
