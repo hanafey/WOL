@@ -44,6 +44,7 @@ class ObserverOfDeadOrAlive(
                     }
 
                     if (isAwokeByWOL) {
+                        mvm.audioTrackController.playTrackIfNeeded(mvm.getApplication(), whs.host)
                         if (whs.host.wolNotifications) {
                             hostStateNotification.makeAwokeNotification(whs.host, "${whs.host.title} Awoke on WOL", "")
                         }

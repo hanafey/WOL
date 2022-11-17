@@ -30,9 +30,14 @@ class SettingsData(val spm: SharedPreferences) {
 
     /**
      * Index zero always means no sound track. The remaining access a raw resource that is
-     * an audio file.
+     * an audio file. This is currently immutable setting.
      */
     val wolSoundTracks = listOf(0, R.raw.rooster_crow_a, R.raw.alarm_clock_a)
+
+    /**
+     * Number of millies of silence before another audio announcement of WOL will be played.
+     */
+    val wolSoundMinInterval = 1000L
 
     fun initializeModel(mvm: MainViewModel) {
         readSettings(mvm)

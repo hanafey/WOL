@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -40,13 +39,6 @@ class HostAwokeFragment : Fragment(),
     private val lon = BuildConfig.LON_HostAwokeFragment
 
     private val mvm: MainViewModel = WolApplication.instance.mvm
-    private val vm: HostAwokeViewModel by viewModels {
-        val track = wh.wolSoundTrackIndex
-        HostAwokeViewModel.Factory(
-            requireActivity().application,
-            if (track < 0 || track >= mvm.settingsData.wolSoundTracks.size) 0 else mvm.settingsData.wolSoundTracks[track]
-        )
-    }
 
     private var _binding: FragmentHostAwokeBinding? = null
     private val ui: FragmentHostAwokeBinding
@@ -90,7 +82,10 @@ class HostAwokeFragment : Fragment(),
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                 return when (menuItem.itemId) {
                     android.R.id.home -> {
-                        // Up button clicked
+                        // Up button clicked.
+                        // Stop playing any notification noise. Tracks are started by and observer
+                        // of alive / dead transitons in the MainViewModel.
+                        mvm.audioTrackController.stopTrackIfPlaying()
                         false
                     }
 
@@ -118,13 +113,6 @@ class HostAwokeFragment : Fragment(),
 
         wh.updateWolStats()
         updateUi(wh)
-
-        // FIX: Do we want a back button?
-        // ui.done.setOnClickListener {
-        //     findNavController().navigateUp()
-        // }
-
-        vm.ensureInstantiation()
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {

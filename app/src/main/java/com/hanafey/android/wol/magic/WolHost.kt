@@ -91,7 +91,7 @@ class WolHost(
      * gives the raw resource id of the track that notifies of WOL. Zero means play
      * no track.
      */
-    var wolSoundTrackIndex = 0
+    var wolSoundTrackIndex = 1
 
     /**
      * Send notifications when dead / alive transitions are detected. These can

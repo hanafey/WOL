@@ -34,11 +34,11 @@ class MainViewModel(
     private val lonNoisy = BuildConfig.LON_MainViewModel_noisy
 
     val targets = defaultHostList()
+    val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
     val hostStateNotification = HostStateNotification(application)
+    val audioTrackController = AudioTrackController(settingsData.wolSoundTracks, settingsData.wolSoundMinInterval)
     private val observerOfDeadOrAlive = ObserverOfDeadOrAlive(this, hostStateNotification)
-
-    val settingsData = SettingsData(PreferenceManager.getDefaultSharedPreferences(application))
 
     private val _targetPingChanged = MutableLiveData(-1)
     val targetPingChangedLiveData: LiveData<Int>

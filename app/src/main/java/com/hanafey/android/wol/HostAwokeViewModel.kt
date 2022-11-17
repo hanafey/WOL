@@ -6,6 +6,23 @@ import androidx.annotation.RawRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 
+/**
+ * Currently unused because function because function moved to the `MainViewModel`.
+ *
+ * This is the template for any view model that takes parameters at construction.
+ * ```
+ *  private val vm: HostAwokeViewModel by viewModels {
+ *      val track = wh.wolSoundTrackIndex
+ *      HostAwokeViewModel.Factory(
+ *          requireActivity().application,
+ *          if (track < 0 || track >= mvm.settingsData.wolSoundTracks.size) 0 else mvm.settingsData.wolSoundTracks[track]
+ *      )
+ *  }
+ *
+ * vm.ensureInstantiation()
+ * ```
+ */
+@Deprecated("Replaced, just a template for other view models that need constructor args.")
 class HostAwokeViewModel(context: Application, @RawRes audioResourceId: Int) : ViewModel() {
     private var mediaPlayer: MediaPlayer? = null
 
