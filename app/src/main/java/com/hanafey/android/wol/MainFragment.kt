@@ -2,6 +2,7 @@ package com.hanafey.android.wol
 
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -196,6 +197,17 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
             uiWake[ix].isEnabled = wh.pingMe
             uiWake[ix].setOnClickListener(PingStateClickListener(wh, true))
+
+            uiWake[ix].setOnLongClickListener {
+                mvm.viewModelScope.launch {
+                    if (!mvm.wakeTarget(wh)) {
+                        Snackbar.make(
+                            ui.root, "This is host is ping responsive. No WOL sent!", Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                true
+            }
         }
 
         mvm.networkStateLiveData.observe(viewLifecycleOwner) { ns ->
@@ -288,12 +300,12 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
 
     private fun observePingLiveData() {
         mvm.targetPingChangedLiveData.observe(viewLifecycleOwner) { ix ->
-            val target = when {
+            val (target, wakeAnimal) = when {
                 ix == -1 -> {
                     return@observe
                 }
                 mvm.targets.size > ix -> {
-                    mvm.targets[ix]
+                    mvm.targets[ix] to (uiWake[ix].icon as AnimatedVectorDrawable)
                 }
                 else -> {
                     throw IllegalArgumentException("observePingLiveData: $ix is invalid target index")
@@ -366,6 +378,19 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                         ""
                     }
                     pingCounts.text = wakeMessage
+                }
+            }
+
+            val running = wakeAnimal.isRunning
+            if (target.isWaitingToAwake()) {
+                if (!running) {
+                    // Animation runs while we are waiting.
+                    wakeAnimal.start()
+                }
+            } else {
+                if (running) {
+                    wakeAnimal.stop()
+                    wakeAnimal.reset()
                 }
             }
         }

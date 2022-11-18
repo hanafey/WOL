@@ -20,7 +20,7 @@ open class AckInstant internal constructor() {
     }
 
     /**
-     * Returns the instant and if is was already acknowledged and changes nothing
+     * Returns the instant and if is was already acknowledged and changes nothing.
      */
     fun state(): Pair<Instant, Boolean> {
         val i = instant
@@ -29,7 +29,7 @@ open class AckInstant internal constructor() {
     }
 
     /**
-     * Returns the instant and if is was already acknowledged, and set acknowledged to to true
+     * Returns the instant and if is was already acknowledged, and set acknowledged to to true.
      */
     fun consume(): Pair<Instant, Boolean> {
         val i = instant

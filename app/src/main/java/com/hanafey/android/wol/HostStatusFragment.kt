@@ -128,6 +128,10 @@ class HostStatusFragment : Fragment(),
             wh.updateWolStats()
             updateUi(wh)
 
+            ui.mainLayout.setOnClickListener {
+                // Just for debugging
+            }
+
             ui.wolButton.setOnLongClickListener {
                 mvm.viewModelScope.launch {
                     if (!mvm.wakeTarget(wh)) {
@@ -135,13 +139,6 @@ class HostStatusFragment : Fragment(),
                             ui.root, "This is host is ping responsive. No WOL sent!", Snackbar.LENGTH_LONG
                         ).show()
                     }
-                }
-                (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
-                    if (anim.isRunning) {
-                        anim.stop()
-                        anim.reset()
-                    }
-                    anim.start()
                 }
                 true
             }
@@ -240,22 +237,15 @@ class HostStatusFragment : Fragment(),
     }
 
     private fun updateProgress() {
-        if (wh.isWaitingToAwake() && wh.wolStats.isDefined) {
-            // Track progress
-            ui.wolProgress.visibility = View.VISIBLE
-            val progress = wh.wolStats.progress(Instant.now())
-            ui.wolProgress.progress = progress
-            if (progress > 150) {
-                ui.wolProgress.setIndicatorColor(wolLateColor)
-            } else {
-                ui.wolProgress.setIndicatorColor()
-            }
-        } else {
-            ui.wolProgress.visibility = View.GONE
-            (ui.wolButton.icon as AnimatedVectorDrawable).let { anim ->
-                if (anim.isRunning) {
-                    anim.stop()
-                    anim.reset()
+        if (wh.isWaitingToAwake()) {
+            if (wh.wolStats.isDefined) {
+                // Track progress
+                val progress = wh.wolStats.progress(Instant.now())
+                ui.wolProgress.progress = progress
+                if (progress > 150) {
+                    ui.wolProgress.setIndicatorColor(wolLateColor)
+                } else {
+                    ui.wolProgress.setIndicatorColor()
                 }
             }
         }
@@ -327,6 +317,22 @@ class HostStatusFragment : Fragment(),
             if (wh.pKey == target.pKey) {
                 // Reflect the current host status in the UI, because this is a ping result from our focussed host.
                 updateUi(wh)
+
+                val megaPhoneAnimatedIcon = ui.wolButton.icon as AnimatedVectorDrawable
+                val running = megaPhoneAnimatedIcon.isRunning
+                if (wh.isWaitingToAwake()) {
+                    if (!running) {
+                        // Animation runs while we are waiting.
+                        megaPhoneAnimatedIcon.start()
+                    }
+                    ui.wolProgress.visibility = View.VISIBLE
+                } else {
+                    if (running) {
+                        megaPhoneAnimatedIcon.stop()
+                        megaPhoneAnimatedIcon.reset()
+                    }
+                    ui.wolProgress.visibility = View.GONE
+                }
             }
 
             // --------------------------------------------------------------------------------

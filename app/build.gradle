@@ -39,27 +39,28 @@ android {
         applicationId "com.hanafey.android.wol"
         minSdkVersion 26
         targetSdkVersion 33
-        versionCode 15
-        versionName "2.1.0"
+        versionCode 16
+        versionName "2.1.1"
 
         def lon = ""
 
         // ---------------------------------------------------------------------
         lon = "false"
         // ---------------------------------------------------------------------
-        buildConfigField "boolean", "LON_MainViewModel_noisy", lon
         buildConfigField "boolean", "LON_HostAwokeFragment", lon
+        buildConfigField "boolean", "LON_HostStatusFragment", lon
         buildConfigField "boolean", "LON_MainActivity", lon
+        buildConfigField "boolean", "LON_MainFragment", lon
+        buildConfigField "boolean", "LON_MainViewModel", lon
+        buildConfigField "boolean", "LON_MainViewModel_noisy", lon
         buildConfigField "boolean", "LON_ObserverOfHostState", lon
         buildConfigField "boolean", "LON_PingDeadToAwakeTransition", lon
         buildConfigField "boolean", "LON_SettingHostListFragment", lon
         buildConfigField "boolean", "LON_SettingsFragment", lon
         buildConfigField "boolean", "LON_SettingsHostFragment", lon
         buildConfigField "boolean", "LON_WolApplication", lon
+        buildConfigField "boolean", "LON_WolEventLiveData", lon
         buildConfigField "boolean", "LON_WolStats", lon
-        buildConfigField "boolean", "LON_HostStatusFragment", lon
-        buildConfigField "boolean", "LON_MainFragment", lon
-        buildConfigField "boolean", "LON_MainViewModel", lon
         // ---------------------------------------------------------------------
 
         // ---------------------------------------------------------------------
@@ -111,6 +112,6 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.5.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 }

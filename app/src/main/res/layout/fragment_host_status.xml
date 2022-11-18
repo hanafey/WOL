@@ -8,9 +8,15 @@
     tools:context=".HostStatusFragment"
     >
 
+    <!--
+        Named only for debugging. If 'clickable' is true a listener
+        can do something for debug purposes.
+         -->
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main_layout"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
+        android:clickable="false"
         android:paddingBottom="8dp"
         >
 
@@ -161,7 +167,7 @@
             android:max="200"
             android:min="0"
             android:progress="100"
-            android:visibility="visible"
+            android:visibility="gone"
             app:indicatorColor="?attr/colorError"
             app:trackThickness="18dp"
             tools:visibility="visible"

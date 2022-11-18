@@ -63,7 +63,7 @@
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:text=""
-                    app:icon="@drawable/ic_baseline_electrical_services_24"
+                    app:icon="@drawable/ic_wakeup_wol_animate"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
 
@@ -106,7 +106,7 @@
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:text=""
-                    app:icon="@drawable/ic_baseline_electrical_services_24"
+                    app:icon="@drawable/ic_wakeup_wol_animate"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
 
@@ -149,7 +149,7 @@
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:text=""
-                    app:icon="@drawable/ic_baseline_electrical_services_24"
+                    app:icon="@drawable/ic_wakeup_wol_animate"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
 
@@ -192,7 +192,7 @@
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:text=""
-                    app:icon="@drawable/ic_baseline_electrical_services_24"
+                    app:icon="@drawable/ic_wakeup_wol_animate"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
 
@@ -235,7 +235,7 @@
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:text=""
-                    app:icon="@drawable/ic_baseline_electrical_services_24"
+                    app:icon="@drawable/ic_wakeup_wol_animate"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
         </androidx.appcompat.widget.LinearLayoutCompat>

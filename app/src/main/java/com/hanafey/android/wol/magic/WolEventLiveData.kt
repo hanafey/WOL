@@ -4,6 +4,7 @@ import androidx.annotation.MainThread
 import androidx.lifecycle.MediatorLiveData
 import com.hanafey.android.ax.Dog
 import com.hanafey.android.ax.Live
+import com.hanafey.android.wol.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -24,7 +25,7 @@ class WolEventLiveData(
 ) : MediatorLiveData<WolHost>() {
 
     private val ltag = "WolEventLiveData"
-    private val lon = true
+    private val lon = BuildConfig.LON_WolEventLiveData
     private val lun = wh.title
 
     private val signallingOn = AtomicBoolean(false)
