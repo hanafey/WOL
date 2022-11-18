@@ -109,10 +109,13 @@ class MainFragment : Fragment(), NavController.OnDestinationChangedListener, Lif
                     }
 
                     R.id.mi_test_audio -> {
+                        val target = mvm.targets[0]
+                        mvm.audioTrackController.playTrackIfNeeded(mvm.getApplication(), target)
                         findNavController().navigate(
                             R.id.action_MainFragment_to_HostAwokeFragment,
                             Bundle().apply {
-                                putInt("wh_pkey", 4)
+                                putInt("wh_pkey", target.pKey)
+                                putString("title", target.title)
                             }
                         )
                         true

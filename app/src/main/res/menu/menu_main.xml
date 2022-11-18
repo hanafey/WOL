@@ -10,7 +10,7 @@
         />
     <item
         android:id="@+id/mi_test_audio"
-        android:title="Test Awoke Audio"
+        android:title="Test Awoke Audio (Host 1)"
         app:showAsAction="never"
         />
     <item

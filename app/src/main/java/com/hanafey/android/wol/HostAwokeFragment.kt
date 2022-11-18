@@ -75,7 +75,7 @@ class HostAwokeFragment : Fragment(),
 
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                // FIX: Menu?
+                // No menu.
                 // menuInflater.inflate(R.menu.menu_host_awoke, menu)
             }
 
