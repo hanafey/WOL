@@ -7,7 +7,7 @@ import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.Transformations
+import androidx.lifecycle.distinctUntilChanged
 import com.hanafey.android.ax.Dog
 import com.hanafey.android.ax.Live
 import com.hanafey.android.wol.magic.WolHost
@@ -30,7 +30,7 @@ class WolApplication : Application() {
             isWifi = false
         )
     )
-    private val netStateDMLD: LiveData<NetworkStateTracker.NetState> = Transformations.distinctUntilChanged(netStateMLD)
+    private val netStateDMLD: LiveData<NetworkStateTracker.NetState> = netStateMLD.distinctUntilChanged()
 
     /**
      * Valid only after [onCreate] is called.

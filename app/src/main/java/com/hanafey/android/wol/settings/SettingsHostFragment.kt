@@ -507,9 +507,12 @@ class SettingsHostFragment : PreferenceFragmentCompat(),
         }
     }
 
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String) {
+    override fun onSharedPreferenceChanged(
+        sharedPreferences: SharedPreferences?,
+        key: String?
+    ) {
         val wolHost = mvm.targets[hostIx]
-        when (PrefNames.fromString(key).first) {
+        when (PrefNames.fromString(key!!).first) {
             PrefNames.HOST_TITLE -> {
                 // Change the title on the enable host switch to reflect new host name.
                 val sectionKey = PrefNames.HOST_ENABLED.pref(hostIx)

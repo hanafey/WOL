@@ -204,7 +204,11 @@ class SettingsFragment : PreferenceFragmentCompat(),
         }
     }
 
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String) {}
+    override fun onSharedPreferenceChanged(
+        sharedPreferences: SharedPreferences?,
+        key: String?
+    ) {
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()
